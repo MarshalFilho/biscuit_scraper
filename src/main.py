@@ -9,7 +9,6 @@ def main():
     parser = argparse.ArgumentParser(description="Pipeline de Inteligência e Extração para Biscuit")
     parser.add_argument("--plataforma", choices=["meli", "shopee", "todos"], default="todos",
                         help="Plataforma de e-commerce a raspar (padrão: todos)")
-    parser.add_argument("--excel", action="store_true", help="Gerar apenas o relatório consolidado em Excel")
     parser.add_argument("--login", action="store_true", help="Executar ferramenta para salvar login manual do ML")
     parser.add_argument("--login-shopee", action="store_true", help="Executar ferramenta para salvar login manual da Shopee")
     
@@ -23,11 +22,6 @@ def main():
     if args.login_shopee:
         from utils.salvar_login import gerar_sessao
         gerar_sessao("shopee")
-        return
-        
-    if args.excel:
-        from utils.gerador_excel import gerar_relatorio
-        gerar_relatorio()
         return
         
     # Executa os scrapers selecionados
@@ -44,11 +38,6 @@ def main():
         fase_bronze()
         fase_prata()
         fase_ouro()
-            
-    # Auto-geração do relatório ao fim de rodar tudo ou uma plataforma
-    print("\n=== Gerando Relatório Consolidado Excel ===")
-    from utils.gerador_excel import gerar_relatorio
-    gerar_relatorio()
 
 if __name__ == "__main__":
     main()

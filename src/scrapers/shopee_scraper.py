@@ -15,6 +15,7 @@ from config import (
     TERMOS_BUSCA, get_platform_dirs, AUTH_DIR, MAX_PAGINAS
 )
 from utils.relevancia import verificar_relevancia
+from utils.supabase_client import conectar_supabase, upsert_produto, registrar_historico
 
 # Configuração dinâmica de diretórios para a Shopee
 PLATFORM_DIRS = get_platform_dirs("shopee")
@@ -273,7 +274,38 @@ def fase_ouro():
     with open(ouro_path, "w", encoding="utf-8") as f:
         json.dump(todos_dados_ouro, f, indent=4, ensure_ascii=False)
         
-    print(f"✅ [Etapa Ouro] Concluída! {len(todos_dados_ouro)} itens totais salvos em '{ouro_path}'.")
+    print(f"✅ [Etapa Ouro] JSON gerado! {len(todos_dados_ouro)} itens salvos em '{ouro_path}'.")
+    
+    print("\n☁️ [Etapa Nuvem] Enviando dados para o Supabase...")
+    try:
+        supabase = conectar_supabase()
+        enviados = 0
+        for item in todos_dados_ouro:
+            try:
+                # Extrai o id do produto da url (geralmente formato ...-i.<shop_id>.<item_id>)
+                match_id = re.search(r"-i\.(\d+\.\d+)", item["url_anuncio"])
+                id_externo = match_id.group(1) if match_id else item["titulo"][:20]
+                
+                produto_id = upsert_produto(
+                    supabase=supabase,
+                    plataforma="shopee",
+                    id_externo=id_externo,
+                    titulo=item["titulo"],
+                    link=item["url_anuncio"]
+                )
+                registrar_historico(
+                    supabase=supabase,
+                    produto_id=produto_id,
+                    preco=item["preco"],
+                    vendas_totais=item["vendas_quantidade"]
+                )
+                enviados += 1
+            except Exception as e:
+                print(f"Erro ao enviar produto {item['titulo']}: {e}")
+                
+        print(f"✅ [Etapa Nuvem] {enviados} produtos da Shopee sincronizados com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao conectar com Supabase: {e}")
 
 if __name__ == "__main__":
     fase_bronze()
