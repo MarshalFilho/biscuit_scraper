@@ -1,7 +1,9 @@
-<template>
   <div class="container">
     <header class="header animate-fade-in">
-      <h1 class="premium-title text-gradient">✨ Biscuit Scraper Pro</h1>
+      <div class="header-top">
+        <h1 class="premium-title text-gradient">✨ Biscuit Scraper Pro</h1>
+        <LoginModal @auth-change="user => authUser = user" />
+      </div>
       <p class="premium-subtitle">Plataforma de inteligência ativa para monitoramento e controle.</p>
     </header>
 
@@ -17,8 +19,8 @@
     <div v-else>
       <!-- Central de Controle -->
       <div class="admin-panels">
-        <ScraperConfig @update-blacklist="onUpdateBlacklist" />
-        <CategoryManager @update-categories="onUpdateCategories" />
+        <ScraperConfig :user="authUser" @update-blacklist="onUpdateBlacklist" />
+        <CategoryManager :user="authUser" @update-categories="onUpdateCategories" />
       </div>
 
       <KpiCards 
@@ -101,6 +103,7 @@ const supabase = createClient(config.public.supabaseUrl, config.public.supabaseA
 const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
+const authUser = ref(null)
 
 // Configurações e Categorias dinâmicas
 const blacklist = ref([])
@@ -228,9 +231,10 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 </script>
 
 <style scoped>
-.header { margin-bottom: 2rem; text-align: center; }
+.header { margin-bottom: 2rem; }
+.header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
 .premium-title { font-size: 3rem; margin-bottom: 0.5rem; }
-.premium-subtitle { color: var(--text-muted); font-size: 1.1rem; }
+.premium-subtitle { color: var(--text-muted); font-size: 1.1rem; text-align: left; }
 .admin-panels { display: flex; flex-direction: column; gap: 0rem; }
 
 .filters-panel { padding: 1.5rem; margin-bottom: 2rem; }

@@ -38,7 +38,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { createClient } from '@supabase/supabase-js'
+
+const config = useRuntimeConfig()
+const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+
+const props = defineProps({
+  user: { type: Object, default: null }
+})
 
 const emit = defineEmits(['update-blacklist'])
 
@@ -47,15 +55,15 @@ const localSearchTerms = ref([])
 const newBlacklistTag = ref('')
 const newSearchTag = ref('')
 const statusMessage = ref('')
-const isCollapsed = ref(true) // Padrão minimizado
+const isCollapsed = ref(true)
+
+watch(() => props.user, () => {
+  loadConfigs()
+})
 
 onMounted(() => {
-  // Carrega estado de colapso do painel
   const savedState = localStorage.getItem('scraper_panel_collapsed')
-  if (savedState !== null) {
-    isCollapsed.value = JSON.parse(savedState)
-  }
-  
+  if (savedState !== null) isCollapsed.value = JSON.parse(savedState)
   loadConfigs()
 })
 
@@ -64,12 +72,23 @@ function toggleCollapse() {
   localStorage.setItem('scraper_panel_collapsed', JSON.stringify(isCollapsed.value))
 }
 
-/**
- * Função estruturada para carregar as configurações.
- * [FASE 2] TODO: Modificar esta função para buscar do Supabase se o usuário estiver autenticado.
- */
 async function loadConfigs() {
-  // Simulação Local via LocalStorage
+  if (props.user) {
+    const { data, error } = await supabase
+      .from('configuracoes_scraper')
+      .select('blacklist, termos_busca')
+      .eq('user_id', props.user.id)
+      .single()
+      
+    if (data) {
+      localBlacklist.value = data.blacklist || []
+      localSearchTerms.value = data.termos_busca || []
+      emit('update-blacklist', localBlacklist.value)
+      return
+    }
+  }
+
+  // Simulação Local via LocalStorage (Fallback)
   const savedBL = localStorage.getItem('biscuit_blacklist')
   if (savedBL) localBlacklist.value = JSON.parse(savedBL)
   else localBlacklist.value = ['chocolate', 'nestle', 'choco', 'filtro', 'purificadora', 'bolacha']
@@ -78,26 +97,45 @@ async function loadConfigs() {
   if (savedST) localSearchTerms.value = JSON.parse(savedST)
   else localSearchTerms.value = ['topo de bolo biscuit', 'vela biscuit personalizada']
   
-  // Envia blacklist carregada para o index
   emit('update-blacklist', localBlacklist.value)
 }
 
-/**
- * Função estruturada para salvar as configurações.
- * [FASE 2] TODO: Enviar um UPDATE/INSERT para a tabela configuracoes_scraper no Supabase.
- */
 async function saveConfigs() {
-  // Simulação Local via LocalStorage
+  // Simulação Local via LocalStorage (Cache/Backup)
   localStorage.setItem('biscuit_blacklist', JSON.stringify(localBlacklist.value))
   localStorage.setItem('biscuit_search_terms', JSON.stringify(localSearchTerms.value))
   
+  if (props.user) {
+    const { error } = await supabase.from('configuracoes_scraper').upsert(
+      { user_id: props.user.id, blacklist: localBlacklist.value, termos_busca: localSearchTerms.value },
+      { onConflict: 'user_id' }
+    )
+    if (error) {
+      showStatus('Erro ao salvar na nuvem!')
+      console.error(error)
+      return
+    }
+    showStatus('Preferências salvas na nuvem!')
+  } else {
+    showStatus('Salvo localmente (Logue para salvar na nuvem)')
+  }
   emit('update-blacklist', localBlacklist.value)
-  showStatus('Preferências salvas localmente!')
 }
 
-function triggerScraper() {
-  // [FASE 2] TODO: Alterar campo `disparo_pendente: true` no Supabase.
-  showStatus('Comando enviado! (Status: Pendente para o Python)')
+async function triggerScraper() {
+  if (props.user) {
+    const { error } = await supabase.from('configuracoes_scraper').upsert(
+      { user_id: props.user.id, disparo_pendente: true },
+      { onConflict: 'user_id' }
+    )
+    if (error) {
+      showStatus('Erro ao agendar disparo!')
+      return
+    }
+    showStatus('Comando enviado à Nuvem! O Scraper iniciará em breve.')
+  } else {
+    showStatus('Apenas simulação. Faça login para disparar de verdade!')
+  }
 }
 
 function showStatus(msg) {

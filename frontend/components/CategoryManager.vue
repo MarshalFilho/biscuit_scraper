@@ -30,7 +30,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { createClient } from '@supabase/supabase-js'
+
+const config = useRuntimeConfig()
+const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+
+const props = defineProps({
+  user: { type: Object, default: null }
+})
 
 const emit = defineEmits(['update-categories'])
 
@@ -38,11 +46,13 @@ const rules = ref([])
 const statusMessage = ref('')
 const isCollapsed = ref(true)
 
+watch(() => props.user, () => {
+  loadConfigs()
+})
+
 onMounted(() => {
   const savedState = localStorage.getItem('category_panel_collapsed')
-  if (savedState !== null) {
-    isCollapsed.value = JSON.parse(savedState)
-  }
+  if (savedState !== null) isCollapsed.value = JSON.parse(savedState)
   loadConfigs()
 })
 
@@ -51,10 +61,22 @@ function toggleCollapse() {
   localStorage.setItem('category_panel_collapsed', JSON.stringify(isCollapsed.value))
 }
 
-/**
- * [FASE 2] TODO: Carregar categorias do Supabase.
- */
 async function loadConfigs() {
+  if (props.user) {
+    const { data, error } = await supabase
+      .from('configuracoes_scraper')
+      .select('regras_categoria')
+      .eq('user_id', props.user.id)
+      .single()
+      
+    if (data && data.regras_categoria && data.regras_categoria.length > 0) {
+      rules.value = data.regras_categoria
+      emit('update-categories', rules.value)
+      return
+    }
+  }
+
+  // Fallback Local
   const saved = localStorage.getItem('biscuit_category_rules')
   if (saved) {
     rules.value = JSON.parse(saved)
@@ -70,14 +92,27 @@ async function loadConfigs() {
   emit('update-categories', rules.value)
 }
 
-/**
- * [FASE 2] TODO: Salvar categorias na tabela do Supabase.
- */
 async function saveConfigs() {
   const validRules = rules.value.filter(r => r.keyword.trim() !== '' && r.category.trim() !== '')
+  
+  // Cache local
   localStorage.setItem('biscuit_category_rules', JSON.stringify(validRules))
+  
+  if (props.user) {
+    const { error } = await supabase.from('configuracoes_scraper').upsert(
+      { user_id: props.user.id, regras_categoria: validRules },
+      { onConflict: 'user_id' }
+    )
+    if (error) {
+      showStatus('Erro ao salvar categorias na nuvem!')
+      console.error(error)
+      return
+    }
+    showStatus('Categorias salvas na nuvem!')
+  } else {
+    showStatus('Regras salvas localmente (Logue para persistir na nuvem)')
+  }
   emit('update-categories', validRules)
-  showStatus('Regras aplicadas em tempo real!')
 }
 
 function showStatus(msg) {
