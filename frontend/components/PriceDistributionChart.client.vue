@@ -1,8 +1,8 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.6s;">
-    <h3>Distribuição de Preços (Dispersão Unidimensional)</h3>
+    <h3>Média de Preço por Categoria</h3>
     <div class="chart-wrapper">
-      <apexchart v-if="isMounted" type="scatter" height="350" :options="chartOptions" :series="series"></apexchart>
+      <apexchart v-if="isMounted" type="bar" height="350" :options="chartOptions" :series="series"></apexchart>
     </div>
   </div>
 </template>
@@ -20,42 +20,51 @@ const props = defineProps({
 const isMounted = ref(false)
 onMounted(() => { isMounted.value = true })
 
-// Boxplot requires specific data formats that might not render well without high volume, 
-// using 1D Scatter for price distribution on platforms.
+// Calcula média de preço agrupado por plataforma e categoria
 const series = computed(() => {
-  const meliData = props.items.filter(i => i.plataforma === 'meli' && i.preco).map((i, idx) => [1, i.preco])
-  const shopeeData = props.items.filter(i => i.plataforma === 'shopee' && i.preco).map((i, idx) => [2, i.preco])
+  const categoriesList = ['Velas', 'Topos de Bolo', 'Chaveiros/Lembrancinhas', 'Outros']
   
+  const getAvg = (plat, cat) => {
+    const list = props.items.filter(i => i.plataforma === plat && i.categoria === cat && i.preco > 0)
+    if (list.length === 0) return 0
+    return list.reduce((acc, i) => acc + i.preco, 0) / list.length
+  }
+
   return [
-    { name: 'Mercado Livre', data: meliData },
-    { name: 'Shopee', data: shopeeData }
+    {
+      name: 'Mercado Livre',
+      data: categoriesList.map(cat => getAvg('meli', cat).toFixed(2))
+    },
+    {
+      name: 'Shopee',
+      data: categoriesList.map(cat => getAvg('shopee', cat).toFixed(2))
+    }
   ]
 })
 
 const chartOptions = {
-  chart: { type: 'scatter', toolbar: { show: false }, background: 'transparent' },
+  chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
+  plotOptions: { bar: { horizontal: false, columnWidth: '55%', borderRadius: 4, endingShape: 'rounded' } },
+  dataLabels: { enabled: false },
+  stroke: { show: true, width: 2, colors: ['transparent'] },
   colors: ['#ffe600', '#ff6b35'],
   xaxis: { 
-    categories: ['', 'Mercado Livre', 'Shopee', ''],
-    min: 0,
-    max: 3,
-    tickAmount: 3,
-    labels: { style: { colors: '#94a3b8' }, formatter: (val) => val === 1 ? 'M. Livre' : val === 2 ? 'Shopee' : '' }
+    categories: ['Velas', 'Topos de Bolo', 'Chaveiros', 'Outros'], 
+    labels: { style: { colors: '#94a3b8' } }
   },
-  yaxis: { title: { text: 'Preço (R$)' }, labels: { style: { colors: '#94a3b8' } } },
-  legend: { show: false },
-  grid: { borderColor: 'rgba(255, 255, 255, 0.1)', strokeDashArray: 4, xaxis: { lines: { show: true } } },
+  yaxis: { 
+    title: { text: 'Preço Médio (R$)' }, 
+    labels: { style: { colors: '#94a3b8' }, formatter: (val) => "R$ " + val }
+  },
+  legend: { position: 'top', labels: { colors: '#f8fafc' } },
+  grid: { borderColor: 'rgba(255, 255, 255, 0.1)', strokeDashArray: 4 },
   theme: { mode: 'dark' },
-  markers: { size: 5, strokeWidth: 0, hover: { size: 7 }, fillOpacity: 0.5 },
-  tooltip: {
-    x: { formatter: (val) => val === 1 ? 'Mercado Livre' : 'Shopee' },
-    y: { formatter: (val) => "R$ " + val.toFixed(2) }
-  }
+  tooltip: { y: { formatter: (val) => "R$ " + val } }
 }
 </script>
 
 <style scoped>
 .chart-container { padding: 1.5rem; }
-.chart-container h3 { margin-bottom: 1rem; color: var(--text-main); font-size: 1.25rem; }
+.chart-container h3 { margin-bottom: 1rem; color: var(--text-main); font-size: 1.1rem; margin-top: 0; }
 .chart-wrapper { min-height: 350px; }
 </style>

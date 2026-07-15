@@ -43,7 +43,10 @@
           <PriceVsSalesChart :items="filteredProducts" class="half-width" />
         </div>
         
-        <PriceDistributionChart :items="filteredProducts" class="full-width" />
+        <div class="charts-row">
+          <PriceDistributionChart :items="filteredProducts" class="half-width" />
+          <MarketShareChart :items="filteredProducts" class="half-width" />
+        </div>
       </div>
     </div>
   </div>
