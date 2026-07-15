@@ -14,6 +14,11 @@ __pycache__/
 
 # Data files (ignored to avoid committing sensitive/large data)
 *.json
+!package.json
+!package-lock.json
+!frontend/package.json
+!frontend/package-lock.json
+!config_app.json
 *.xlsx
 *.csv
 data/bronze/
