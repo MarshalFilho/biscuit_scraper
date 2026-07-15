@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     }
   },
   app: {
+    baseURL: '/biscuit_scraper/',
     head: {
       title: 'Biscuit Scraper Dashboard',
       meta: [
