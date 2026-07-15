@@ -27,6 +27,8 @@ data/prata/
 # OS generated files
 node_modules/
 frontend/node_modules/
+.nuxt/
+frontend/.nuxt/
 .DS_Store
 .DS_Store?
 ._*
