@@ -1,3 +1,4 @@
+<template>
   <div class="container">
     <header class="header animate-fade-in">
       <div class="header-top">
