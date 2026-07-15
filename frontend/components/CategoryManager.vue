@@ -1,23 +1,31 @@
 <template>
-  <div class="glass-panel config-panel animate-fade-in" style="animation-delay: 0.1s;">
-    <h3>🏷️ Gerenciador Dinâmico de Categorias</h3>
-    <p class="subtitle">Associe palavras-chave aos nomes das categorias para organizar os produtos.</p>
+  <div class="glass-panel config-panel animate-fade-in" :class="{ 'is-collapsed': isCollapsed }" style="animation-delay: 0.1s;">
+    <div class="panel-header" @click="toggleCollapse">
+      <h3>🏷️ Gerenciador Dinâmico de Categorias <span class="badge">Simulação Local</span></h3>
+      <button class="btn-toggle">{{ isCollapsed ? '▼ Expandir' : '▲ Minimizar' }}</button>
+    </div>
     
-    <div class="rules-list">
-      <div v-for="(rule, index) in rules" :key="index" class="rule-item">
-        <span class="text-muted">Se o título contiver:</span>
-        <input type="text" v-model="rule.keyword" placeholder="ex: noivos" class="glass-input small" />
-        <span class="text-muted">➔ Categoria:</span>
-        <input type="text" v-model="rule.category" placeholder="ex: Casamento" class="glass-input small" />
-        <button @click="removeRule(index)" class="btn-icon">✖</button>
+    <transition name="slide-fade">
+      <div v-show="!isCollapsed" class="panel-content mt-3">
+        <p class="subtitle">Associe palavras-chave aos nomes das categorias para organizar os produtos.</p>
+        
+        <div class="rules-list">
+          <div v-for="(rule, index) in rules" :key="index" class="rule-item">
+            <span class="text-muted">Se o título contiver:</span>
+            <input type="text" v-model="rule.keyword" placeholder="ex: noivos" class="glass-input small" />
+            <span class="text-muted">➔ Categoria:</span>
+            <input type="text" v-model="rule.category" placeholder="ex: Casamento" class="glass-input small" />
+            <button @click="removeRule(index)" class="btn-icon">✖</button>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <button @click="addRule" class="btn secondary">+ Adicionar Regra</button>
+          <button @click="saveConfigs" class="btn primary">💾 Aplicar e Salvar Regras</button>
+          <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
+        </div>
       </div>
-    </div>
-    
-    <div class="actions">
-      <button @click="addRule" class="btn secondary">+ Adicionar Regra</button>
-      <button @click="saveRules" class="btn primary">💾 Aplicar e Salvar Regras</button>
-      <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -28,8 +36,25 @@ const emit = defineEmits(['update-categories'])
 
 const rules = ref([])
 const statusMessage = ref('')
+const isCollapsed = ref(true)
 
 onMounted(() => {
+  const savedState = localStorage.getItem('category_panel_collapsed')
+  if (savedState !== null) {
+    isCollapsed.value = JSON.parse(savedState)
+  }
+  loadConfigs()
+})
+
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value
+  localStorage.setItem('category_panel_collapsed', JSON.stringify(isCollapsed.value))
+}
+
+/**
+ * [FASE 2] TODO: Carregar categorias do Supabase.
+ */
+async function loadConfigs() {
   const saved = localStorage.getItem('biscuit_category_rules')
   if (saved) {
     rules.value = JSON.parse(saved)
@@ -43,15 +68,12 @@ onMounted(() => {
     ]
   }
   emit('update-categories', rules.value)
-})
+}
 
-function addRule() {
-  rules.value.push({ keyword: '', category: '' })
-}
-function removeRule(idx) {
-  rules.value.splice(idx, 1)
-}
-function saveRules() {
+/**
+ * [FASE 2] TODO: Salvar categorias na tabela do Supabase.
+ */
+async function saveConfigs() {
   const validRules = rules.value.filter(r => r.keyword.trim() !== '' && r.category.trim() !== '')
   localStorage.setItem('biscuit_category_rules', JSON.stringify(validRules))
   emit('update-categories', validRules)
@@ -62,11 +84,20 @@ function showStatus(msg) {
   statusMessage.value = msg
   setTimeout(() => statusMessage.value = '', 3500)
 }
+function addRule() { rules.value.push({ keyword: '', category: '' }) }
+function removeRule(idx) { rules.value.splice(idx, 1) }
 </script>
 
 <style scoped>
-.config-panel { padding: 1.5rem; margin-bottom: 2rem; }
-.config-panel h3 { margin-top: 0; color: var(--text-main); font-size: 1.25rem; margin-bottom: 0.3rem; }
+.config-panel { padding: 1.5rem; margin-bottom: 2rem; transition: padding 0.3s ease; }
+.config-panel.is-collapsed { padding: 1rem 1.5rem; margin-bottom: 1rem; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.panel-header h3 { margin: 0; color: var(--text-main); font-size: 1.25rem; display: flex; align-items: center; gap: 0.8rem; }
+.badge { font-size: 0.7rem; background: rgba(192, 132, 252, 0.2); color: var(--neon-purple); padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid rgba(192, 132, 252, 0.4); text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; }
+.btn-toggle { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: color 0.2s; outline: none; }
+.btn-toggle:hover { color: var(--neon-purple); }
+
+.mt-3 { margin-top: 1.5rem; }
 .subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
 .rules-list { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.2rem; }
 .rule-item { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; background: rgba(0,0,0,0.1); padding: 0.6rem 1rem; border-radius: 8px; border: 1px solid var(--border-glass); }
@@ -82,4 +113,9 @@ function showStatus(msg) {
 .btn.secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-glass); }
 .btn.secondary:hover { background: rgba(255, 255, 255, 0.1); }
 .status-msg { color: #10b981; font-weight: 600; font-size: 0.9rem; }
+
+/* Transição do Vue */
+.slide-fade-enter-active, .slide-fade-leave-active { transition: all 0.3s ease; overflow: hidden; transform-origin: top; }
+.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; max-height: 0; transform: translateY(-10px); }
+.slide-fade-enter-to, .slide-fade-leave-from { opacity: 1; max-height: 1000px; transform: translateY(0); }
 </style>

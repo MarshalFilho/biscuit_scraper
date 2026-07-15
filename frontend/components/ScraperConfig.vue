@@ -1,32 +1,39 @@
 <template>
-  <div class="glass-panel config-panel animate-fade-in">
-    <h3>⚙️ Controle do Scraper (Simulação Local)</h3>
+  <div class="glass-panel config-panel animate-fade-in" :class="{ 'is-collapsed': isCollapsed }">
+    <div class="panel-header" @click="toggleCollapse">
+      <h3>⚙️ Controle do Scraper <span class="badge">Simulação Local</span></h3>
+      <button class="btn-toggle">{{ isCollapsed ? '▼ Expandir' : '▲ Minimizar' }}</button>
+    </div>
     
-    <div class="form-group">
-      <label>Termos de Busca Ativos (Para extração futura):</label>
-      <div class="tag-input-container">
-        <span v-for="tag in localSearchTerms" :key="tag" class="tag bg-blue">
-          {{ tag }} <button class="close-btn" @click="removeSearchTag(tag)">x</button>
-        </span>
-        <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" placeholder="Pressione Enter para adicionar (ex: topo de bolo)" class="glass-input inline" />
-      </div>
-    </div>
+    <transition name="slide-fade">
+      <div v-show="!isCollapsed" class="panel-content">
+        <div class="form-group mt-3">
+          <label>Termos de Busca Ativos (Para extração futura):</label>
+          <div class="tag-input-container">
+            <span v-for="tag in localSearchTerms" :key="tag" class="tag bg-blue">
+              {{ tag }} <button class="close-btn" @click="removeSearchTag(tag)">x</button>
+            </span>
+            <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" placeholder="Pressione Enter para adicionar (ex: topo de bolo)" class="glass-input inline" />
+          </div>
+        </div>
 
-    <div class="form-group">
-      <label>Blacklist (Se contiver no título, oculta/descarta automaticamente):</label>
-      <div class="tag-input-container">
-        <span v-for="tag in localBlacklist" :key="tag" class="tag bg-red">
-          {{ tag }} <button class="close-btn" @click="removeBlacklistTag(tag)">x</button>
-        </span>
-        <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" placeholder="Pressione Enter para adicionar (ex: chocolate)" class="glass-input inline" />
-      </div>
-    </div>
+        <div class="form-group">
+          <label>Blacklist (Se contiver no título, oculta/descarta automaticamente):</label>
+          <div class="tag-input-container">
+            <span v-for="tag in localBlacklist" :key="tag" class="tag bg-red">
+              {{ tag }} <button class="close-btn" @click="removeBlacklistTag(tag)">x</button>
+            </span>
+            <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" placeholder="Pressione Enter para adicionar (ex: chocolate)" class="glass-input inline" />
+          </div>
+        </div>
 
-    <div class="actions">
-      <button @click="saveSettings" class="btn primary">💾 Salvar Preferências</button>
-      <button @click="triggerScraper" class="btn danger">▶️ Disparar Scraper Agora</button>
-      <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
-    </div>
+        <div class="actions">
+          <button @click="saveConfigs" class="btn primary">💾 Salvar Preferências</button>
+          <button @click="triggerScraper" class="btn danger">▶️ Disparar Scraper Agora</button>
+          <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -40,8 +47,29 @@ const localSearchTerms = ref([])
 const newBlacklistTag = ref('')
 const newSearchTag = ref('')
 const statusMessage = ref('')
+const isCollapsed = ref(true) // Padrão minimizado
 
 onMounted(() => {
+  // Carrega estado de colapso do painel
+  const savedState = localStorage.getItem('scraper_panel_collapsed')
+  if (savedState !== null) {
+    isCollapsed.value = JSON.parse(savedState)
+  }
+  
+  loadConfigs()
+})
+
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value
+  localStorage.setItem('scraper_panel_collapsed', JSON.stringify(isCollapsed.value))
+}
+
+/**
+ * Função estruturada para carregar as configurações.
+ * [FASE 2] TODO: Modificar esta função para buscar do Supabase se o usuário estiver autenticado.
+ */
+async function loadConfigs() {
+  // Simulação Local via LocalStorage
   const savedBL = localStorage.getItem('biscuit_blacklist')
   if (savedBL) localBlacklist.value = JSON.parse(savedBL)
   else localBlacklist.value = ['chocolate', 'nestle', 'choco', 'filtro', 'purificadora', 'bolacha']
@@ -50,35 +78,25 @@ onMounted(() => {
   if (savedST) localSearchTerms.value = JSON.parse(savedST)
   else localSearchTerms.value = ['topo de bolo biscuit', 'vela biscuit personalizada']
   
+  // Envia blacklist carregada para o index
   emit('update-blacklist', localBlacklist.value)
-})
-
-function addBlacklistTag() {
-  const t = newBlacklistTag.value.trim().toLowerCase()
-  if (t && !localBlacklist.value.includes(t)) localBlacklist.value.push(t)
-  newBlacklistTag.value = ''
-}
-function removeBlacklistTag(tag) {
-  localBlacklist.value = localBlacklist.value.filter(t => t !== tag)
 }
 
-function addSearchTag() {
-  const t = newSearchTag.value.trim().toLowerCase()
-  if (t && !localSearchTerms.value.includes(t)) localSearchTerms.value.push(t)
-  newSearchTag.value = ''
-}
-function removeSearchTag(tag) {
-  localSearchTerms.value = localSearchTerms.value.filter(t => t !== tag)
-}
-
-function saveSettings() {
+/**
+ * Função estruturada para salvar as configurações.
+ * [FASE 2] TODO: Enviar um UPDATE/INSERT para a tabela configuracoes_scraper no Supabase.
+ */
+async function saveConfigs() {
+  // Simulação Local via LocalStorage
   localStorage.setItem('biscuit_blacklist', JSON.stringify(localBlacklist.value))
   localStorage.setItem('biscuit_search_terms', JSON.stringify(localSearchTerms.value))
+  
   emit('update-blacklist', localBlacklist.value)
   showStatus('Preferências salvas localmente!')
 }
 
 function triggerScraper() {
+  // [FASE 2] TODO: Alterar campo `disparo_pendente: true` no Supabase.
   showStatus('Comando enviado! (Status: Pendente para o Python)')
 }
 
@@ -86,11 +104,31 @@ function showStatus(msg) {
   statusMessage.value = msg
   setTimeout(() => statusMessage.value = '', 3500)
 }
+
+function addBlacklistTag() {
+  const t = newBlacklistTag.value.trim().toLowerCase()
+  if (t && !localBlacklist.value.includes(t)) localBlacklist.value.push(t)
+  newBlacklistTag.value = ''
+}
+function removeBlacklistTag(tag) { localBlacklist.value = localBlacklist.value.filter(t => t !== tag) }
+function addSearchTag() {
+  const t = newSearchTag.value.trim().toLowerCase()
+  if (t && !localSearchTerms.value.includes(t)) localSearchTerms.value.push(t)
+  newSearchTag.value = ''
+}
+function removeSearchTag(tag) { localSearchTerms.value = localSearchTerms.value.filter(t => t !== tag) }
 </script>
 
 <style scoped>
-.config-panel { padding: 1.5rem; margin-bottom: 1.5rem; }
-.config-panel h3 { margin-top: 0; color: var(--text-main); font-size: 1.25rem; margin-bottom: 1.2rem; }
+.config-panel { padding: 1.5rem; margin-bottom: 1rem; transition: padding 0.3s ease; }
+.config-panel.is-collapsed { padding: 1rem 1.5rem; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.panel-header h3 { margin: 0; color: var(--text-main); font-size: 1.25rem; display: flex; align-items: center; gap: 0.8rem; }
+.badge { font-size: 0.7rem; background: rgba(56, 189, 248, 0.2); color: var(--neon-blue); padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid rgba(56, 189, 248, 0.4); text-transform: uppercase; letter-spacing: 0.05em; font-weight: bold; }
+.btn-toggle { background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: color 0.2s; outline: none; }
+.btn-toggle:hover { color: var(--neon-blue); }
+
+.mt-3 { margin-top: 1.5rem; }
 .form-group { margin-bottom: 1.2rem; }
 .form-group label { display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: 500; }
 .tag-input-container { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.1); padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-glass); }
@@ -107,4 +145,9 @@ function showStatus(msg) {
 .btn.danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
 .btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
 .status-msg { color: #10b981; font-weight: 600; font-size: 0.9rem; }
+
+/* Transição do Vue */
+.slide-fade-enter-active, .slide-fade-leave-active { transition: all 0.3s ease; overflow: hidden; transform-origin: top; }
+.slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; max-height: 0; transform: translateY(-10px); }
+.slide-fade-enter-to, .slide-fade-leave-from { opacity: 1; max-height: 1000px; transform: translateY(0); }
 </style>
