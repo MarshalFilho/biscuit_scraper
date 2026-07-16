@@ -8,6 +8,11 @@
     <transition name="slide-fade">
       <div v-show="!isCollapsed" class="panel-content">
         <div class="form-group mt-3">
+          <label>Nome do Projeto (Opcional):</label>
+          <input type="text" v-model="nomeProjeto" placeholder="Ex: Monitoramento de Placas de Vídeo" class="glass-input full-width" />
+        </div>
+
+        <div class="form-group mt-3">
           <label>Termos de Busca Ativos (Para extração futura):</label>
           <div class="tag-input-container">
             <span v-for="tag in localSearchTerms" :key="tag" class="tag bg-blue">
@@ -48,8 +53,9 @@ const props = defineProps({
   user: { type: Object, default: null }
 })
 
-const emit = defineEmits(['update-blacklist'])
+const emit = defineEmits(['update-blacklist', 'update-project-name'])
 
+const nomeProjeto = ref('Meu Projeto Scraper')
 const localBlacklist = ref([])
 const localSearchTerms = ref([])
 const newBlacklistTag = ref('')
@@ -76,38 +82,50 @@ async function loadConfigs() {
   if (props.user) {
     const { data, error } = await supabase
       .from('configuracoes_scraper')
-      .select('blacklist, termos_busca')
+      .select('nome_projeto, blacklist, termos_busca')
       .eq('user_id', props.user.id)
       .single()
       
     if (data) {
+      if (data.nome_projeto) nomeProjeto.value = data.nome_projeto
       localBlacklist.value = data.blacklist || []
       localSearchTerms.value = data.termos_busca || []
       emit('update-blacklist', localBlacklist.value)
+      emit('update-project-name', nomeProjeto.value)
       return
     }
   }
 
   // Simulação Local via LocalStorage (Fallback)
-  const savedBL = localStorage.getItem('biscuit_blacklist')
+  const savedName = localStorage.getItem('scraper_nome_projeto')
+  if (savedName) nomeProjeto.value = savedName
+  
+  const savedBL = localStorage.getItem('scraper_blacklist')
   if (savedBL) localBlacklist.value = JSON.parse(savedBL)
-  else localBlacklist.value = ['chocolate', 'nestle', 'choco', 'filtro', 'purificadora', 'bolacha']
+  else localBlacklist.value = ['termo_indesejado_1']
 
-  const savedST = localStorage.getItem('biscuit_search_terms')
+  const savedST = localStorage.getItem('scraper_search_terms')
   if (savedST) localSearchTerms.value = JSON.parse(savedST)
-  else localSearchTerms.value = ['topo de bolo biscuit', 'vela biscuit personalizada']
+  else localSearchTerms.value = ['meu produto teste']
   
   emit('update-blacklist', localBlacklist.value)
+  emit('update-project-name', nomeProjeto.value)
 }
 
 async function saveConfigs() {
   // Simulação Local via LocalStorage (Cache/Backup)
-  localStorage.setItem('biscuit_blacklist', JSON.stringify(localBlacklist.value))
-  localStorage.setItem('biscuit_search_terms', JSON.stringify(localSearchTerms.value))
+  localStorage.setItem('scraper_nome_projeto', nomeProjeto.value)
+  localStorage.setItem('scraper_blacklist', JSON.stringify(localBlacklist.value))
+  localStorage.setItem('scraper_search_terms', JSON.stringify(localSearchTerms.value))
   
   if (props.user) {
     const { error } = await supabase.from('configuracoes_scraper').upsert(
-      { user_id: props.user.id, blacklist: localBlacklist.value, termos_busca: localSearchTerms.value },
+      { 
+        user_id: props.user.id, 
+        nome_projeto: nomeProjeto.value,
+        blacklist: localBlacklist.value, 
+        termos_busca: localSearchTerms.value 
+      },
       { onConflict: 'user_id' }
     )
     if (error) {
@@ -120,6 +138,7 @@ async function saveConfigs() {
     showStatus('Salvo localmente (Logue para salvar na nuvem)')
   }
   emit('update-blacklist', localBlacklist.value)
+  emit('update-project-name', nomeProjeto.value)
 }
 
 async function triggerScraper() {
@@ -175,7 +194,10 @@ function removeSearchTag(tag) { localSearchTerms.value = localSearchTerms.value.
 .bg-red { background: rgba(239, 68, 68, 0.4); border: 1px solid rgba(239, 68, 68, 0.6); }
 .close-btn { background: none; border: none; color: white; cursor: pointer; font-size: 0.9rem; padding: 0; line-height: 1; opacity: 0.7; }
 .close-btn:hover { opacity: 1; }
-.glass-input.inline { background: transparent; border: none; color: var(--text-main); flex: 1; min-width: 200px; outline: none; }
+.glass-input { background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: white; padding: 0.6rem 1rem; border-radius: 8px; outline: none; }
+.glass-input.inline { background: transparent; border: none; flex: 1; min-width: 200px; padding: 0; }
+.glass-input.full-width { width: 100%; display: block; margin-bottom: 0.5rem; }
+.glass-input:focus { border-color: var(--neon-blue); }
 .actions { display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; }
 .btn { padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; }
 .btn.primary { background: var(--neon-blue); color: #000; }

@@ -2,7 +2,7 @@
   <div class="container">
     <header class="header animate-fade-in">
       <div class="header-top">
-        <h1 class="premium-title text-gradient">✨ Biscuit Scraper Pro</h1>
+        <h1 class="premium-title text-gradient">✨ {{ nomeProjeto || 'Scraper Pro' }}</h1>
         <LoginModal @auth-change="user => authUser = user" />
       </div>
       <p class="premium-subtitle">Plataforma de inteligência ativa para monitoramento e controle.</p>
@@ -20,7 +20,7 @@
     <div v-else>
       <!-- Central de Controle -->
       <div class="admin-panels">
-        <ScraperConfig :user="authUser" @update-blacklist="onUpdateBlacklist" />
+        <ScraperConfig :user="authUser" @update-blacklist="onUpdateBlacklist" @update-project-name="name => nomeProjeto = name" />
         <CategoryManager :user="authUser" @update-categories="onUpdateCategories" />
       </div>
 
@@ -105,6 +105,7 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
+const nomeProjeto = ref('Scraper Pro')
 
 // Configurações e Categorias dinâmicas
 const blacklist = ref([])
@@ -158,6 +159,7 @@ onMounted(async () => {
           link: p.link,
           preco: latestHistory.preco || 0,
           vendas_totais: latestHistory.vendas_totais || 0,
+          historico_coletas: sortedHistory
         }
       })
     }
