@@ -11,9 +11,8 @@ from playwright.sync_api import sync_playwright
 
 # Permite importação dos módulos da pasta src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import (
-    TERMOS_BUSCA, get_platform_dirs, AUTH_DIR, MAX_PAGINAS
-)
+from config import get_platform_dirs, AUTH_DIR
+import config
 from utils.relevancia import verificar_relevancia
 from utils.supabase_client import conectar_supabase, upsert_produto, registrar_historico
 
@@ -77,7 +76,7 @@ def fase_bronze():
             
         context = browser.new_context(**context_args)
 
-        for termo in TERMOS_BUSCA:
+        for termo in config.get_termos_busca():
             # Abrir uma nova aba por termo de busca evita cache/cookies suspeitos acumulados
             page = context.new_page()
             nome_arquivo_base = termo.replace(" ", "_")
@@ -95,7 +94,8 @@ def fase_bronze():
                 page.close()
                 continue
                 
-            for pagina in range(1, MAX_PAGINAS + 1):
+            max_pags = config.get_max_paginas()
+            for pagina in range(1, max_pags + 1):
                 if pagina > 1:
                     print(f"   Processando página {pagina}...")
                     
@@ -152,7 +152,7 @@ def fase_bronze():
 def fase_prata():
     print("\n🚀 [Etapa Prata] Estruturando dados da Shopee (Bronze -> Prata)...")
     
-    for termo in TERMOS_BUSCA:
+    for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
         bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}.html")
         prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
@@ -191,7 +191,7 @@ def fase_ouro():
     print("\n🚀 [Etapa Ouro] Extração e deduplicação Shopee (Prata -> Ouro)...")
     todos_dados_ouro = []
     
-    for termo in TERMOS_BUSCA:
+    for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
         prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
         

@@ -1,5 +1,7 @@
 import os
-import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Definição dinâmica de caminhos do projeto
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -11,17 +13,12 @@ else:
 DATA_DIR = os.path.join(BASE_DIR, "data")
 AUTH_DIR = os.path.join(DATA_DIR, "auth")
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
-CONFIG_FILE = os.path.join(BASE_DIR, "config_app.json")
 
 # Garante que as pastas básicas globais existam
 for folder in [AUTH_DIR, REPORTS_DIR]:
     os.makedirs(folder, exist_ok=True)
 
 def get_platform_dirs(plataforma):
-    """
-    Retorna os caminhos bronze, prata e ouro específicos de uma plataforma
-    e garante que as respectivas pastas existam.
-    """
     plat_dir = os.path.join(DATA_DIR, plataforma)
     dirs = {
         "bronze": os.path.join(plat_dir, "bronze"),
@@ -33,81 +30,63 @@ def get_platform_dirs(plataforma):
     return dirs
 
 # ==========================================
-# CONFIGURAÇÕES DE FILTRAGEM E RELEVÂNCIA (VIA JSON)
+# CONFIGURAÇÕES DE FILTRAGEM (NUVEM)
 # ==========================================
 
 DEFAULT_CONFIG = {
-    "TERMOS_BUSCA": [
-        "rim biscuit",
-        "coração biscuit",
-        "topo de bolo biscuit",
-        "vela biscuit",
-        "lembrancinha biscuit",
-        "chaveiro biscuit",
-        "cachorro biscuit",
-        "biscuit pet",
-        "boneco biscuit",
-        "pessoa biscuit",
-        "biscuit"
-    ],
-    "PALAVRA_OBRIGATORIA_GLOBAL": "",
-    "PALAVRAS_NEGATIVAS": [
-        "base acril", "bases acril", "base de acril", "bases de acril", "base para biscuit", "bases para biscuit",
-        "base espelhad", "bases espelhad", "bolacha mdf", "bolachas mdf",
-        "molde", "moldes", "forma de silicone", "formas de silicone", "forma para biscuit", "formas para biscuit",
-        "cortador", "cortadores", "ejetor", "ejetores", "modelador", "modeladores",
-        "cortar biscoito", "cortar biscuit", "cortar",
-        "apostila", "curso", "passo a passo", "tutorial", "videoaula", "video aula",
-        "cola para biscuit", "massa de biscuit", "massa para biscuit", "massas de biscuit", "massas para biscuit",
-        "textura", "carimbo", "estojo de marcadores", "esteca", "estecas", "marcador", "marcadores", "regua", "reguas",
-        "ferramenta", "ferramentas", "pitão", "pitao", "pitões", "pitoes", "olhinho", "olhinhos", "resina",
-        "petisco", "formula natural", "dog biscuit", "dog biscuits", "biscuits",
-        "impresso em 3d", "impressao 3d", "impressão 3d", "impressa em 3d", "impressora 3d", "fimo", "enchimento",
-        "tapete", "tapetes",
-        "feltro", "eva", "papelaria", "bauducco", "biscoito", "bolacha", "chocolate", "pla", "abs", "petg", "massa", "massas", "porcelana fria", "homeopatia", "medicamento", "remedio", "veterinario", "veterinaria", "mdf", "acrilico", "gesso", "cimento", "cerâmica", "ceramica", "pelúcia", "pelucia", "amigurumi", "crochê", "croche", "tampa de vaso", "assento", "livro", "livros", "pincel", "pinceis", "pincéis", "boleador", "boleadores"
-    ],
-    "MAX_PAGINAS": 1,
-    "PALAVRAS_NEGATIVAS_EXATAS": [
-        "racao", "racoes", "papel"
-    ],
-    "REGRAS_TIPO_PRODUTO": {
-        "chaveiro": ["chaveir"],
-        "lembrancinha": ["lembranc", "brinde", "mimo", "lembrac", "aplique"],
-        "topo de bolo": ["topo", "bolo", "vela"]
-    },
-    "REGRAS_CONTEUDO_BUSCA": {
-        "rim": ["rim", "rins", "pulmao", "órgão", "orgao"],
-        "cora": ["coracao"],
-        "cachorro": ["cachorr", "dog"],
-        "pet": ["pet", "animal", "cachorr", "gato", "dog"]
-    }
+    "termos_busca": ["meu produto teste"],
+    "blacklist": ["termo_indesejado"],
+    "palavras_negativas_exatas": ["racao", "racoes", "papel"],
+    "regras_tipo_produto": {},
+    "regras_conteudo_busca": {},
+    "palavra_obrigatoria_global": "",
+    "max_paginas": 1
 }
 
-# Inicializa as configurações
-def carregar_config():
-    if not os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-            json.dump(DEFAULT_CONFIG, f, ensure_ascii=False, indent=4)
-        return DEFAULT_CONFIG
+config_atual = DEFAULT_CONFIG.copy()
+
+def recarregar_config():
+    """
+    Conecta ao Supabase e baixa as configurações ativas da Nuvem.
+    Chamado a cada ciclo do daemon antes de iniciar o scrape.
+    """
+    global config_atual
+    user_id = os.environ.get("SUPABASE_USER_ID")
+    
+    if not user_id:
+        print("⚠️ AVISO: Variável SUPABASE_USER_ID ausente no .env. Executando com configurações locais de teste.")
+        return config_atual
         
     try:
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        from utils.supabase_client import conectar_supabase
+        supabase = conectar_supabase()
+        response = supabase.table("configuracoes_scraper").select("termos_busca, blacklist, regras_categoria").eq("user_id", user_id).execute()
+        
+        if response.data and len(response.data) > 0:
+            data = response.data[0]
+            config_atual["termos_busca"] = data.get("termos_busca", DEFAULT_CONFIG["termos_busca"])
+            config_atual["blacklist"] = data.get("blacklist", DEFAULT_CONFIG["blacklist"])
+            
+            # Aqui podemos mapear regras de categoria do JSON para algo compatível no backend, 
+            # se necessitar regras complexas, mas inicialmente usamos as default de teste
+            # ou injetamos na pipeline.
+            print("✅ Configurações dinâmicas injetadas com sucesso a partir do Supabase.")
+        else:
+            print("⚠️ AVISO: Nenhuma linha encontrada na tabela configuracoes_scraper para o seu user_id.")
+            
     except Exception as e:
-        print(f"Erro ao carregar config.json: {e}")
-        return DEFAULT_CONFIG
+        print(f"❌ Erro ao baixar configurações do Supabase: {e}")
+        
+    return config_atual
 
-def salvar_config(nova_config):
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
-        json.dump(nova_config, f, ensure_ascii=False, indent=4)
+# Carrega na inicialização padrão
+recarregar_config()
 
-# Carrega na inicialização do módulo
-config_atual = carregar_config()
-
-TERMOS_BUSCA = config_atual.get("TERMOS_BUSCA", DEFAULT_CONFIG["TERMOS_BUSCA"])
-PALAVRA_OBRIGATORIA_GLOBAL = config_atual.get("PALAVRA_OBRIGATORIA_GLOBAL", DEFAULT_CONFIG["PALAVRA_OBRIGATORIA_GLOBAL"])
-PALAVRAS_NEGATIVAS = config_atual.get("PALAVRAS_NEGATIVAS", DEFAULT_CONFIG["PALAVRAS_NEGATIVAS"])
-PALAVRAS_NEGATIVAS_EXATAS = config_atual.get("PALAVRAS_NEGATIVAS_EXATAS", DEFAULT_CONFIG["PALAVRAS_NEGATIVAS_EXATAS"])
-REGRAS_TIPO_PRODUTO = config_atual.get("REGRAS_TIPO_PRODUTO", DEFAULT_CONFIG["REGRAS_TIPO_PRODUTO"])
-REGRAS_CONTEUDO_BUSCA = config_atual.get("REGRAS_CONTEUDO_BUSCA", DEFAULT_CONFIG["REGRAS_CONTEUDO_BUSCA"])
-MAX_PAGINAS = config_atual.get("MAX_PAGINAS", DEFAULT_CONFIG["MAX_PAGINAS"])
+# Funções Getters Dinâmicas para os Scrapers
+def get_termos_busca(): return config_atual["termos_busca"]
+def get_blacklist(): return config_atual["blacklist"]
+def get_palavras_negativas_exatas(): return config_atual["palavras_negativas_exatas"]
+def get_regras_tipo_produto(): return config_atual["regras_tipo_produto"]
+def get_regras_conteudo_busca(): return config_atual["regras_conteudo_busca"]
+def get_palavra_obrigatoria_global(): return config_atual["palavra_obrigatoria_global"]
+def get_max_paginas(): return config_atual["max_paginas"]

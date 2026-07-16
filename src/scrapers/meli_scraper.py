@@ -11,9 +11,8 @@ from playwright.sync_api import sync_playwright
 
 # Permite importação dos módulos da pasta src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import (
-    TERMOS_BUSCA, get_platform_dirs, AUTH_DIR, MAX_PAGINAS
-)
+from config import get_platform_dirs, AUTH_DIR
+import config
 from utils.relevancia import verificar_relevancia
 from utils.supabase_client import conectar_supabase, upsert_produto, registrar_historico
 
@@ -84,7 +83,7 @@ def fase_bronze():
         context = browser.new_context(**context_args)
         page = context.new_page()
  
-        for termo in TERMOS_BUSCA:
+        for termo in config.get_termos_busca():
             nome_arquivo_base = termo.replace(" ", "_")
             print(f"\n🔎 Termo de busca: '{termo}'")
             
@@ -99,7 +98,8 @@ def fase_bronze():
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}. Pulando para o próximo termo...")
                 continue
             
-            for pagina in range(1, MAX_PAGINAS + 1):
+            max_pags = config.get_max_paginas()
+            for pagina in range(1, max_pags + 1):
                 if pagina > 1:
                     print(f"   Processando página {pagina}...")
                 
@@ -160,7 +160,7 @@ def fase_prata():
     """
     print("\n🚀 [Etapa Prata] Iniciando processamento e mesclagem de estrutura (Bronze -> Prata)...")
     
-    for termo in TERMOS_BUSCA:
+    for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
         prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
         
@@ -219,7 +219,7 @@ def fase_ouro():
     print("\n🚀 [Etapa Ouro] Iniciando extração e deduplicação de dados (Prata -> Ouro)...")
     todos_dados_ouro = []
     
-    for termo in TERMOS_BUSCA:
+    for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
         prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
         
