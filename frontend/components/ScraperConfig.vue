@@ -18,7 +18,7 @@
             <span v-for="tag in localSearchTerms" :key="tag" class="tag bg-blue">
               {{ tag }} <button class="close-btn" @click="removeSearchTag(tag)">x</button>
             </span>
-            <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" placeholder="Pressione Enter para adicionar (ex: topo de bolo)" class="glass-input inline" />
+            <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" @paste="handlePasteSearch" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" />
           </div>
         </div>
 
@@ -28,7 +28,7 @@
             <span v-for="tag in localBlacklist" :key="tag" class="tag bg-red">
               {{ tag }} <button class="close-btn" @click="removeBlacklistTag(tag)">x</button>
             </span>
-            <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" placeholder="Pressione Enter para adicionar (ex: chocolate)" class="glass-input inline" />
+            <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" @paste="handlePasteBlacklist" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" />
           </div>
         </div>
 
@@ -162,18 +162,44 @@ function showStatus(msg) {
   setTimeout(() => statusMessage.value = '', 3500)
 }
 
+function processTags(rawString, targetArray) {
+  if (!rawString) return
+  // Divide por vírgula, ponto-e-vírgula ou quebra de linha
+  const tags = rawString.split(/[,;\n]+/).map(t => t.trim().toLowerCase()).filter(t => t)
+  tags.forEach(t => {
+    if (!targetArray.value.includes(t)) targetArray.value.push(t)
+  })
+}
+
 function addBlacklistTag() {
-  const t = newBlacklistTag.value.trim().toLowerCase()
-  if (t && !localBlacklist.value.includes(t)) localBlacklist.value.push(t)
+  processTags(newBlacklistTag.value, localBlacklist)
   newBlacklistTag.value = ''
 }
-function removeBlacklistTag(tag) { localBlacklist.value = localBlacklist.value.filter(t => t !== tag) }
+
+function removeBlacklistTag(tag) { 
+  localBlacklist.value = localBlacklist.value.filter(t => t !== tag) 
+}
+
 function addSearchTag() {
-  const t = newSearchTag.value.trim().toLowerCase()
-  if (t && !localSearchTerms.value.includes(t)) localSearchTerms.value.push(t)
+  processTags(newSearchTag.value, localSearchTerms)
   newSearchTag.value = ''
 }
-function removeSearchTag(tag) { localSearchTerms.value = localSearchTerms.value.filter(t => t !== tag) }
+
+function removeSearchTag(tag) { 
+  localSearchTerms.value = localSearchTerms.value.filter(t => t !== tag) 
+}
+
+function handlePasteBlacklist(e) {
+  e.preventDefault()
+  const text = (e.clipboardData || window.clipboardData).getData('text')
+  processTags(text, localBlacklist)
+}
+
+function handlePasteSearch(e) {
+  e.preventDefault()
+  const text = (e.clipboardData || window.clipboardData).getData('text')
+  processTags(text, localSearchTerms)
+}
 </script>
 
 <style scoped>
