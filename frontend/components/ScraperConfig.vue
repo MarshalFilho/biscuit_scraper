@@ -63,8 +63,10 @@ const newSearchTag = ref('')
 const statusMessage = ref('')
 const isCollapsed = ref(true)
 
-watch(() => props.user, () => {
-  loadConfigs()
+watch(() => props.user?.id, (newId, oldId) => {
+  if (newId !== oldId) {
+    loadConfigs()
+  }
 })
 
 onMounted(() => {
