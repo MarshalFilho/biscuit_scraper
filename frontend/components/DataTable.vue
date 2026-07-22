@@ -3,12 +3,7 @@
     <div class="table-header">
       <h3>Base de Dados de Produtos</h3>
       <div class="table-actions">
-        <select v-model="periodoComparacao" class="glass-input inline-select">
-          <option value="last">Comparar com: Último Registro</option>
-          <option value="7">Comparar com: 1 Semana atrás</option>
-          <option value="15">Comparar com: 15 Dias atrás</option>
-          <option value="30">Comparar com: 30 Dias atrás</option>
-        </select>
+        <!-- Select de período foi movido para o Super Filtro Global -->
         <input type="text" v-model="search" placeholder="Buscar por título..." class="search-input glass-panel ml-2" />
       </div>
     </div>
@@ -28,7 +23,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in processedPaginatedData" :key="item.id">
+          <tr v-for="item in paginatedData" :key="item.id">
             <td>
               <span :class="['badge', item.plataforma]">
                 {{ item.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}
@@ -37,7 +32,10 @@
             <td>
               <span class="badge category">{{ item.categoria }}</span>
             </td>
-            <td class="title-cell" :title="item.titulo">{{ item.titulo }}</td>
+            <td class="title-cell" :title="item.titulo">
+              <span v-if="item.isNew" class="badge-new" title="Identificado recentemente">✨ Novo</span>
+              {{ item.titulo }}
+            </td>
             
             <!-- Preços -->
             <td class="price-cell">R$ {{ item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
@@ -120,67 +118,7 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, end)
 })
 
-function getHistoricalData(item, daysAgo) {
-  if (!item.historico_coletas || item.historico_coletas.length === 0) return null
-  
-  if (daysAgo === 'last') {
-    return item.historico_coletas.length > 1 ? item.historico_coletas[1] : null
-  }
-  
-  const targetDate = new Date()
-  targetDate.setDate(targetDate.getDate() - parseInt(daysAgo))
-  
-  let closest = null
-  let minDiff = Infinity
-  
-  const historyToCheck = item.historico_coletas.slice(1)
-  if (historyToCheck.length === 0) return null
-  
-  for (const entry of historyToCheck) {
-    const entryDate = new Date(entry.data_coleta)
-    const diff = Math.abs(entryDate - targetDate)
-    
-    // Tolerância de +- 2 dias (172800000 ms)
-    if (diff < minDiff && diff <= 172800000) {
-      minDiff = diff
-      closest = entry
-    }
-  }
-  
-  return closest
-}
-
-const processedPaginatedData = computed(() => {
-  return paginatedData.value.map(item => {
-    const hist = getHistoricalData(item, periodoComparacao.value)
-    let varInfo = null
-    let salesDiff = null
-    
-    if (hist) {
-      if (hist.preco > 0) {
-        const diff = item.preco - hist.preco
-        const perc = (diff / hist.preco) * 100
-        // Ignora pequenas oscilações de centavos
-        if (Math.abs(diff) > 0.05) {
-          varInfo = {
-            diff,
-            perc,
-            isPositive: diff > 0,
-            isNegative: diff < 0
-          }
-        }
-      }
-      salesDiff = Math.max(0, item.vendas_totais - hist.vendas_totais)
-    }
-    
-    return {
-      ...item,
-      hist,
-      varInfo,
-      salesDiff
-    }
-  })
-})
+// Lógica movida para index.vue
 </script>
 
 <style scoped>
@@ -215,6 +153,9 @@ const processedPaginatedData = computed(() => {
 .badge.meli { background: rgba(255, 230, 0, 0.15); color: #ffe600; border: 1px solid rgba(255, 230, 0, 0.3); }
 .badge.shopee { background: rgba(255, 107, 53, 0.15); color: #ff6b35; border: 1px solid rgba(255, 107, 53, 0.3); }
 .badge.category { background: rgba(192, 132, 252, 0.15); color: var(--neon-purple); border: 1px solid rgba(192, 132, 252, 0.3); }
+
+.badge-new { font-size: 0.65rem; background: linear-gradient(90deg, #f59e0b, #ef4444); color: white; padding: 0.2rem 0.5rem; border-radius: 99px; margin-right: 0.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; animation: pulse 2s infinite; display: inline-block; vertical-align: middle; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
 
 .link-btn { display: inline-block; padding: 0.4rem 0.8rem; background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.3s ease; white-space: nowrap; }
 .link-btn:hover { background: rgba(56, 189, 248, 0.2); }

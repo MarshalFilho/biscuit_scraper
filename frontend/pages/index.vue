@@ -38,6 +38,16 @@
         
         <div class="filters-grid">
           <div class="filter-group">
+            <label>Ordenar por:</label>
+            <select v-model="selectedSort" class="glass-input">
+              <option value="sales">Vendas Totais</option>
+              <option value="growth7">Maior Crescimento (Últimos 7d)</option>
+              <option value="growth15">Maior Crescimento (Últimos 15d)</option>
+              <option value="growth30">Maior Crescimento (Últimos 30d)</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
             <label>Categoria:</label>
             <select v-model="selectedCategory" class="glass-input">
               <option value="Todas">Todas as Categorias</option>
@@ -117,6 +127,7 @@ function onUpdateCategories(rules) { categoryRules.value = rules }
 // Estado dos Super Filtros
 const selectedCategory = ref('Todas')
 const selectedPlatform = ref('Todas')
+const selectedSort = ref('sales')
 const minPrice = ref(null)
 const maxPrice = ref(null)
 const minSales = ref(null)
@@ -136,13 +147,37 @@ function getCategoryByRules(title) {
   return 'Outros'
 }
 
+function getHistoricalData(item, daysAgo) {
+  if (!item.historico_coletas || item.historico_coletas.length === 0) return null
+  const targetDate = new Date()
+  targetDate.setDate(targetDate.getDate() - parseInt(daysAgo))
+  
+  let closest = null
+  let minDiff = Infinity
+  
+  const historyToCheck = item.historico_coletas.slice(1)
+  if (historyToCheck.length === 0) return null
+  
+  for (const entry of historyToCheck) {
+    const entryDate = new Date(entry.data_coleta)
+    const diff = Math.abs(entryDate - targetDate)
+    
+    // Tolerância de +- 2 dias (172800000 ms)
+    if (diff < minDiff && diff <= 172800000) {
+      minDiff = diff
+      closest = entry
+    }
+  }
+  return closest
+}
+
 onMounted(async () => {
   try {
     loading.value = true
     const { data: prodData, error: prodErr } = await supabase
       .from('produtos')
       .select(`
-        id, plataforma, titulo, link, id_externo,
+        id, plataforma, titulo, link, id_externo, criado_em,
         historico_coletas ( preco, vendas_totais, data_coleta )
       `)
       
@@ -157,6 +192,7 @@ onMounted(async () => {
           plataforma: p.plataforma,
           titulo: p.titulo,
           link: p.link,
+          criado_em: p.criado_em,
           preco: latestHistory.preco || 0,
           vendas_totais: latestHistory.vendas_totais || 0,
           historico_coletas: sortedHistory
@@ -171,19 +207,55 @@ onMounted(async () => {
   }
 })
 
-// Mapeia regras e remove blacklist
+// Mapeia regras, remove blacklist e calcula crescimento/novo
 const processedProducts = computed(() => {
   return productsRaw.value
-    .map(p => ({
-      ...p,
-      categoria: getCategoryByRules(p.titulo)
-    }))
+    .map(p => {
+      // É novo se tiver apenas 1 registro no histórico ou se foi criado nas últimas 24h
+      const createdDate = p.criado_em ? new Date(p.criado_em) : new Date()
+      const isNew = (p.historico_coletas && p.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
+      
+      let hist = null
+      let varInfo = null
+      let salesDiff = null
+      
+      let daysAgo = 7
+      if (selectedSort.value === 'growth15') daysAgo = 15
+      if (selectedSort.value === 'growth30') daysAgo = 30
+      
+      hist = getHistoricalData(p, daysAgo)
+      if (hist) {
+        salesDiff = Math.max(0, p.vendas_totais - hist.vendas_totais)
+        if (hist.preco > 0) {
+          const diff = p.preco - hist.preco
+          if (Math.abs(diff) > 0.05) {
+            varInfo = { diff, perc: (diff / hist.preco) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+          }
+        }
+      }
+
+      return {
+        ...p,
+        categoria: getCategoryByRules(p.titulo),
+        isNew,
+        hist,
+        varInfo,
+        salesDiff
+      }
+    })
     .filter(p => {
       const t = p.titulo.toLowerCase()
       if (blacklist.value.some(word => t.includes(word))) return false
       return true
     })
-    .sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0))
+    .sort((a, b) => {
+      if (selectedSort.value.startsWith('growth')) {
+        const diffA = a.salesDiff || 0
+        const diffB = b.salesDiff || 0
+        if (diffA !== diffB) return diffB - diffA
+      }
+      return (b.vendas_totais || 0) - (a.vendas_totais || 0)
+    })
 })
 
 // Aplica os Super Filtros
