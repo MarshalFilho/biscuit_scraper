@@ -4,6 +4,7 @@
       <h3>Base de Dados de Produtos</h3>
       <div class="table-actions">
         <!-- Select de período foi movido para o Super Filtro Global -->
+        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Baixar dados filtrados em Excel/CSV">⬇️ Exportar CSV</button>
         <input type="text" v-model="search" placeholder="Buscar por título..." class="search-input glass-panel ml-2" />
       </div>
     </div>
@@ -62,7 +63,8 @@
               <span v-else class="text-muted">-</span>
             </td>
             
-            <td>
+            <td class="action-cell">
+              <button @click="openModal(item)" class="action-btn" title="Ver histórico completo">📊 Raio-X</button>
               <a :href="item.link" target="_blank" class="link-btn">Acessar ↗</a>
             </td>
           </tr>
@@ -79,11 +81,15 @@
       <span class="page-info">Página {{ currentPage }} de {{ totalPages }}</span>
       <button :disabled="currentPage === totalPages" @click="currentPage++" class="page-btn glass-panel">Próxima</button>
     </div>
+
+    <!-- Modal Analítico -->
+    <ProductModal :product="selectedProduct" @close="selectedProduct = null" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import ProductModal from './ProductModal.vue'
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -93,11 +99,16 @@ const search = ref('')
 const periodoComparacao = ref('7') // default 1 week
 const currentPage = ref(1)
 const itemsPerPage = 12
+const selectedProduct = ref(null)
 
 // Zera a página quando busca
 watch(search, () => {
   currentPage.value = 1
 })
+
+function openModal(item) {
+  selectedProduct.value = item
+}
 
 const filteredData = computed(() => {
   let result = props.items
@@ -118,6 +129,44 @@ const paginatedData = computed(() => {
   return filteredData.value.slice(start, end)
 })
 
+function exportToCSV() {
+  if (filteredData.value.length === 0) return
+  
+  const headers = ['Plataforma', 'Categoria', 'Título', 'Preço Atual (R$)', 'Vendas Totais', 'Crescimento de Vendas', 'Variação Preço (R$)', 'Data Criação', 'Link']
+  
+  const rows = filteredData.value.map(item => {
+    const varPreco = item.varInfo ? (item.varInfo.isPositive ? '+' : '-') + Math.abs(item.varInfo.diff).toFixed(2).replace('.', ',') : '0,00'
+    const crescimento = item.salesDiff !== null ? `+${item.salesDiff}` : '0'
+    const precoAtual = item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00'
+    const criado = item.criado_em ? new Date(item.criado_em).toLocaleDateString('pt-BR') : ''
+    
+    // Escapar aspas e separar por ponto-e-vírgula (padrão PT-BR no Excel)
+    return [
+      item.plataforma,
+      item.categoria,
+      `"${item.titulo.replace(/"/g, '""')}"`,
+      precoAtual,
+      item.vendas_totais || 0,
+      crescimento,
+      varPreco,
+      criado,
+      `"${item.link}"`
+    ].join(';')
+  })
+  
+  const csvContent = [headers.join(';'), ...rows].join('\n')
+  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' }) // BOM for Excel
+  const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  
+  link.setAttribute("href", url)
+  link.setAttribute("download", `relatorio_scraper_${new Date().toISOString().split('T')[0]}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 // Lógica movida para index.vue
 </script>
 
@@ -126,6 +175,9 @@ const paginatedData = computed(() => {
 .table-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
 .table-header h3 { font-size: 1.25rem; color: var(--text-main); margin: 0; }
 .table-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.btn { padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; font-size: 0.9rem; }
+.outline-btn { background: transparent; border: 1px solid var(--border-glass); color: var(--text-main); }
+.outline-btn:hover { background: rgba(56, 189, 248, 0.1); border-color: var(--neon-blue); color: var(--neon-blue); }
 
 .search-input { background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: var(--text-main); padding: 0.75rem 1rem; border-radius: 8px; width: 300px; outline: none; transition: border-color 0.3s ease; }
 .search-input:focus { border-color: var(--neon-blue); }
@@ -157,7 +209,10 @@ const paginatedData = computed(() => {
 .badge-new { font-size: 0.65rem; background: linear-gradient(90deg, #f59e0b, #ef4444); color: white; padding: 0.2rem 0.5rem; border-radius: 99px; margin-right: 0.5rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; animation: pulse 2s infinite; display: inline-block; vertical-align: middle; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
 
-.link-btn { display: inline-block; padding: 0.4rem 0.8rem; background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.3s ease; white-space: nowrap; }
+.action-cell { display: flex; gap: 0.5rem; align-items: center; }
+.action-btn { display: inline-block; padding: 0.4rem 0.8rem; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.3s ease; white-space: nowrap; }
+.action-btn:hover { background: rgba(16, 185, 129, 0.2); }
+.link-btn { display: inline-block; padding: 0.4rem 0.8rem; background: rgba(56, 189, 248, 0.1); color: var(--neon-blue); text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.3s ease; white-space: nowrap; border: 1px solid rgba(56, 189, 248, 0.3); }
 .link-btn:hover { background: rgba(56, 189, 248, 0.2); }
 .empty-state { text-align: center; padding: 3rem !important; color: var(--text-muted); font-style: italic; }
 
