@@ -52,14 +52,14 @@ def limpar_vendas(texto_vendas):
 def fase_bronze():
     """
     Fase Bronze: Abre o navegador, acessa a Shopee e salva a página HTML bruta
-    de cada termo de busca na pasta data/shopee/bronze/ (coleta até MAX_PAGINAS páginas).
+    de cada termo de busca na pasta data/shopee/bronze/ (coleta até N páginas).
     """
-    print(f"\n🚀 [Etapa Bronze - Shopee] Iniciando raspagem da web (até {MAX_PAGINAS} páginas por termo)...")
+    print(f"\n🚀 [Etapa Bronze - Shopee] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...")
     
     with sync_playwright() as p:
         browser_args = {
-            "headless": False,
-            "args": ["--disable-blink-features=AutomationControlled"]
+            "headless": True,
+            "args": ["--disable-blink-features=AutomationControlled", "--no-sandbox"]
         }
         chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         if os.path.exists(chrome_path):
@@ -119,7 +119,7 @@ def fase_bronze():
                         f.write(html_renderizado)
                     print(f"   🥉 BRONZE: Arquivo salvo em '{bronze_path}'.")
                     
-                    if pagina == MAX_PAGINAS:
+                    if pagina == max_pags:
                         break
                         
                     # Clica no botão "Próximo" para ir para a próxima página
@@ -154,37 +154,50 @@ def fase_prata():
     
     for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
-        bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}.html")
         prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
         
-        if not os.path.exists(bronze_path):
+        # Procura arquivos paginados (_p1, _p2...) correspondentes a este termo
+        arquivos_para_processar = []
+        for p in range(1, config.get_max_paginas() + 1):
+            path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{p}.html")
+            if os.path.exists(path):
+                arquivos_para_processar.append(path)
+                
+        if not arquivos_para_processar:
             print(f"⚠️ [Prata] Arquivo de origem não encontrado: '{termo}'.")
             continue
-            
-        with open(bronze_path, "r", encoding="utf-8") as f:
-            soup = BeautifulSoup(f.read(), "html.parser")
             
         combinado_soup = BeautifulSoup("", "html.parser")
         container_pai = combinado_soup.new_tag("div", attrs={"class": "shopee-search-results"})
         combinado_soup.append(container_pai)
         
-        # A Shopee usa a classe shopee-search-item-result__item ou o atributo data-sqe="item"
-        produtos = soup.find_all(["div", "li"], attrs={"data-sqe": "item"})
+        total_produtos = 0
         
-        if not produtos:
-            # Fallback caso a estrutura mude
-            produtos = soup.find_all("a", attrs={"data-sqe": "link"})
+        for path in arquivos_para_processar:
+            with open(path, "r", encoding="utf-8") as f:
+                soup = BeautifulSoup(f.read(), "html.parser")
+                
+            # A Shopee usa a classe shopee-search-item-result__item ou o atributo data-sqe="item"
+            produtos = soup.find_all(["div", "li"], attrs={"data-sqe": "item"})
             
-        if produtos:
-            for p in produtos:
-                container_pai.append(p)
+            if not produtos:
+                # Fallback caso a estrutura mude
+                produtos = soup.find_all("a", attrs={"data-sqe": "link"})
+                
+            if produtos:
+                for p in produtos:
+                    container_pai.append(p)
+                    total_produtos += 1
+                    
+        if total_produtos > 0:
             with open(prata_path, "w", encoding="utf-8") as f:
                 f.write(str(combinado_soup))
-            print(f"   🥈 PRATA: {len(produtos)} cards estruturados em '{prata_path}'.")
+            print(f"   🥈 PRATA: Arquivo estruturado '{prata_path}' gerado combinando {len(arquivos_para_processar)} página(s) e {total_produtos} produtos.")
         else:
             print(f"   ⚠️ AVISO [Prata]: Nenhum produto encontrado para '{termo}'.")
             
     print("✅ [Etapa Prata] Concluída!")
+
 
 
 def fase_ouro():

@@ -8,43 +8,43 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import config
 
-def executar_scrapers(plataforma):
+def executar_scrapers(plataforma, user_id):
+    from utils.supabase_client import atualizar_status_scraper
     if plataforma in ["meli", "todos"]:
         print("\n=== Executando Scraper Mercado Livre ===")
+        atualizar_status_scraper(user_id, "Mercado Livre (Fase Bronze) - Acessando as páginas web...")
         from scrapers.meli_scraper import fase_bronze, fase_prata, fase_ouro
         fase_bronze()
+        
+        atualizar_status_scraper(user_id, "Mercado Livre (Fase Prata) - Lendo os produtos em HTML...")
         fase_prata()
+        
+        atualizar_status_scraper(user_id, "Mercado Livre (Fase Ouro) - Processando dados e salvando na Nuvem...")
         fase_ouro()
         
     if plataforma in ["shopee", "todos"]:
         print("\n=== Executando Scraper Shopee ===")
+        atualizar_status_scraper(user_id, "Shopee (Fase Bronze) - Acessando as páginas web...")
         from scrapers.shopee_scraper import fase_bronze, fase_prata, fase_ouro
         fase_bronze()
+        
+        atualizar_status_scraper(user_id, "Shopee (Fase Prata) - Lendo os produtos em HTML...")
         fase_prata()
+        
+        atualizar_status_scraper(user_id, "Shopee (Fase Ouro) - Processando dados e salvando na Nuvem...")
         fase_ouro()
 
 def main():
     parser = argparse.ArgumentParser(description="Pipeline de Inteligência e Extração para Biscuit")
     parser.add_argument("--plataforma", choices=["meli", "shopee", "todos"], default="todos",
                         help="Plataforma de e-commerce a raspar (padrão: todos)")
-    parser.add_argument("--login", action="store_true", help="Executar ferramenta para salvar login manual do ML")
-    parser.add_argument("--login-shopee", action="store_true", help="Executar ferramenta para salvar login manual da Shopee")
     parser.add_argument("--daemon", action="store_true", help="Modo Polling Contínuo escutando Supabase")
+    parser.add_argument("--cloud", action="store_true", help="Modo One-Shot para rodar no GitHub Actions")
     
     args = parser.parse_args()
     
-    if args.login:
-        from utils.salvar_login import gerar_sessao
-        gerar_sessao("meli")
-        return
-
-    if args.login_shopee:
-        from utils.salvar_login import gerar_sessao
-        gerar_sessao("shopee")
-        return
-        
     if args.daemon:
-        from utils.supabase_client import conectar_supabase
+        from utils.supabase_client import conectar_supabase, atualizar_status_scraper
         
         print("\n🎧 Modo Daemon ativado. Escutando a nuvem (Supabase)...")
         user_id = os.environ.get("SUPABASE_USER_ID")
@@ -67,21 +67,29 @@ def main():
                     pendente = response.data[0].get("disparo_pendente", False)
                     if pendente:
                         print("🚀 DISPARO PENDENTE DETECTADO! Iniciando extração...")
+                        atualizar_status_scraper(user_id, "Robô acordou! Inicializando...")
                         
                         # 1. Recarrega as configurações dinâmicas mais recentes
                         config.recarregar_config()
                         
                         # 2. Roda os scrapers
-                        executar_scrapers(args.plataforma)
+                        executar_scrapers(args.plataforma, user_id)
                             
                         print("\n✅ Extração concluída. Atualizando status na nuvem...")
                         # 3. Reseta o status
-                        supabase.table("configuracoes_scraper").update({"disparo_pendente": False}).eq("user_id", user_id).execute()
+                        supabase.table("configuracoes_scraper").update({
+                            "disparo_pendente": False,
+                            "status_scraper": "Concluído com sucesso!"
+                        }).eq("user_id", user_id).execute()
                         print("✅ Status resetado. Aguardando novo comando...")
+                        
+                        # Apaga o status de sucesso após 5 segundos para limpar o painel
+                        time.sleep(5)
+                        supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", user_id).execute()
                     else:
                         print("💤 Nenhum disparo pendente. Dormindo...")
                 else:
-                    print("⚠️ Usuário não encontrado na tabela configuracoes_scraper. Verifique seu ID.")
+                    print("⚠️ Nenhuma configuração encontrada para este usuário.")
                     
             except Exception as e:
                 print(f"❌ Erro no loop do daemon: {e}")
@@ -89,11 +97,38 @@ def main():
             # Dorme por 5 minutos (300 segundos)
             time.sleep(300)
             
+    elif args.cloud:
+        # MODO ONE-SHOT (Nuvem / GitHub Actions)
+        print("\n☁️ Modo Nuvem (One-Shot) ativado. Executando uma única vez...")
+        user_id = os.environ.get("SUPABASE_USER_ID")
+        if not user_id:
+            print("❌ ERRO: SUPABASE_USER_ID não encontrado. Abortando.")
+            return
+            
+        from utils.supabase_client import conectar_supabase, atualizar_status_scraper
+        atualizar_status_scraper(user_id, "Robô acordou na Nuvem! Inicializando...")
+        
+        config.recarregar_config()
+        executar_scrapers(args.plataforma, user_id)
+        
+        print("\n✅ Extração na nuvem concluída.")
+        try:
+            supabase = conectar_supabase()
+            supabase.table("configuracoes_scraper").update({
+                "disparo_pendente": False,
+                "status_scraper": "Concluído com sucesso!"
+            }).eq("user_id", user_id).execute()
+            
+            time.sleep(5)
+            supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", user_id).execute()
+        except Exception as e:
+            print(f"Erro ao finalizar: {e}")
+            
     else:
         # Modo execução única e manual (sem escutar Nuvem)
         print("\n⚙️ Modo de Execução Única Manual.")
         config.recarregar_config()
-        executar_scrapers(args.plataforma)
+        executar_scrapers(args.plataforma, None)
 
 if __name__ == "__main__":
     main()

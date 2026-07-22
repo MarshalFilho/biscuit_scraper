@@ -1,0 +1,31 @@
+name: 🚀 Bot de Extração - Biscuit Scraper
+
+on:
+  workflow_dispatch: # Permite disparo manual via API (ex: pelo Supabase Webhook)
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Clonar Repositório
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Instalar Dependências e Navegador
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: 🤖 Rodar o Scraper (Modo Nuvem One-Shot)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_USER_ID: ${{ secrets.SUPABASE_USER_ID }}
+        run: |
+          python src/main.py --plataforma todos --cloud

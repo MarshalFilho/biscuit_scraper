@@ -62,15 +62,14 @@ def extrair_vendas_texto(produto):
 def fase_bronze():
     """
     Fase Bronze: Abre o navegador, acessa o Mercado Livre e salva a página HTML bruta
-    de cada termo de busca na pasta data/mercado_livre/bronze/ (coleta até MAX_PAGINAS páginas).
+    de cada termo de busca na pasta data/mercado_livre/bronze/ (coleta até N páginas).
     """
-    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {MAX_PAGINAS} páginas por termo)...")
+    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...")
     
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
-            executable_path=r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            args=["--disable-blink-features=AutomationControlled"]
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
         ) 
         
         auth_path = os.path.join(AUTH_DIR, "auth_meli.json")
@@ -127,7 +126,7 @@ def fase_bronze():
                 print(f"   🥉 BRONZE: Arquivo '{bronze_path}' salvo com sucesso.")
                 
                 # Se já alcançamos a página máxima configurada, interrompemos
-                if pagina == MAX_PAGINAS:
+                if pagina == max_pags:
                     break
                 
                 # Verifica próxima página
@@ -166,7 +165,7 @@ def fase_prata():
         
         # Procura arquivos paginados (_p1, _p2...) correspondentes a este termo
         arquivos_para_processar = []
-        for p in range(1, MAX_PAGINAS + 1):
+        for p in range(1, config.get_max_paginas() + 1):
             path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{p}.html")
             if os.path.exists(path):
                 arquivos_para_processar.append(path)
@@ -234,7 +233,7 @@ def fase_ouro():
         
         # Tenta carregar o mapeamento de avaliações do JSON-LD a partir dos arquivos BRONZE deste termo (onde os scripts estão intactos)
         reviews_map = {}
-        for p in range(1, MAX_PAGINAS + 1):
+        for p in range(1, config.get_max_paginas() + 1):
             bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{p}.html")
             if os.path.exists(bronze_path):
                 try:
