@@ -1,7 +1,7 @@
 <template>
   <div class="glass-panel config-panel animate-fade-in" :class="{ 'is-collapsed': isCollapsed }">
     <div class="panel-header" @click="toggleCollapse">
-      <h3>⚙️ Controle do Scraper <span class="badge">Simulação Local</span></h3>
+      <h3>⚙️ Controle do Scraper <span class="badge">Nuvem Integrada</span></h3>
       <button class="btn-toggle">{{ isCollapsed ? '▼ Expandir' : '▲ Minimizar' }}</button>
     </div>
     
@@ -9,16 +9,16 @@
       <div v-show="!isCollapsed" class="panel-content">
         <div class="form-group mt-3">
           <label>Nome do Projeto (Opcional):</label>
-          <input type="text" v-model="nomeProjeto" placeholder="Ex: Monitoramento de Placas de Vídeo" class="glass-input full-width" />
+          <input type="text" v-model="nomeProjeto" placeholder="Ex: Monitoramento de Placas de Vídeo" class="glass-input full-width" :disabled="disparoPendente" />
         </div>
 
         <div class="form-group mt-3">
           <label>Termos de Busca Ativos (Para extração futura):</label>
           <div class="tag-input-container">
             <span v-for="tag in localSearchTerms" :key="tag" class="tag bg-blue">
-              {{ tag }} <button class="close-btn" @click="removeSearchTag(tag)">x</button>
+              {{ tag }} <button class="close-btn" @click="removeSearchTag(tag)" :disabled="disparoPendente">x</button>
             </span>
-            <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" @paste="handlePasteSearch" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" />
+            <input type="text" v-model="newSearchTag" @keydown.enter.prevent="addSearchTag" @paste="handlePasteSearch" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" :disabled="disparoPendente" />
           </div>
         </div>
 
@@ -26,15 +26,20 @@
           <label>Blacklist (Se contiver no título, oculta/descarta automaticamente):</label>
           <div class="tag-input-container">
             <span v-for="tag in localBlacklist" :key="tag" class="tag bg-red">
-              {{ tag }} <button class="close-btn" @click="removeBlacklistTag(tag)">x</button>
+              {{ tag }} <button class="close-btn" @click="removeBlacklistTag(tag)" :disabled="disparoPendente">x</button>
             </span>
-            <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" @paste="handlePasteBlacklist" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" />
+            <input type="text" v-model="newBlacklistTag" @keydown.enter.prevent="addBlacklistTag" @paste="handlePasteBlacklist" placeholder="Cole uma lista ou digite (separados por vírgula)" class="glass-input inline" :disabled="disparoPendente" />
           </div>
         </div>
 
         <div class="actions">
-          <button @click="saveConfigs" class="btn primary">💾 Salvar Preferências</button>
-          <button @click="triggerScraper" class="btn danger">▶️ Disparar Scraper Agora</button>
+          <button @click="saveConfigs" class="btn primary" :disabled="disparoPendente">💾 Salvar Preferências</button>
+          
+          <button @click="triggerScraper" class="btn danger" :disabled="disparoPendente || !props.user">
+            <div v-if="disparoPendente" class="spinner-inline"></div>
+            <span>{{ disparoPendente ? (statusScraper || '⏳ Iniciando nuvem...') : '▶️ Disparar Scraper Agora' }}</span>
+          </button>
+          
           <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
         </div>
       </div>
@@ -43,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
 const config = useRuntimeConfig()
@@ -63,9 +68,15 @@ const newSearchTag = ref('')
 const statusMessage = ref('')
 const isCollapsed = ref(true)
 
+// Variáveis de Controle e Status Realtime
+const disparoPendente = ref(false)
+const statusScraper = ref('')
+let realtimeChannel = null
+
 watch(() => props.user?.id, (newId, oldId) => {
   if (newId !== oldId) {
     loadConfigs()
+    if (newId) setupRealtime()
   }
 })
 
@@ -73,7 +84,29 @@ onMounted(() => {
   const savedState = localStorage.getItem('scraper_panel_collapsed')
   if (savedState !== null) isCollapsed.value = JSON.parse(savedState)
   loadConfigs()
+  if (props.user) setupRealtime()
 })
+
+onUnmounted(() => {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
+
+function setupRealtime() {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+  
+  realtimeChannel = supabase.channel('status_tracker')
+    .on('postgres_changes', { 
+      event: 'UPDATE', 
+      schema: 'public', 
+      table: 'configuracoes_scraper',
+      filter: `user_id=eq.${props.user.id}`
+    }, payload => {
+      const novadata = payload.new
+      if (novadata.disparo_pendente !== undefined) disparoPendente.value = novadata.disparo_pendente
+      if (novadata.status_scraper !== undefined) statusScraper.value = novadata.status_scraper || ''
+    })
+    .subscribe()
+}
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
@@ -84,7 +117,7 @@ async function loadConfigs() {
   if (props.user) {
     const { data, error } = await supabase
       .from('configuracoes_scraper')
-      .select('nome_projeto, blacklist, termos_busca')
+      .select('nome_projeto, blacklist, termos_busca, disparo_pendente, status_scraper')
       .eq('user_id', props.user.id)
       .single()
       
@@ -92,6 +125,9 @@ async function loadConfigs() {
       if (data.nome_projeto) nomeProjeto.value = data.nome_projeto
       localBlacklist.value = data.blacklist || []
       localSearchTerms.value = data.termos_busca || []
+      if (data.disparo_pendente !== undefined) disparoPendente.value = data.disparo_pendente
+      if (data.status_scraper !== undefined) statusScraper.value = data.status_scraper || ''
+      
       emit('update-blacklist', localBlacklist.value)
       emit('update-project-name', nomeProjeto.value)
       return
@@ -115,7 +151,6 @@ async function loadConfigs() {
 }
 
 async function saveConfigs() {
-  // Simulação Local via LocalStorage (Cache/Backup)
   localStorage.setItem('scraper_nome_projeto', nomeProjeto.value)
   localStorage.setItem('scraper_blacklist', JSON.stringify(localBlacklist.value))
   localStorage.setItem('scraper_search_terms', JSON.stringify(localSearchTerms.value))
@@ -145,15 +180,17 @@ async function saveConfigs() {
 
 async function triggerScraper() {
   if (props.user) {
+    disparoPendente.value = true
+    statusScraper.value = "Agendado na Nuvem. Aguardando robô..."
     const { error } = await supabase.from('configuracoes_scraper').upsert(
-      { user_id: props.user.id, disparo_pendente: true },
+      { user_id: props.user.id, disparo_pendente: true, status_scraper: statusScraper.value },
       { onConflict: 'user_id' }
     )
     if (error) {
       showStatus('Erro ao agendar disparo!')
+      disparoPendente.value = false
       return
     }
-    showStatus('Comando enviado à Nuvem! O Scraper iniciará em breve.')
   } else {
     showStatus('Apenas simulação. Faça login para disparar de verdade!')
   }
@@ -166,7 +203,6 @@ function showStatus(msg) {
 
 function processTags(rawString, targetArray) {
   if (!rawString) return
-  // Divide por vírgula, ponto-e-vírgula ou quebra de linha
   const tags = rawString.split(/[,;\n]+/).map(t => t.trim().toLowerCase()).filter(t => t)
   tags.forEach(t => {
     if (!targetArray.value.includes(t)) targetArray.value.push(t)
@@ -226,12 +262,19 @@ function handlePasteSearch(e) {
 .glass-input.inline { background: transparent; border: none; flex: 1; min-width: 200px; padding: 0; }
 .glass-input.full-width { width: 100%; display: block; margin-bottom: 0.5rem; }
 .glass-input:focus { border-color: var(--neon-blue); }
-.actions { display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; }
-.btn { padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; }
+.glass-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.actions { display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; }
+.btn { padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; display: flex; align-items: center; gap: 0.5rem; }
 .btn.primary { background: var(--neon-blue); color: #000; }
-.btn.primary:hover { background: #1da4e3; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+.btn.primary:hover:not(:disabled) { background: #1da4e3; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
 .btn.danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
-.btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
+.btn.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.3); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); border-color: transparent; }
+
+.spinner-inline { width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: currentColor; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .status-msg { color: #10b981; font-weight: 600; font-size: 0.9rem; }
 
 /* Transição do Vue */

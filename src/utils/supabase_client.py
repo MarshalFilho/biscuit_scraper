@@ -14,6 +14,14 @@ def conectar_supabase() -> Client:
         
     return create_client(url, key)
 
+def atualizar_status_scraper(user_id, status_mensagem):
+    try:
+        supabase = conectar_supabase()
+        supabase.table("configuracoes_scraper").update({"status_scraper": status_mensagem}).eq("user_id", user_id).execute()
+    except Exception as e:
+        print(f"⚠️ Erro ao atualizar status na nuvem: {e}")
+
+
 def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str) -> str:
     """
     Verifica se o produto existe. Se não, insere.
