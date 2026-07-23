@@ -1,7 +1,9 @@
 name: 🚀 Bot de Extração - Biscuit Scraper
 
 on:
-  workflow_dispatch: # Permite disparo manual via API (ex: pelo Supabase Webhook)
+  repository_dispatch:
+    types: [disparo_supabase] # Permite disparo via Webhook do Supabase
+  workflow_dispatch: # Permite disparo manual na interface do GitHub
   schedule:
     - cron: '0 8 * * *' # Executa diariamente às 08:00 UTC (05:00 BRT)
 
