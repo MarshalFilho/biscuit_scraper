@@ -57,11 +57,29 @@
 
           <div class="filter-group">
             <label>Plataforma:</label>
-            <select v-model="selectedPlatform" class="glass-input">
-              <option value="Todas">Ambos (ML + Shopee)</option>
-              <option value="meli">Mercado Livre</option>
-              <option value="shopee">Shopee</option>
-            </select>
+            <div class="toggle-group">
+              <button 
+                type="button" 
+                :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
+                @click="selectedPlatform = 'Todas'"
+              >
+                🌐 Ambas
+              </button>
+              <button 
+                type="button" 
+                :class="['toggle-btn', { active: selectedPlatform === 'meli' }]" 
+                @click="selectedPlatform = 'meli'"
+              >
+                🛒 Mercado Livre
+              </button>
+              <button 
+                type="button" 
+                :class="['toggle-btn', { active: selectedPlatform === 'shopee' }]" 
+                @click="selectedPlatform = 'shopee'"
+              >
+                🧡 Shopee
+              </button>
+            </div>
           </div>
 
           <div class="filter-group">
@@ -318,9 +336,9 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
 .filter-group label { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
 
-.glass-input { background: rgba(0,0,0,0.2); border: 1px solid var(--border-glass); color: var(--text-main); padding: 0.6rem 1rem; border-radius: 8px; outline: none; transition: border 0.3s; font-size: 0.95rem; }
-.glass-input:focus { border-color: var(--neon-blue); }
-.glass-input option { background: var(--bg-color); color: var(--text-main); }
+.glass-input { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); padding: 0.6rem 1rem; border-radius: 8px; outline: none; transition: border 0.3s, box-shadow 0.3s; font-size: 0.95rem; }
+.glass-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+.glass-input option { background: #ffffff; color: var(--text-main); }
 .glass-input.tiny { width: 80px; text-align: center; padding: 0.6rem 0.5rem; }
 .glass-input.small { width: 120px; }
 
