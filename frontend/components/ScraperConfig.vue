@@ -192,13 +192,14 @@ async function triggerScraper() {
       return
     }
 
-    // Aciona a rota server-side do Nuxt para mandar a requisição limpa para o GitHub Actions
+    // Aciona a Edge Function do Supabase (Nuvem para Nuvem 100% segura)
     try {
-      await $fetch('/api/trigger-github', { method: 'POST' })
+      const { data, error: fnError } = await supabase.functions.invoke('trigger-github')
+      if (fnError) throw fnError
       showStatus('Sinal enviado! Robô ativado no GitHub Actions.')
     } catch (apiErr) {
-      console.error('Erro ao acionar o GitHub Actions:', apiErr)
-      showStatus('Erro ao disparar na nuvem. Verifique o GITHUB_PAT.')
+      console.error('Erro ao acionar o GitHub Actions via Edge Function:', apiErr)
+      showStatus('Erro ao disparar na nuvem. Verifique a Edge Function.')
     }
   } else {
     showStatus('Apenas simulação. Faça login para disparar de verdade!')
