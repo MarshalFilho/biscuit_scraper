@@ -29,6 +29,8 @@ node_modules/
 frontend/node_modules/
 .output/
 frontend/.output/
+.nuxt/
+frontend/.nuxt/
 
 .DS_Store
 .DS_Store?
