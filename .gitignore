@@ -29,6 +29,8 @@ node_modules/
 frontend/node_modules/
 .output/
 frontend/.output/
+dist/
+frontend/dist/
 .nuxt/
 frontend/.nuxt/
 

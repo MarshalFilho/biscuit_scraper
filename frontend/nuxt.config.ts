@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: false, // Modo SPA para GitHub Pages (evita erro 'window is not defined' do ApexCharts durante o generate)
   compatibilityDate: '2026-07-14',
   css: [
     '~/assets/css/main.css'
