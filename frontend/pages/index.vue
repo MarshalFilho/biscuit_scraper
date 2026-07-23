@@ -24,19 +24,46 @@
         <CategoryManager :user="authUser" @update-categories="onUpdateCategories" />
       </div>
 
-      <KpiCards 
-        :totalProducts="totalProducts"
-        :averagePrice="averagePrice"
-        :topPlatform="topPlatform"
-        :topProduct="topProduct"
-        :estimatedRevenue="estimatedRevenue"
-      />
-      
-      <!-- Super Filtros Globais -->
-      <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.2s;">
-        <h4 class="filters-title">🔍 Super Filtros (Reflete em todo o painel)</h4>
+      <!-- Super Filtros Globais (Acima das métricas para indicar que comanda o painel) -->
+      <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
+        <h4 class="filters-title">🔍 Super Filtros Globais (Comanda todos os gráficos e métricas)</h4>
         
         <div class="filters-grid">
+          <div class="filter-group">
+            <label>Plataforma:</label>
+            <div class="toggle-group">
+              <button 
+                type="button" 
+                :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
+                @click="selectedPlatform = 'Todas'"
+              >
+                🌐 Ambas
+              </button>
+              <button 
+                type="button" 
+                :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
+                @click="selectedPlatform = 'meli'"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
+                  <rect width="24" height="24" rx="12" fill="#FFE600"/>
+                  <path d="M7 11.5L10 14.5L17 7.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Mercado Livre
+              </button>
+              <button 
+                type="button" 
+                :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
+                @click="selectedPlatform = 'shopee'"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
+                  <path d="M6 8V6C6 4.34315 7.34315 3 9 3H15C16.6569 3 18 4.34315 18 6V8M3 8H21L19.5 21H4.5L3 8Z" stroke="#EE4D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#EE4D2D" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Shopee
+              </button>
+            </div>
+          </div>
+
           <div class="filter-group">
             <label>Ordenar por:</label>
             <select v-model="selectedSort" class="glass-input">
@@ -53,33 +80,6 @@
               <option value="Todas">Todas as Categorias</option>
               <option v-for="cat in dynamicCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
-          </div>
-
-          <div class="filter-group">
-            <label>Plataforma:</label>
-            <div class="toggle-group">
-              <button 
-                type="button" 
-                :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
-                @click="selectedPlatform = 'Todas'"
-              >
-                🌐 Ambas
-              </button>
-              <button 
-                type="button" 
-                :class="['toggle-btn', { active: selectedPlatform === 'meli' }]" 
-                @click="selectedPlatform = 'meli'"
-              >
-                🛒 Mercado Livre
-              </button>
-              <button 
-                type="button" 
-                :class="['toggle-btn', { active: selectedPlatform === 'shopee' }]" 
-                @click="selectedPlatform = 'shopee'"
-              >
-                🧡 Shopee
-              </button>
-            </div>
           </div>
 
           <div class="filter-group">
@@ -104,6 +104,15 @@
           </div>
         </div>
       </div>
+
+      <!-- Métricas / KPIs Globais -->
+      <KpiCards 
+        :totalProducts="totalProducts"
+        :averagePrice="averagePrice"
+        :topPlatform="topPlatform"
+        :topProduct="topProduct"
+        :estimatedRevenue="estimatedRevenue"
+      />
 
       <div class="content-grid">
         <DataTable :items="filteredProducts" class="full-width" />

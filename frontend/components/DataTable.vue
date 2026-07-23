@@ -36,13 +36,21 @@
             <th @click="sortBy('vendas_totais')" class="sortable-header" title="Clique para ordenar por vendas acumuladas">
               Vendas Totais <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th>Ações</th>
+            <th class="action-th">Ações</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in paginatedData" :key="item.id">
             <td>
               <span :class="['badge', item.plataforma]">
+                <svg v-if="item.plataforma === 'meli'" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="badge-icon">
+                  <rect width="24" height="24" rx="12" fill="#FFE600"/>
+                  <path d="M7 11.5L10 14.5L17 7.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="badge-icon">
+                  <path d="M6 8V6C6 4.34315 7.34315 3 9 3H15C16.6569 3 18 4.34315 18 6V8M3 8H21L19.5 21H4.5L3 8Z" stroke="#EE4D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#EE4D2D" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
                 {{ item.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}
               </span>
             </td>
@@ -80,8 +88,8 @@
             </td>
             
             <td class="action-cell">
-              <button @click="openModal(item)" class="action-btn" title="Ver histórico completo e métricas do anúncio">🔎 Detalhes</button>
-              <a :href="item.link" target="_blank" class="link-btn" title="Abrir anúncio original na loja">Acessar ↗</a>
+              <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
+              <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
             </td>
           </tr>
           <tr v-if="filteredData.length === 0">
@@ -253,18 +261,21 @@ function exportToCSV() {
 .sales-value { font-weight: 700; color: #0f172a; }
 .block-diff { display: block; font-size: 0.75rem; }
 
-.badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; display: inline-block; }
+.badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; }
 .badge.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .badge.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .badge.category { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+.badge-icon { vertical-align: middle; flex-shrink: 0; }
 
 .badge-new { font-size: 0.65rem; background: linear-gradient(90deg, #d97706, #dc2626); color: white; padding: 0.2rem 0.5rem; border-radius: 99px; margin-right: 0.4rem; font-weight: bold; text-transform: uppercase; display: inline-block; vertical-align: middle; }
 
-.action-cell { display: flex; gap: 0.5rem; align-items: center; }
-.action-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.45rem 0.8rem; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
-.action-btn:hover { background: #dbeafe; border-color: #93c5fd; }
-.link-btn { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.45rem 0.8rem; background: #f8fafc; color: #475569; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease; white-space: nowrap; border: 1px solid #cbd5e1; }
-.link-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
+.action-th { text-align: center; width: 90px; }
+.action-cell { display: flex; gap: 0.4rem; justify-content: center; align-items: center; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; border: 1px solid #cbd5e1; }
+.action-btn-icon { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.action-btn-icon:hover { background: #dbeafe; border-color: #93c5fd; transform: translateY(-1px); }
+.link-btn-icon { background: #f8fafc; color: #475569; border-color: #cbd5e1; font-weight: bold; }
+.link-btn-icon:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px); }
 .empty-state { text-align: center; padding: 3rem !important; color: var(--text-muted); font-style: italic; }
 
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
