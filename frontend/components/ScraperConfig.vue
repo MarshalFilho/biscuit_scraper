@@ -191,6 +191,15 @@ async function triggerScraper() {
       disparoPendente.value = false
       return
     }
+
+    // Aciona a rota server-side do Nuxt para mandar a requisição limpa para o GitHub Actions
+    try {
+      await $fetch('/api/trigger-github', { method: 'POST' })
+      showStatus('Sinal enviado! Robô ativado no GitHub Actions.')
+    } catch (apiErr) {
+      console.error('Erro ao acionar o GitHub Actions:', apiErr)
+      showStatus('Erro ao disparar na nuvem. Verifique o GITHUB_PAT.')
+    }
   } else {
     showStatus('Apenas simulação. Faça login para disparar de verdade!')
   }
