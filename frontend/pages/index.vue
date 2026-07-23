@@ -1,34 +1,26 @@
 <template>
   <div class="container">
-    <header class="header animate-fade-in">
-      <div class="header-top">
-        <h1 class="premium-title text-gradient">✨ {{ nomeProjeto || 'Scraper Pro' }}</h1>
-        <LoginModal @auth-change="user => authUser = user" />
-      </div>
-      <p class="premium-subtitle">Plataforma de inteligência ativa para monitoramento e controle.</p>
-    </header>
+    <Navbar :projectName="nomeProjeto" @auth-change="user => authUser = user" />
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Conectando à base de dados segura...</p>
+      <p>Conectando à base de dados segura do Supabase...</p>
     </div>
 
     <div v-else-if="error" class="error-state">
-      <p>⚠️ Ocorreu um erro: {{ error }}</p>
+      <p>⚠️ Ocorreu um erro ao carregar os dados: {{ error }}</p>
     </div>
 
     <div v-else>
-      <!-- Central de Controle -->
-      <div class="admin-panels">
-        <ScraperConfig :user="authUser" @update-blacklist="onUpdateBlacklist" @update-project-name="name => nomeProjeto = name" />
-        <CategoryManager :user="authUser" @update-categories="onUpdateCategories" />
-      </div>
-
-      <!-- Super Filtros Globais (Acima das métricas para indicar que comanda o painel) -->
+      <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
-        <h4 class="filters-title">🔍 Super Filtros Globais (Comanda todos os gráficos e métricas)</h4>
+        <div class="filters-header">
+          <h4>🔍 Super Filtros Globais</h4>
+          <span class="filters-info">Altera em tempo real todos os KPIs, gráficos e tabelas do painel</span>
+        </div>
         
         <div class="filters-grid">
+          <!-- Plataforma -->
           <div class="filter-group">
             <label>Plataforma:</label>
             <div class="toggle-group">
@@ -44,7 +36,7 @@
                 :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
                 @click="selectedPlatform = 'meli'"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
                   <rect width="24" height="24" rx="12" fill="#FFE600"/>
                   <path d="M7 11.5L10 14.5L17 7.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -55,7 +47,7 @@
                 :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
                 @click="selectedPlatform = 'shopee'"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
                   <path d="M6 8V6C6 4.34315 7.34315 3 9 3H15C16.6569 3 18 4.34315 18 6V8M3 8H21L19.5 21H4.5L3 8Z" stroke="#EE4D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#EE4D2D" stroke-width="1.8" stroke-linecap="round"/>
                 </svg>
@@ -64,16 +56,18 @@
             </div>
           </div>
 
+          <!-- Período de Análise -->
           <div class="filter-group">
-            <label>Ordenar por:</label>
-            <select v-model="selectedSort" class="glass-input">
-              <option value="sales">Vendas Totais</option>
-              <option value="growth7">Maior Crescimento (Últimos 7d)</option>
-              <option value="growth15">Maior Crescimento (Últimos 15d)</option>
-              <option value="growth30">Maior Crescimento (Últimos 30d)</option>
+            <label>Intervalo de Datas (Período):</label>
+            <select v-model="selectedTimeframe" class="glass-input highlight-select">
+              <option value="7">📅 Últimos 7 Dias</option>
+              <option value="15">📅 Últimos 15 Dias</option>
+              <option value="30">📅 Últimos 30 Dias</option>
+              <option value="all">♾️ Todo o Histórico</option>
             </select>
           </div>
 
+          <!-- Categoria -->
           <div class="filter-group">
             <label>Categoria:</label>
             <select v-model="selectedCategory" class="glass-input">
@@ -82,6 +76,7 @@
             </select>
           </div>
 
+          <!-- Faixa de Preço -->
           <div class="filter-group">
             <label>Faixa de Preço (R$):</label>
             <div class="range-inputs">
@@ -91,11 +86,13 @@
             </div>
           </div>
 
+          <!-- Vendas Mínimas -->
           <div class="filter-group">
             <label>Vendas Mínimas:</label>
             <input type="number" v-model="minSales" placeholder="Ex: 50" class="glass-input" />
           </div>
 
+          <!-- Ocultar Sem Vendas -->
           <div class="filter-group checkbox-group">
             <label class="checkbox-label">
               <input type="checkbox" v-model="hideZeroSales" />
@@ -105,26 +102,35 @@
         </div>
       </div>
 
-      <!-- Métricas / KPIs Globais -->
+      <!-- Métricas Globais (KPIs) -->
       <KpiCards 
         :totalProducts="totalProducts"
         :averagePrice="averagePrice"
         :topPlatform="topPlatform"
         :topProduct="topProduct"
         :estimatedRevenue="estimatedRevenue"
+        :dateRangeText="dateRangeText"
       />
 
       <div class="content-grid">
+        <!-- Tabela Principal -->
         <DataTable :items="filteredProducts" class="full-width" />
         
+        <!-- Linha 1 de Gráficos: Top Produtos + Barras de Faixa de Preço -->
         <div class="charts-row">
           <TopProductsChart :items="filteredProducts" class="half-width" />
           <PriceVsSalesChart :items="filteredProducts" class="half-width" />
         </div>
         
+        <!-- Linha 2 de Gráficos: Vendedores em Destaque + Participação de Mercado -->
         <div class="charts-row">
-          <PriceDistributionChart :items="filteredProducts" class="half-width" />
+          <TopSellersChart :items="filteredProducts" class="half-width" />
           <MarketShareChart :items="filteredProducts" class="half-width" />
+        </div>
+
+        <!-- Linha 3 de Gráficos: Distribuição de Preços -->
+        <div class="charts-row">
+          <PriceDistributionChart :items="filteredProducts" class="full-width" />
         </div>
       </div>
     </div>
@@ -134,6 +140,14 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { createClient } from '@supabase/supabase-js'
+import Navbar from '~/components/Navbar.vue'
+import KpiCards from '~/components/KpiCards.vue'
+import DataTable from '~/components/DataTable.vue'
+import TopProductsChart from '~/components/TopProductsChart.client.vue'
+import PriceVsSalesChart from '~/components/PriceVsSalesChart.client.vue'
+import MarketShareChart from '~/components/MarketShareChart.client.vue'
+import PriceDistributionChart from '~/components/PriceDistributionChart.client.vue'
+import TopSellersChart from '~/components/TopSellersChart.client.vue'
 
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
@@ -154,7 +168,7 @@ function onUpdateCategories(rules) { categoryRules.value = rules }
 // Estado dos Super Filtros
 const selectedCategory = ref('Todas')
 const selectedPlatform = ref('Todas')
-const selectedSort = ref('sales')
+const selectedTimeframe = ref('7') // '7', '15', '30', 'all'
 const minPrice = ref(null)
 const maxPrice = ref(null)
 const minSales = ref(null)
@@ -176,6 +190,10 @@ function getCategoryByRules(title) {
 
 function getHistoricalData(item, daysAgo) {
   if (!item.historico_coletas || item.historico_coletas.length === 0) return null
+  if (daysAgo === 'all') {
+    return item.historico_coletas[item.historico_coletas.length - 1]
+  }
+
   const targetDate = new Date()
   targetDate.setDate(targetDate.getDate() - parseInt(daysAgo))
   
@@ -189,8 +207,7 @@ function getHistoricalData(item, daysAgo) {
     const entryDate = new Date(entry.data_coleta)
     const diff = Math.abs(entryDate - targetDate)
     
-    // Tolerância de +- 2 dias (172800000 ms)
-    if (diff < minDiff && diff <= 172800000) {
+    if (diff < minDiff && diff <= (parseInt(daysAgo) * 86400000 + 172800000)) {
       minDiff = diff
       closest = entry
     }
@@ -234,11 +251,34 @@ onMounted(async () => {
   }
 })
 
-// Mapeia regras, remove blacklist e calcula crescimento/novo
+// Texto explicativo do período para os KPIs
+const dateRangeText = computed(() => {
+  if (productsRaw.value.length === 0) return 'Carregando datas...'
+  
+  const dates = []
+  for (const p of productsRaw.value) {
+    if (p.historico_coletas) {
+      for (const h of p.historico_coletas) {
+        if (h.data_coleta) dates.push(new Date(h.data_coleta))
+      }
+    }
+  }
+
+  if (dates.length === 0) return 'Dados atualizados em tempo real'
+  
+  const minDate = new Date(Math.min(...dates))
+  const maxDate = new Date(Math.max(...dates))
+  
+  const formatStr = (d) => d.toLocaleDateString('pt-BR')
+  const periodName = selectedTimeframe.value === 'all' ? 'Todo o Histórico' : `Últimos ${selectedTimeframe.value} Dias`
+
+  return `${formatStr(minDate)} até ${formatStr(maxDate)} (${periodName})`
+})
+
+// Processa métricas e variações com base no período selecionado
 const processedProducts = computed(() => {
   return productsRaw.value
     .map(p => {
-      // É novo se tiver apenas 1 registro no histórico ou se foi criado nas últimas 24h
       const createdDate = p.criado_em ? new Date(p.criado_em) : new Date()
       const isNew = (p.historico_coletas && p.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
       
@@ -246,11 +286,7 @@ const processedProducts = computed(() => {
       let varInfo = null
       let salesDiff = null
       
-      let daysAgo = 7
-      if (selectedSort.value === 'growth15') daysAgo = 15
-      if (selectedSort.value === 'growth30') daysAgo = 30
-      
-      hist = getHistoricalData(p, daysAgo)
+      hist = getHistoricalData(p, selectedTimeframe.value)
       if (hist) {
         salesDiff = Math.max(0, p.vendas_totais - hist.vendas_totais)
         if (hist.preco > 0) {
@@ -275,17 +311,10 @@ const processedProducts = computed(() => {
       if (blacklist.value.some(word => t.includes(word))) return false
       return true
     })
-    .sort((a, b) => {
-      if (selectedSort.value.startsWith('growth')) {
-        const diffA = a.salesDiff || 0
-        const diffB = b.salesDiff || 0
-        if (diffA !== diffB) return diffB - diffA
-      }
-      return (b.vendas_totais || 0) - (a.vendas_totais || 0)
-    })
+    .sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0))
 })
 
-// Aplica os Super Filtros
+// Aplica os Super Filtros Globais
 const filteredProducts = computed(() => {
   let result = processedProducts.value
 
@@ -311,7 +340,7 @@ const filteredProducts = computed(() => {
   return result
 })
 
-// KPIs Baseados nos produtos filtrados
+// KPIs Globais
 const totalProducts = computed(() => filteredProducts.value.length)
 const averagePrice = computed(() => {
   if (filteredProducts.value.length === 0) return 0
@@ -333,36 +362,32 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 </script>
 
 <style scoped>
-.header { margin-bottom: 2rem; }
-.header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-.premium-title { font-size: 3rem; margin-bottom: 0.5rem; }
-.premium-subtitle { color: var(--text-muted); font-size: 1.1rem; text-align: left; }
-.admin-panels { display: flex; flex-direction: column; gap: 0rem; }
+.filters-panel { padding: 1.5rem; margin-bottom: 2rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05); }
+.filters-header { margin-bottom: 1.2rem; }
+.filters-header h4 { margin: 0 0 0.2rem 0; color: #0f172a; font-size: 1.15rem; }
+.filters-info { color: #64748b; font-size: 0.85rem; }
 
-.filters-panel { padding: 1.5rem; margin-bottom: 2rem; }
-.filters-title { margin-top: 0; color: var(--text-main); font-size: 1.1rem; margin-bottom: 1.2rem; }
 .filters-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end; }
 .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
-.filter-group label { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
+.filter-group label { color: #475569; font-size: 0.85rem; font-weight: 600; }
 
-.glass-input { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); padding: 0.6rem 1rem; border-radius: 8px; outline: none; transition: border 0.3s, box-shadow 0.3s; font-size: 0.95rem; }
-.glass-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-.glass-input option { background: #ffffff; color: var(--text-main); }
+.glass-input { background: #ffffff; border: 1px solid #cbd5e1; color: #0f172a; padding: 0.6rem 1rem; border-radius: 8px; outline: none; transition: border 0.3s; font-size: 0.95rem; }
+.glass-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+.highlight-select { border-color: #93c5fd; background: #eff6ff; font-weight: 600; color: #1e40af; }
 .glass-input.tiny { width: 80px; text-align: center; padding: 0.6rem 0.5rem; }
-.glass-input.small { width: 120px; }
 
 .range-inputs { display: flex; align-items: center; gap: 0.5rem; }
-.range-sep { color: var(--text-muted); font-size: 0.85rem; }
+.range-sep { color: #64748b; font-size: 0.85rem; }
 
 .checkbox-group { justify-content: center; height: 100%; padding-bottom: 0.8rem; }
-.checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-main) !important; font-size: 0.95rem !important; }
+.checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: #0f172a !important; font-size: 0.92rem !important; font-weight: 600; }
 
 .content-grid { display: flex; flex-direction: column; gap: 2rem; }
 .charts-row { display: flex; gap: 2rem; flex-wrap: wrap; }
 .full-width { width: 100%; }
 .half-width { flex: 1; min-width: 400px; }
 
-.loading-state, .error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 40vh; color: var(--text-muted); font-size: 1.2rem; }
-.spinner { width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: var(--neon-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+.loading-state, .error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 40vh; color: #64748b; font-size: 1.2rem; }
+.spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-left-color: #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

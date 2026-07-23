@@ -1,8 +1,11 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.5s;">
-    <h3>Relação Preço vs Vendas (Dispersão)</h3>
+    <div class="chart-header-box">
+      <h3>📊 Volume de Vendas por Faixa de Preço</h3>
+      <p class="chart-subtitle">Descubra em qual faixa de preço o mercado mais vende</p>
+    </div>
     <div class="chart-wrapper">
-      <apexchart v-if="isMounted" type="scatter" height="350" :options="chartOptions" :series="series"></apexchart>
+      <apexchart v-if="isMounted" type="bar" height="320" :options="chartOptions" :series="series"></apexchart>
     </div>
   </div>
 </template>
@@ -20,33 +23,76 @@ const props = defineProps({
 const isMounted = ref(false)
 onMounted(() => { isMounted.value = true })
 
+const priceRanges = [
+  { label: 'Até R$ 25', min: 0, max: 25 },
+  { label: 'R$ 25 - R$ 50', min: 25.01, max: 50 },
+  { label: 'R$ 50 - R$ 100', min: 50.01, max: 100 },
+  { label: 'R$ 100 - R$ 200', min: 100.01, max: 200 },
+  { label: 'Acima R$ 200', min: 200.01, max: Infinity }
+]
+
 const series = computed(() => {
-  const meliData = props.items.filter(i => i.plataforma === 'meli' && i.preco && i.vendas_totais).map(i => [i.preco, i.vendas_totais])
-  const shopeeData = props.items.filter(i => i.plataforma === 'shopee' && i.preco && i.vendas_totais).map(i => [i.preco, i.vendas_totais])
-  
+  const meliSales = priceRanges.map(r => {
+    return props.items
+      .filter(i => i.plataforma === 'meli' && i.preco >= r.min && i.preco <= r.max)
+      .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
+  })
+
+  const shopeeSales = priceRanges.map(r => {
+    return props.items
+      .filter(i => i.plataforma === 'shopee' && i.preco >= r.min && i.preco <= r.max)
+      .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
+  })
+
   return [
-    { name: 'Mercado Livre', data: meliData },
-    { name: 'Shopee', data: shopeeData }
+    { name: 'Mercado Livre', data: meliSales },
+    { name: 'Shopee', data: shopeeSales }
   ]
 })
 
-const chartOptions = {
-  chart: { type: 'scatter', zoom: { enabled: true, type: 'xy' }, toolbar: { show: false }, background: 'transparent' },
-  colors: ['#ffe600', '#ff6b35'],
-  xaxis: { title: { text: 'Preço (R$)' }, labels: { style: { colors: '#94a3b8' } }, tickAmount: 10, type: 'numeric' },
-  yaxis: { title: { text: 'Vendas Totais' }, labels: { style: { colors: '#94a3b8' } } },
-  legend: { position: 'top', labels: { colors: '#f8fafc' } },
-  grid: { borderColor: 'rgba(255, 255, 255, 0.1)', strokeDashArray: 4 },
-  theme: { mode: 'dark' },
-  markers: { size: 6, strokeWidth: 0, hover: { size: 8 } },
+const chartOptions = computed(() => ({
+  chart: {
+    type: 'bar',
+    toolbar: { show: false },
+    background: 'transparent',
+    fontFamily: 'Inter, sans-serif'
+  },
+  colors: ['#ca8a04', '#ea580c'], // Dourado para Mercado Livre, Laranja para Shopee
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: '55%',
+      borderRadius: 6
+    }
+  },
+  dataLabels: {
+    enabled: true,
+    formatter: (val) => val > 0 ? val.toLocaleString('pt-BR') : '',
+    style: { fontSize: '11px', fontWeight: 'bold', colors: ['#ffffff'] }
+  },
+  stroke: { show: true, width: 2, colors: ['transparent'] },
+  xaxis: {
+    categories: priceRanges.map(r => r.label),
+    labels: { style: { colors: '#475569', fontWeight: 600 } }
+  },
+  yaxis: {
+    title: { text: 'Vendas Totais (un)', style: { color: '#475569', fontWeight: 600 } },
+    labels: { style: { colors: '#475569' } }
+  },
+  legend: { position: 'top', labels: { colors: '#0f172a' } },
+  grid: { borderColor: '#e2e8f0', strokeDashArray: 4 },
+  theme: { mode: 'light' },
   tooltip: {
-    y: { formatter: (val) => val + " vendas" }
+    theme: 'light',
+    y: { formatter: (val) => val.toLocaleString('pt-BR') + " vendas" }
   }
-}
+}))
 </script>
 
 <style scoped>
-.chart-container { padding: 1.5rem; }
-.chart-container h3 { margin-bottom: 1rem; color: var(--text-main); font-size: 1.25rem; }
-.chart-wrapper { min-height: 350px; }
+.chart-container { padding: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
+.chart-header-box { margin-bottom: 1rem; }
+.chart-header-box h3 { margin: 0 0 0.2rem 0; color: #0f172a; font-size: 1.15rem; }
+.chart-subtitle { color: #64748b; font-size: 0.85rem; margin: 0; }
+.chart-wrapper { min-height: 320px; }
 </style>
