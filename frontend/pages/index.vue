@@ -221,7 +221,7 @@ onMounted(async () => {
     const { data: prodData, error: prodErr } = await supabase
       .from('produtos')
       .select(`
-        id, plataforma, titulo, link, id_externo, criado_em,
+        id, plataforma, titulo, link, id_externo, vendedor, criado_em,
         historico_coletas ( preco, vendas_totais, data_coleta )
       `)
       
@@ -236,6 +236,7 @@ onMounted(async () => {
           plataforma: p.plataforma,
           titulo: p.titulo,
           link: p.link,
+          vendedor: p.vendedor || null,
           criado_em: p.criado_em,
           preco: latestHistory.preco || 0,
           vendas_totais: latestHistory.vendas_totais || 0,

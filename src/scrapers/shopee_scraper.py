@@ -267,6 +267,10 @@ def fase_ouro():
                     vendas_texto = elementos_vendas[0].parent.text
                 vendas = limpar_vendas(vendas_texto)
 
+                # Extrai vendedor ou localização da loja
+                vendedor_tag = produto.find(["div", "span"], class_=re.compile(r"shopee-search-item-result__shop-location|z1678"))
+                vendedor = vendedor_tag.text.strip() if vendedor_tag else None
+
                 resultados_ouro.append({
                     "termo_busca": termo,
                     "plataforma": "shopee",
@@ -274,6 +278,7 @@ def fase_ouro():
                     "preco": preco,
                     "vendas_quantidade": vendas,
                     "url_anuncio": url_anuncio,
+                    "vendedor": vendedor
                 })
             except Exception as e:
                 continue
@@ -304,7 +309,8 @@ def fase_ouro():
                     plataforma="shopee",
                     id_externo=id_externo,
                     titulo=item["titulo"],
-                    link=item["url_anuncio"]
+                    link=item["url_anuncio"],
+                    vendedor=item.get("vendedor")
                 )
                 registrar_historico(
                     supabase=supabase,

@@ -22,7 +22,7 @@ def atualizar_status_scraper(user_id, status_mensagem):
         print(f"⚠️ Erro ao atualizar status na nuvem: {e}")
 
 
-def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str) -> str:
+def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str, vendedor: str = None) -> str:
     """
     Verifica se o produto existe. Se não, insere.
     Retorna o UUID do produto no banco.
@@ -31,7 +31,11 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     response = supabase.table("produtos").select("id").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
     
     if response.data and len(response.data) > 0:
-        return response.data[0]["id"]
+        produto_id = response.data[0]["id"]
+        # Se recebemos vendedor e o registro antigo não tinha, atualiza
+        if vendedor:
+            supabase.table("produtos").update({"vendedor": vendedor}).eq("id", produto_id).execute()
+        return produto_id
         
     # Se não existir, insere
     novo_produto = {
@@ -39,6 +43,7 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
         "id_externo": id_externo,
         "titulo": titulo,
         "link": link,
+        "vendedor": vendedor,
         "criado_em": datetime.utcnow().isoformat()
     }
     

@@ -286,6 +286,12 @@ def fase_ouro():
                     titulo_normalizado = titulo.strip().lower()
                     vendas = reviews_map.get(titulo_normalizado, 0)
                 
+                # Extrai vendedor do HTML
+                vendedor_tag = produto.find(["span", "div", "a"], class_=re.compile(r"poly-component__seller|ui-search-official-store-label|ui-search-item__group__element|ui-search-item__seller"))
+                vendedor = None
+                if vendedor_tag:
+                    vendedor = vendedor_tag.text.replace("Por", "").replace("por", "").strip()
+                
                 resultados_ouro.append({
                     "termo_busca": termo,
                     "plataforma": "mercado_livre",
@@ -293,6 +299,7 @@ def fase_ouro():
                     "preco": preco,
                     "vendas_quantidade": vendas,
                     "url_anuncio": url_anuncio,
+                    "vendedor": vendedor
                 })
             except Exception as e:
                 continue
@@ -321,7 +328,8 @@ def fase_ouro():
                     plataforma="meli",
                     id_externo=item["url_anuncio"].split("-")[1] if "-" in item["url_anuncio"] else item["titulo"][:20],
                     titulo=item["titulo"],
-                    link=item["url_anuncio"]
+                    link=item["url_anuncio"],
+                    vendedor=item.get("vendedor")
                 )
                 registrar_historico(
                     supabase=supabase,

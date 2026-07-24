@@ -3,7 +3,7 @@
     <div class="chart-header-box">
       <div class="header-titles">
         <h3>🏪 Análise de Vendedores & Lojas em Destaque</h3>
-        <p class="chart-subtitle">Lojas com maior volume de vendas e anúncios ativos no mercado</p>
+        <p class="chart-subtitle">Lojas e vendedores com maior volume de vendas no mercado</p>
       </div>
       <div class="view-toggle">
         <button 
@@ -21,6 +21,11 @@
           📋 Tabela
         </button>
       </div>
+    </div>
+
+    <!-- Banner informativo se a maioria for sem vendedor -->
+    <div class="seller-notice-banner" v-if="hasUnregisteredSellers">
+      <span>💡 <strong>Nota sobre Vendedores:</strong> Os nomes oficiais dos vendedores serão sincronizados e preenchidos automaticamente na próxima execução do robô de raspagem.</span>
     </div>
 
     <!-- Visão Gráfico -->
@@ -44,7 +49,9 @@
         <tbody>
           <tr v-for="(seller, index) in topSellersList" :key="seller.name">
             <td class="rank-td">#{{ index + 1 }}</td>
-            <td class="seller-name-td">{{ seller.name }}</td>
+            <td class="seller-name-td">
+              <span :class="{'text-unregistered': seller.isUnregistered}">{{ seller.name }}</span>
+            </td>
             <td>
               <span :class="['badge-sm', seller.platform]">
                 {{ seller.platform === 'meli' ? 'Mercado Livre' : 'Shopee' }}
@@ -78,19 +85,30 @@ const activeMode = ref('chart')
 
 onMounted(() => { isMounted.value = true })
 
-// Agrupa produtos por vendedor/loja (ou fallback por vendedor derivado do título/anúncio)
+const hasUnregisteredSellers = computed(() => {
+  return props.items.some(item => !item.vendedor)
+})
+
+// Agrupa produtos por vendedor/loja real
 const topSellersList = computed(() => {
   const map = new Map()
 
   for (const item of props.items) {
-    // Se o item tiver vendedor explícito usa ele, senão agrupa por loja/termo
-    const name = item.vendedor || item.loja || (item.plataforma === 'meli' ? 'Loja Oficial ML' : 'Vendedor Shopee')
+    let name = item.vendedor
+    let isUnregistered = false
+
+    if (!name) {
+      name = item.plataforma === 'meli' ? 'Vendedor Mercado Livre (Coleta Antiga)' : 'Vendedor Shopee (Coleta Antiga)'
+      isUnregistered = true
+    }
+
     const key = `${name}_${item.plataforma}`
 
     if (!map.has(key)) {
       map.set(key, {
         name,
         platform: item.plataforma,
+        isUnregistered,
         productCount: 0,
         totalSales: 0,
         estimatedRevenue: 0
@@ -138,7 +156,7 @@ const chartOptions = computed(() => ({
     style: { fontSize: '11px', fontWeight: 'bold', colors: ['#ffffff'] }
   },
   xaxis: {
-    categories: topSellersList.value.map(s => s.name.length > 22 ? s.name.substring(0, 22) + '...' : s.name),
+    categories: topSellersList.value.map(s => s.name.length > 25 ? s.name.substring(0, 25) + '...' : s.name),
     labels: { style: { colors: '#475569' } }
   },
   yaxis: {
@@ -155,9 +173,11 @@ const chartOptions = computed(() => ({
 
 <style scoped>
 .chart-container { padding: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
-.chart-header-box { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.2rem; gap: 1rem; flex-wrap: wrap; }
+.chart-header-box { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; gap: 1rem; flex-wrap: wrap; }
 .header-titles h3 { margin: 0 0 0.2rem 0; color: #0f172a; font-size: 1.15rem; }
 .chart-subtitle { color: #64748b; font-size: 0.85rem; margin: 0; }
+
+.seller-notice-banner { background: #fefce8; border: 1px solid #fef08a; color: #854d0e; padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; }
 
 .view-toggle { display: flex; gap: 0.3rem; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid #cbd5e1; }
 .toggle-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
@@ -171,6 +191,7 @@ const chartOptions = computed(() => ({
 .sellers-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; }
 .rank-td { font-weight: 700; color: #2563eb; width: 40px; }
 .seller-name-td { font-weight: 600; color: #0f172a; }
+.text-unregistered { color: #64748b; font-style: italic; }
 .sales-td { font-weight: 700; color: #059669; }
 .revenue-td { font-weight: 700; color: #2563eb; }
 
