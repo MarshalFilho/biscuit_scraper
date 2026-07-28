@@ -12,6 +12,9 @@
     </div>
 
     <div v-else>
+      <!-- Relatório de Inteligência Executiva por IA (Fase 4) -->
+      <AiExecutiveReport :reportData="aiReportData" />
+
       <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
@@ -215,9 +218,22 @@ function getHistoricalData(item, daysAgo) {
   return closest
 }
 
+const aiReportData = ref(null)
+
 onMounted(async () => {
   try {
     loading.value = true
+    
+    // Tenta carregar o relatório de IA se houver no Supabase
+    try {
+      const { data: cfg } = await supabase.from('configuracoes_scraper').select('relatorio_insights').limit(1).single()
+      if (cfg && cfg.relatorio_insights) {
+        aiReportData.value = cfg.relatorio_insights
+      }
+    } catch (e) {
+      // Usa o fallback mock padrão do componente AiExecutiveReport
+    }
+
     const { data: prodData, error: prodErr } = await supabase
       .from('produtos')
       .select(`

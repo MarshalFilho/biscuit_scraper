@@ -62,6 +62,22 @@ def executar_scrapers(plataforma, user_id):
         atualizar_status_scraper(user_id, "🧡 Shopee [3/3]: Extraindo produtos e enviando ao Supabase...")
         fase_ouro()
 
+    # Pós-Processamento de Inteligência Artificial
+    print("\n=== Executando Módulos de IA ===")
+    atualizar_status_scraper(user_id, "🧠 IA [1/2]: Categorizando produtos e padronizando classes...")
+    try:
+        from ai.categorizer import categorizar_produtos_novos
+        categorizar_produtos_novos()
+    except Exception as e:
+        print(f"⚠️ Aviso na categorização por IA: {e}")
+
+    atualizar_status_scraper(user_id, "💡 IA [2/2]: Gerando Relatório de Insights Executivos...")
+    try:
+        from ai.insights_generator import gerar_relatorio_insights
+        gerar_relatorio_insights()
+    except Exception as e:
+        print(f"⚠️ Aviso na geração de insights por IA: {e}")
+
 def main():
     parser = argparse.ArgumentParser(description="Pipeline de Inteligência e Extração para E-commerce")
     parser.add_argument("--plataforma", choices=["meli", "shopee", "todos"], default="todos",

@@ -223,6 +223,25 @@ function handleFileUpload(event) {
   reader.readAsText(file)
 }
 
+function applyAiGeneratedFilters(aiData) {
+  if (aiData.termos) {
+    aiData.termos.forEach(t => {
+      if (!localSearchTerms.value.includes(t)) localSearchTerms.value.push(t)
+    })
+  }
+  if (aiData.blacklist) {
+    aiData.blacklist.forEach(b => {
+      if (!localBlacklist.value.includes(b)) localBlacklist.value.push(b)
+    })
+  }
+  saveConfigs()
+  showStatus('Filtros gerados pela IA foram aplicados com sucesso!')
+}
+
+defineExpose({
+  applyAiGeneratedFilters
+})
+
 async function saveConfigs() {
   localStorage.setItem('scraper_nome_projeto', nomeProjeto.value)
   localStorage.setItem('scraper_blacklist', JSON.stringify(localBlacklist.value))
