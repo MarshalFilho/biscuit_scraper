@@ -137,14 +137,31 @@ def main():
             time.sleep(300)
             
     elif args.cloud:
-        # MODO ONE-SHOT (Nuvem / GitHub Actions)
-        print("\n☁️ Modo Nuvem (One-Shot) ativado. Executando uma única vez...")
+        # MODO ONE-SHOT / CHECAGEM DE NUVEM (GitHub Actions)
+        print("\n☁️ Modo Nuvem (GitHub Actions) ativado. Verificando agendamento...")
         user_id = os.environ.get("SUPABASE_USER_ID")
         if not user_id:
-            print("❌ ERRO: SUPABASE_USER_ID não encontrado. Abortando.")
+            print("❌ ERRO: SUPABASE_USER_ID não configurado no ambiente. Abortando.")
             return
-            
+
         from utils.supabase_client import conectar_supabase, atualizar_status_scraper
+        try:
+            supabase = conectar_supabase()
+            res = supabase.table("configuracoes_scraper").select("disparo_pendente").eq("user_id", user_id).execute()
+            
+            if res.data and len(res.data) > 0:
+                pendente = res.data[0].get("disparo_pendente", False)
+                if not pendente:
+                    print("💤 Nenhum disparo pendente no Supabase. Encerrando execução em nuvem graciosamente sem raspar.")
+                    return
+            else:
+                print("⚠️ Nenhuma linha de configuração encontrada no Supabase para este usuário. Encerrando.")
+                return
+        except Exception as e:
+            print(f"⚠️ Erro ao checar disparo pendente no Supabase: {e}")
+            return
+
+        print("🚀 DISPARO PENDENTE DETECTADO NO SUPABASE! Iniciando pipeline de extração...")
         atualizar_status_scraper(user_id, "🤖 Robô acordou no GitHub Actions! Sincronizando sessão...")
         
         sincronizar_sessao_nuvem(user_id)
@@ -153,7 +170,6 @@ def main():
         
         print("\n✅ Extração na nuvem concluída.")
         try:
-            supabase = conectar_supabase()
             supabase.table("configuracoes_scraper").update({
                 "disparo_pendente": False,
                 "status_scraper": "🎉 Raspagem concluída com sucesso!"
@@ -162,7 +178,7 @@ def main():
             time.sleep(6)
             supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", user_id).execute()
         except Exception as e:
-            print(f"Erro ao finalizar: {e}")
+            print(f"Erro ao finalizar status no Supabase: {e}")
             
     else:
         # Modo execução única e manual local
