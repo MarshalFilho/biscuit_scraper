@@ -23,12 +23,51 @@ PRATA_DIR = PLATFORM_DIRS["prata"]
 OURO_DIR = PLATFORM_DIRS["ouro"]
 
 def limpar_preco(texto_preco):
+    """
+    Extrai o primeiro valor monetário válido de uma string.
+    Evita contatenar parcelas (ex: 12x R$ 100) ou faixas de variação.
+    """
     if not texto_preco: return 0.0
-    num = texto_preco.replace(".", "").replace(",", ".").strip()
-    try:
-        return float(re.sub(r"[^\d.]", "", num))
-    except ValueError:
-        return 0.0
+    matches = re.findall(r"(?:R\$\s*)?(\d+(?:\.\d{3})*(?:,\d{1,2})?)", str(texto_preco), re.IGNORECASE)
+    if not matches: return 0.0
+    for m in matches:
+        try:
+            val_clean = m.replace(".", "").replace(",", ".")
+            val = float(val_clean)
+            if val > 0: return val
+        except ValueError: continue
+    return 0.0
+
+def extrair_preco_card_meli(produto):
+    """
+    Extrai com precisão o preço promocional/vigente do card do Mercado Livre,
+    filtrando preços originais cortados, parcelamentos e anúncios relacionados.
+    """
+    container_atual = produto.find(class_=re.compile(r"poly-price__current|andes-money-amount--main-price|poly-component__price"))
+    if not container_atual:
+        cand_amounts = produto.find_all("span", class_="andes-money-amount")
+        for cand in cand_amounts:
+            parent_classes = " ".join([c for parent in cand.parents for c in parent.get("class", [])])
+            if "previous" not in parent_classes and "original" not in parent_classes and "installment" not in parent_classes:
+                container_atual = cand
+                break
+    if not container_atual:
+        container_atual = produto
+
+    frac_tag = container_atual.find("span", class_="andes-money-amount__fraction")
+    cents_tag = container_atual.find("span", class_="andes-money-amount__cents")
+    raw_text = container_atual.text.strip()
+    
+    if frac_tag:
+        frac_str = frac_tag.text.strip().replace(".", "")
+        cents_str = cents_tag.text.strip() if cents_tag else "00"
+        try:
+            price_val = float(f"{frac_str}.{cents_str}")
+            return price_val, f"Fração='{frac_tag.text}', Cents='{cents_str}' (Bruto: '{raw_text}')"
+        except ValueError: pass
+        
+    price_val = limpar_preco(raw_text)
+    return price_val, f"Texto Bruto: '{raw_text}'"
 
 def limpar_vendas(texto_vendas):
     if not texto_vendas: return 0
@@ -274,8 +313,8 @@ def fase_ouro():
                     continue
                 urls_processadas.add(url_anuncio)
                 
-                preco_tag = produto.find("span", class_="andes-money-amount__fraction")
-                preco = limpar_preco(preco_tag.text) if preco_tag else 0.0
+                preco, preco_debug_log = extrair_preco_card_meli(produto)
+                print(f"   🔎 [AUDITORIA PREÇO ML] '{titulo[:35]}...' => R$ {preco:.2f} ({preco_debug_log})")
                 
                 # Extrai vendas do HTML
                 vendas_texto = extrair_vendas_texto(produto)

@@ -274,7 +274,7 @@ async function saveConfigs() {
 async function triggerScraper() {
   if (props.user) {
     disparoPendente.value = true
-    statusScraper.value = "Agendado na Nuvem. Aguardando robô..."
+    statusScraper.value = "Solicitação registrada! O robô na nuvem faz a verificação periódica. Os dados podem levar até 2 horas para atualizar."
     const { error } = await supabase.from('configuracoes_scraper').upsert(
       { user_id: props.user.id, disparo_pendente: true, status_scraper: statusScraper.value },
       { onConflict: 'user_id' }
@@ -284,23 +284,15 @@ async function triggerScraper() {
       disparoPendente.value = false
       return
     }
-
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('trigger-github')
-      if (fnError) throw fnError
-      showStatus('Sinal enviado! Robô ativado no GitHub Actions.')
-    } catch (apiErr) {
-      console.error('Erro ao acionar o GitHub Actions via Edge Function:', apiErr)
-      showStatus('Sinal gravado no Supabase. Aguardando escuta do robô.')
-    }
+    showStatus("Solicitação registrada! O robô na nuvem faz a verificação periódica. Os dados podem levar até 2 horas para atualizar.", 8000)
   } else {
     showStatus('Faça login para disparar o robô!')
   }
 }
 
-function showStatus(msg) {
+function showStatus(msg, duration = 4000) {
   statusMessage.value = msg
-  setTimeout(() => statusMessage.value = '', 4000)
+  setTimeout(() => statusMessage.value = '', duration)
 }
 
 function processTags(rawString, targetArray) {

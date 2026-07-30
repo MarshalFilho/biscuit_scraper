@@ -23,14 +23,33 @@ PRATA_DIR = PLATFORM_DIRS["prata"]
 OURO_DIR = PLATFORM_DIRS["ouro"]
 
 def limpar_preco(texto_preco):
+    """
+    Extrai o primeiro valor monetário válido de uma string na Shopee.
+    Suporta faixas de preço como "R$ 38,90 - R$ 250,00" (extrai R$ 38.90).
+    """
     if not texto_preco: return 0.0
-    # Shopee costuma usar "R$ 10,00" ou "R$10,00 - R$20,00". Pegamos o primeiro valor.
-    texto_preco = texto_preco.split("-")[0]
-    num = texto_preco.replace("R$", "").replace(".", "").replace(",", ".").strip()
-    try:
-        return float(re.sub(r"[^\d.]", "", num))
-    except ValueError:
-        return 0.0
+    texto_preco = str(texto_preco).split("-")[0]
+    matches = re.findall(r"(?:R\$\s*)?(\d+(?:\.\d{3})*(?:,\d{1,2})?)", texto_preco, re.IGNORECASE)
+    if not matches: return 0.0
+    for m in matches:
+        try:
+            val_clean = m.replace(".", "").replace(",", ".")
+            val = float(val_clean)
+            if val > 0: return val
+        except ValueError: continue
+    return 0.0
+
+def extrair_preco_card_shopee(produto):
+    elementos_preco = produto.find_all(string=re.compile(r"R\$"))
+    if elementos_preco:
+        for elem in elementos_preco:
+            p_elem = elem.parent
+            if p_elem:
+                full_txt = p_elem.parent.text if p_elem.text.strip() == "R$" and p_elem.parent else p_elem.text
+                val = limpar_preco(full_txt)
+                if val > 0:
+                    return val, f"Texto Bruto: '{full_txt.strip()}'"
+    return 0.0, "Nenhum preço encontrado"
 
 def limpar_vendas(texto_vendas):
     if not texto_vendas: return 0
@@ -248,17 +267,8 @@ def fase_ouro():
                     continue
 
                 # 2. PREÇO
-                # Procura por qualquer texto que tenha "R$" e pega o pai/avô para obter o valor completo
-                preco_text = ""
-                elementos_preco = produto.find_all(string=re.compile(r"R\$"))
-                if elementos_preco:
-                    p_elem = elementos_preco[0].parent
-                    if p_elem:
-                        if p_elem.text.strip() == "R$" and p_elem.parent:
-                            preco_text = p_elem.parent.text
-                        else:
-                            preco_text = p_elem.text
-                preco = limpar_preco(preco_text)
+                preco, preco_debug_log = extrair_preco_card_shopee(produto)
+                print(f"   🔎 [AUDITORIA PREÇO SHOPEE] '{titulo[:35]}...' => R$ {preco:.2f} ({preco_debug_log})")
 
                 # 3. VENDAS
                 vendas_texto = ""

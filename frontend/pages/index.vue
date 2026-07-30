@@ -15,6 +15,11 @@
       <!-- Relatório de Inteligência Executiva por IA (Fase 4) -->
       <AiExecutiveReport :reportData="aiReportData" />
 
+      <!-- Banner da Data e Horário da Última Atualização -->
+      <div class="last-update-banner animate-fade-in">
+        <span>🕒 <strong>Última atualização:</strong> {{ lastScrapeFormatted }}</span>
+      </div>
+
       <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
@@ -220,6 +225,32 @@ function getHistoricalData(item, daysAgo) {
 
 const aiReportData = ref(null)
 
+const lastScrapeFormatted = computed(() => {
+  if (!productsRaw.value || productsRaw.value.length === 0) return 'Sem registros de raspagem'
+  let maxDate = null
+  for (const p of productsRaw.value) {
+    if (p.criado_em) {
+      const d = new Date(p.criado_em)
+      if (!maxDate || d > maxDate) maxDate = d
+    }
+    if (p.historico_coletas && Array.isArray(p.historico_coletas)) {
+      for (const h of p.historico_coletas) {
+        if (h.data_coleta) {
+          const d = new Date(h.data_coleta)
+          if (!maxDate || d > maxDate) maxDate = d
+        }
+      }
+    }
+  }
+  if (!maxDate) return 'Sem registros de raspagem'
+  const day = String(maxDate.getDate()).padStart(2, '0')
+  const month = String(maxDate.getMonth() + 1).padStart(2, '0')
+  const year = maxDate.getFullYear()
+  const hours = String(maxDate.getHours()).padStart(2, '0')
+  const minutes = String(maxDate.getMinutes()).padStart(2, '0')
+  return `${day}/${month}/${year} às ${hours}:${minutes}`
+})
+
 onMounted(async () => {
   try {
     loading.value = true
@@ -407,4 +438,18 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .loading-state, .error-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 40vh; color: #64748b; font-size: 1.2rem; }
 .spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-left-color: #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.last-update-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  padding: 0.65rem 1.1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 </style>
