@@ -108,6 +108,10 @@ def fase_bronze():
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                try:
+                    page.wait_for_selector('a[href*="-i."], [data-sqe="item"], .shopee-search-item-result__item', timeout=15000)
+                except Exception:
+                    pass
             except Exception as e:
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}")
                 page.close()
@@ -196,12 +200,13 @@ def fase_prata():
             with open(path, "r", encoding="utf-8") as f:
                 soup = BeautifulSoup(f.read(), "html.parser")
                 
-            # A Shopee usa a classe shopee-search-item-result__item ou o atributo data-sqe="item"
-            produtos = soup.find_all(["div", "li"], attrs={"data-sqe": "item"})
-            
+            produtos = soup.find_all(["div", "li", "a"], attrs={"data-sqe": "item"})
             if not produtos:
-                # Fallback caso a estrutura mude
                 produtos = soup.find_all("a", attrs={"data-sqe": "link"})
+            if not produtos:
+                produtos = soup.find_all(["div", "li", "a"], class_=re.compile(r"shopee-search-item-result|col-xs-2-4"))
+            if not produtos:
+                produtos = [a for a in soup.find_all("a", href=re.compile(r"-i\.\d+\.\d+|\/product\/"))]
                 
             if produtos:
                 for p in produtos:

@@ -132,6 +132,12 @@ def fase_bronze():
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                try:
+                    page.wait_for_selector(".ui-search-results, .poly-card, .ui-search-layout, .ui-search-item", timeout=15000)
+                except Exception:
+                    pass
+                page.mouse.wheel(0, 800)
+                time.sleep(1.5)
             except Exception as e:
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}. Pulando para o próximo termo...")
                 continue
@@ -291,7 +297,17 @@ def fase_ouro():
                 except Exception as e:
                     print(f"   ⚠️ Erro ao ler JSON-LD do arquivo Bronze p{p} para '{termo}': {e}")
         
-        produtos_cards = soup.find_all(["li", "div"], class_=re.compile(r"ui-search-layout__item|poly-card"))
+        produtos_cards = soup.find_all(["li", "div"], class_=re.compile(r"ui-search-layout__item|poly-card|ui-search-result"))
+        if not produtos_cards:
+            title_tags = soup.find_all(["h2", "a"], class_=re.compile(r"ui-search-item__title|poly-component__title|poly-box"))
+            cards_seen = set()
+            for t in title_tags:
+                parent_card = t.find_parent(["li", "div"], class_=re.compile(r"ui-search-layout__item|poly-card|ui-search-result|poly-card-container"))
+                if not parent_card:
+                    parent_card = t.parent
+                if parent_card and id(parent_card) not in cards_seen:
+                    cards_seen.add(id(parent_card))
+                    produtos_cards.append(parent_card)
         
         resultados_ouro = []
         urls_processadas = set()
