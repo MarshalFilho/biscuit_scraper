@@ -137,6 +137,13 @@ def fase_bronze():
                     
                     html_renderizado = page.content()
                     
+                    title = page.title()
+                    curr_url = page.url
+                    html_len = len(html_renderizado)
+                    print(f"   🔍 [DIAGNÓSTICO SHOPEE BRONZE] Título: '{title}' | URL: '{curr_url}' | Tamanho HTML: {html_len} bytes")
+                    if "captcha" in curr_url.lower() or "verify" in curr_url.lower() or "blocked" in title.lower():
+                        print(f"   ⚠️ ALERTA DE BLOQUEIO [SHOPEE]: A Shopee enviou página de captcha/verificação!")
+
                     bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{pagina}.html")
                     with open(bronze_path, "w", encoding="utf-8") as f:
                         f.write(html_renderizado)
@@ -219,6 +226,13 @@ def fase_prata():
             print(f"   🥈 PRATA: Arquivo estruturado '{prata_path}' gerado combinando {len(arquivos_para_processar)} página(s) e {total_produtos} produtos.")
         else:
             print(f"   ⚠️ AVISO [Prata]: Nenhum produto encontrado para '{termo}'.")
+            if arquivos_para_processar:
+                with open(arquivos_para_processar[0], "r", encoding="utf-8") as f:
+                    diag_soup = BeautifulSoup(f.read(), "html.parser")
+                print(f"      -> Quantidade de links <a> no HTML: {len(diag_soup.find_all('a'))}")
+                print(f"      -> Quantidade de divs no HTML: {len(diag_soup.find_all('div'))}")
+                snippet = diag_soup.text.strip()[:200].replace('\n', ' ')
+                print(f"      -> Trecho de texto do HTML: '{snippet}'")
             
     print("✅ [Etapa Prata] Concluída!")
 

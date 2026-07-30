@@ -164,6 +164,13 @@ def fase_bronze():
                 
                 html_renderizado = page.content()
                 
+                title = page.title()
+                curr_url = page.url
+                html_len = len(html_renderizado)
+                print(f"   🔍 [DIAGNÓSTICO ML BRONZE] Título: '{title}' | URL: '{curr_url}' | Tamanho HTML: {html_len} bytes")
+                if "captcha" in curr_url.lower() or "blocked" in title.lower() or "denied" in title.lower():
+                    print(f"   ⚠️ ALERTA DE BLOQUEIO [ML]: O Mercado Livre enviou página de captcha/bloqueio!")
+
                 # Salva o arquivo Bronze localmente
                 bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{pagina}.html")
                 with open(bronze_path, "w", encoding="utf-8") as f:
@@ -359,6 +366,15 @@ def fase_ouro():
             except Exception as e:
                 continue
   
+        if len(resultados_ouro) == 0:
+            print(f"   ⚠️ DIAGNÓSTICO ML OURO: 0 produtos extraídos para o termo '{termo}'!")
+            h2_list = [t.text.strip()[:40] for t in soup.find_all("h2")[:5]]
+            print(f"      -> Primeiros H2s no HTML: {h2_list}")
+            print(f"      -> Quantidade de links <a> no HTML: {len(soup.find_all('a'))}")
+            print(f"      -> Quantidade de <li> no HTML: {len(soup.find_all('li'))}")
+            snippet = soup.text.strip()[:200].replace('\n', ' ')
+            print(f"      -> Trecho de texto do HTML: '{snippet}'")
+
         print(f"   🥇 OURO: {len(resultados_ouro)} produtos extraídos para o termo '{termo}'.")
         todos_dados_ouro.extend(resultados_ouro)
   

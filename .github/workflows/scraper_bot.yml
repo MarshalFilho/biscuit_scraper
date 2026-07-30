@@ -32,3 +32,10 @@ jobs:
           SUPABASE_USER_ID: ${{ secrets.SUPABASE_USER_ID }}
         run: |
           python src/main.py --plataforma todos --cloud
+
+      - name: 📤 Salvar Artefato HTML para Diagnóstico Auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-debug-files
+          path: data/
