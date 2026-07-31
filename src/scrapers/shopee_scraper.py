@@ -88,7 +88,22 @@ def fase_bronze():
         
         auth_path = os.path.join(AUTH_DIR, "auth_shopee.json")
         context_args = {
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "viewport": {"width": 1366, "height": 768},
+            "locale": "pt-BR",
+            "timezone_id": "America/Sao_Paulo",
+            "extra_http_headers": {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+                "sec-ch-ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"Windows"',
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "none",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1"
+            }
         }
         if os.path.exists(auth_path):
             context_args["storage_state"] = auth_path
@@ -96,8 +111,13 @@ def fase_bronze():
         context = browser.new_context(**context_args)
 
         for termo in config.get_termos_busca():
-            # Abrir uma nova aba por termo de busca evita cache/cookies suspeitos acumulados
             page = context.new_page()
+            page.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+                Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
+                window.chrome = { runtime: {} };
+            """)
             nome_arquivo_base = termo.replace(" ", "_")
             print(f"\n🔎 Termo de busca: '{termo}'")
             
