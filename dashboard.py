@@ -161,9 +161,51 @@ def load_insights():
             return None
     return None
 
-# Título Principal
-st.markdown("<h1 class='premium-title'>✨ Biscuit Scraper Pro</h1>", unsafe_allow_html=True)
-st.markdown("<p class='premium-subtitle'>Plataforma de inteligência avançada para monitoramento do mercado de Biscuit.</p>", unsafe_allow_html=True)
+# Header com Botão de Modo Escuro Visível
+col_head1, col_head2 = st.columns([4, 1])
+
+with col_head1:
+    st.markdown("<h1 class='premium-title'>✨ Biscuit Scraper Pro</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='premium-subtitle'>Plataforma de inteligência avançada para monitoramento do mercado de Biscuit.</p>", unsafe_allow_html=True)
+
+with col_head2:
+    st.write("")
+    st.write("")
+    modo_escuro = st.toggle("🌙 Modo Escuro", value=False)
+
+if modo_escuro:
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #121214 !important;
+            color: #F4F4F5 !important;
+        }
+        div[data-testid="metric-container"] {
+            background: rgba(30, 30, 35, 0.8) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        div[data-testid="metric-container"] * {
+            color: #F4F4F5 !important;
+        }
+        .ai-card {
+            background: linear-gradient(135deg, rgba(255,107,53,0.15) 0%, rgba(255,192,0,0.15) 100%) !important;
+            color: #F4F4F5 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <style>
+        .stApp {
+            background-color: #FAFAFA !important;
+            color: #18181B !important;
+        }
+        div[data-testid="metric-container"] {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
 # Criar Tabs (Adicionado Aba de Insights)
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard Analítico", "🧠 Insights da IA", "⚙️ Configurações", "🚀 Centro de Extração"])
