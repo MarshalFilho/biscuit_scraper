@@ -25,8 +25,28 @@ def gerar_relatorio_insights():
         produtos = res.data or []
         
     except Exception as e:
-        print(f"⚠️ Aviso ao conectar no Supabase para insights: {e}. Gerando relatório com estrutura local...")
+        print(f"⚠️ Aviso ao conectar no Supabase para insights: {e}. Lendo arquivos JSON locais (Fallback)...")
         produtos = []
+
+    # Fallback para arquivos locais se não houver dados
+    if not produtos:
+        for p_name, filepath in [("meli", "data/mercado_livre/ouro/dados_meli.json"), ("shopee", "data/shopee/ouro/dados_shopee.json")]:
+            full_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), filepath)
+            if os.path.exists(full_path):
+                try:
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        dados = json.load(f)
+                        for d in dados:
+                            produtos.append({
+                                "plataforma": p_name,
+                                "titulo": d.get("titulo", ""),
+                                "link": d.get("url_anuncio", ""),
+                                "vendedor": d.get("nome_loja", ""),
+                                "categoria_ia": d.get("categoria_ia", ""),
+                                "historico_coletas": [{"preco": float(d.get("preco", 0)), "vendas_totais": int(d.get("vendas_quantidade", 0))}]
+                            })
+                except Exception as ex:
+                    print(f"Erro ao ler {filepath}: {ex}")
 
     # Processamento estatístico
     vendedores_map = {}

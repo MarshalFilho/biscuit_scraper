@@ -45,17 +45,17 @@ def extrair_preco_card_meli(produto):
     """
     container_atual = produto.find(class_=re.compile(r"poly-price__current|andes-money-amount--main-price|poly-component__price"))
     if not container_atual:
-        cand_amounts = produto.find_all("span", class_="andes-money-amount")
+        cand_amounts = produto.find_all("span", class_=re.compile(r"andes-money-amount|price-tag-amount"))
         for cand in cand_amounts:
             parent_classes = " ".join([c for parent in cand.parents for c in parent.get("class", [])])
-            if "previous" not in parent_classes and "original" not in parent_classes and "installment" not in parent_classes:
+            if "previous" not in parent_classes and "original" not in parent_classes and "installment" not in parent_classes and "poly-price__installments" not in parent_classes:
                 container_atual = cand
                 break
     if not container_atual:
         container_atual = produto
 
-    frac_tag = container_atual.find("span", class_="andes-money-amount__fraction")
-    cents_tag = container_atual.find("span", class_="andes-money-amount__cents")
+    frac_tag = container_atual.find("span", class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
+    cents_tag = container_atual.find("span", class_=re.compile(r"andes-money-amount__cents|price-tag-cents"))
     raw_text = container_atual.text.strip()
     
     if frac_tag:

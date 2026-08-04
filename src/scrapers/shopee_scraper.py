@@ -45,6 +45,10 @@ def extrair_preco_card_shopee(produto):
         for elem in elementos_preco:
             p_elem = elem.parent
             if p_elem:
+                parent_classes = " ".join([c for p in p_elem.parents for c in p.get("class", [])])
+                if "discount" in parent_classes.lower() or "original" in parent_classes.lower():
+                    continue
+                    
                 full_txt = p_elem.parent.text if p_elem.text.strip() == "R$" and p_elem.parent else p_elem.text
                 val = limpar_preco(full_txt)
                 if val > 0:

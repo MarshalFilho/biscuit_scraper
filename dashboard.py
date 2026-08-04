@@ -15,34 +15,76 @@ from config import carregar_config, salvar_config, REPORTS_DIR, DATA_DIR
 # Configuração da Página
 st.set_page_config(page_title="Biscuit Scraper Pro", layout="wide", page_icon="✨")
 
-# --- INJEÇÃO DE CSS PREMIUM ---
+# --- INJEÇÃO DE CSS PREMIUM (Light Mode Principal) ---
 st.markdown("""
     <style>
+    /* Estilo Base: Glassmorphism suave focado no Light Mode (se adapta ao Dark via propriedades nativas do ST) */
     div[data-testid="metric-container"] {
-        background: linear-gradient(145deg, #1e1e24, #2a2a35);
-        border: 1px solid #3a3a4a;
-        padding: 15px 20px;
-        border-radius: 12px;
-        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.4);
-        transition: transform 0.2s;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
+    
+    /* Hover effect */
     div[data-testid="metric-container"]:hover {
-        transform: translateY(-3px);
-        box-shadow: 0px 12px 20px rgba(0, 0, 0, 0.6);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.05);
         border-color: #FF6B35;
     }
+    
+    /* Se o usuário mudar o tema do Streamlit para Dark, ajustamos as métricas */
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="metric-container"] {
+            background: rgba(30, 30, 35, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+    }
+
     .premium-title {
-        font-size: 3rem;
-        font-weight: 800;
+        font-size: 3.5rem;
+        font-weight: 900;
         background: -webkit-linear-gradient(45deg, #FF6B35, #FFC000);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin-bottom: 0px;
+        letter-spacing: -1px;
     }
+    
     .premium-subtitle {
-        color: #A0A0B0;
-        font-size: 1.1rem;
+        color: #71717A;
+        font-size: 1.2rem;
+        font-weight: 500;
         margin-bottom: 30px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .premium-subtitle {
+            color: #A1A1AA;
+        }
+    }
+
+    /* Cards da IA */
+    .ai-card {
+        background: linear-gradient(135deg, rgba(255,107,53,0.1) 0%, rgba(255,192,0,0.1) 100%);
+        border-left: 4px solid #FF6B35;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    @media (prefers-color-scheme: dark) {
+        .ai-card {
+            background: linear-gradient(135deg, rgba(255,107,53,0.05) 0%, rgba(255,192,0,0.05) 100%);
+        }
+    }
+    .ai-card h4 {
+        margin-top: 0;
+        color: #FF6B35;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -109,12 +151,22 @@ def load_data():
     return pd.DataFrame()
 
 
+def load_insights():
+    insights_path = os.path.join(DATA_DIR, "ouro", "insights_executivos.json")
+    if os.path.exists(insights_path):
+        try:
+            with open(insights_path, 'r', encoding='utf-8') as file:
+                return json.load(file)
+        except Exception:
+            return None
+    return None
+
 # Título Principal
 st.markdown("<h1 class='premium-title'>✨ Biscuit Scraper Pro</h1>", unsafe_allow_html=True)
 st.markdown("<p class='premium-subtitle'>Plataforma de inteligência avançada para monitoramento do mercado de Biscuit.</p>", unsafe_allow_html=True)
 
-# Criar Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Dashboard Analítico", "⚙️ Configurações da IA", "🚀 Centro de Extração"])
+# Criar Tabs (Adicionado Aba de Insights)
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard Analítico", "🧠 Insights da IA", "⚙️ Configurações", "🚀 Centro de Extração"])
 
 # ================================
 # TAB 1: VISÃO GERAL (DASHBOARD)
@@ -125,7 +177,7 @@ with tab1:
     if df.empty:
         st.info("Nenhum dado encontrado. Vá até o 'Centro de Extração' para buscar os dados das lojas.")
     else:
-        # Filtros Movidos da Sidebar para o Centro da Tela (Design Limpo)
+        # Filtros no Centro da Tela
         with st.expander("🎛️ Filtros Avançados", expanded=False):
             col_f1, col_f2, col_f3 = st.columns(3)
             
@@ -154,6 +206,7 @@ with tab1:
             (df_loja["preco"] >= filtro_preco[0]) & (df_loja["preco"] <= filtro_preco[1])
         ]
         
+        # Métricas Premium
         col1, col2, col3 = st.columns(3)
         col1.metric("📦 Anúncios Encontrados", f"{len(df_filtrado)}")
         col2.metric("💰 Preço Médio (R$)", f"R$ {df_filtrado['preco'].mean():.2f}" if len(df_filtrado) > 0 else "R$ 0,00")
@@ -161,14 +214,17 @@ with tab1:
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         colA, colB = st.columns(2)
-        plotly_template = "plotly_dark"
+        
+        # Detecta tema atual do streamlit (Light ou Dark)
+        # O plotly por si só já se adapta se deixarmos o template padrão ou o "streamlit"
         
         with colA:
             contagem = df_filtrado["plataforma"].value_counts().reset_index()
             contagem.columns = ["Plataforma", "Quantidade"]
-            fig_pie = px.pie(contagem, values="Quantidade", names="Plataforma", title="Market Share (Anúncios por Loja)", hole=0.5, 
-                             color_discrete_sequence=["#FF6B35", "#FFE600", "#4CAF50"], template=plotly_template)
-            fig_pie.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+            fig_pie = px.pie(contagem, values="Quantidade", names="Plataforma", title="Market Share (Anúncios por Loja)", hole=0.45, 
+                             color_discrete_sequence=["#FF6B35", "#3B82F6", "#4CAF50"])
+            fig_pie.update_traces(hoverinfo='label+percent', textinfo='value', textfont_size=16)
+            fig_pie.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=50, b=10, l=10, r=10))
             st.plotly_chart(fig_pie, use_container_width=True)
             
         with colB:
@@ -176,34 +232,30 @@ with tab1:
             vendas_termo = vendas_termo.sort_values(by="vendas_quantidade", ascending=False).head(10)
             fig_bar = px.bar(vendas_termo, x="vendas_quantidade", y="termo_busca", orientation='h', 
                              title="Top 10 Nichos mais Vendidos", color="vendas_quantidade", 
-                             color_continuous_scale="Sunset", template=plotly_template)
-            fig_bar.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                             color_continuous_scale="Oryel") # Oryel combina com laranja/amarelo
+            fig_bar.update_layout(yaxis={'categoryorder':'total ascending'}, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=50, b=10, l=10, r=10))
             st.plotly_chart(fig_bar, use_container_width=True)
             
         st.subheader("Relação: Preço x Quantidade de Vendas")
         fig_scatter = px.scatter(df_filtrado, x="preco", y="vendas_quantidade", color="plataforma", 
-                                 hover_data=["titulo", "termo_busca"], size_max=12, opacity=0.8,
-                                 color_discrete_sequence=["#FF6B35", "#FFE600", "#4CAF50"], template=plotly_template)
-        fig_scatter.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+                                 hover_data=["titulo", "termo_busca"], size_max=12, opacity=0.7,
+                                 color_discrete_sequence=["#FF6B35", "#3B82F6", "#4CAF50"])
+        fig_scatter.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(t=10, b=10, l=10, r=10))
         st.plotly_chart(fig_scatter, use_container_width=True)
         
         st.divider()
         st.subheader("Base de Dados Completa")
         
-        # Lógica de Busca e Exportação
         col_search, col_export = st.columns([4, 1])
-        
         with col_search:
             busca_query = st.text_input("🔍 Pesquisar por título do produto:", placeholder="Digite para filtrar os resultados...")
             
-        # Filtra pelo texto digitado
         if busca_query:
             df_final = df_filtrado[df_filtrado["titulo"].str.contains(busca_query, case=False, na=False)]
         else:
             df_final = df_filtrado.copy()
             
         with col_export:
-            # Botão de exportação
             csv = df_final.to_csv(index=False).encode('utf-8')
             st.download_button(
                 label="📥 Exportar CSV",
@@ -223,12 +275,69 @@ with tab1:
         )
 
 # ================================
-# TAB 2: CONFIGURAÇÕES
+# TAB 2: INSIGHTS DA IA
 # ================================
 with tab2:
-    st.markdown("### 🧠 Treinamento do Robô")
-    st.write("Configure como a IA deve buscar os dados na internet.")
+    st.markdown("### 🧠 Insights Executivos")
+    st.write("Relatórios gerados automaticamente pela Inteligência Artificial após cada varredura.")
+    st.divider()
     
+    insights = load_insights()
+    
+    if insights:
+        st.caption(f"Última atualização: {insights.get('atualizado_em', 'Desconhecida')}")
+        
+        modulos = insights.get('modulos', [])
+        
+        # Renderização dinâmica dos módulos da IA
+        for i in range(0, len(modulos), 2):
+            col_ia1, col_ia2 = st.columns(2)
+            
+            mod_1 = modulos[i]
+            with col_ia1:
+                st.markdown(f"""
+                <div class="ai-card">
+                    <h4>{mod_1['titulo']}</h4>
+                    <p>{mod_1['resumo']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                if mod_1['tipo'] == 'vendedores':
+                    st.dataframe(pd.DataFrame(mod_1['itens']), use_container_width=True)
+                elif mod_1['tipo'] in ['produtos', 'palavras_chave']:
+                    st.dataframe(pd.DataFrame(mod_1['itens']), use_container_width=True)
+                else:
+                    st.json(mod_1['itens'])
+            
+            if i + 1 < len(modulos):
+                mod_2 = modulos[i+1]
+                with col_ia2:
+                    st.markdown(f"""
+                    <div class="ai-card">
+                        <h4>{mod_2['titulo']}</h4>
+                        <p>{mod_2['resumo']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if mod_2['tipo'] == 'faixas_preco':
+                        fig = px.bar(pd.DataFrame(mod_2['itens']), x='faixa', y='vendas', color='vendas', color_continuous_scale="Oryel")
+                        st.plotly_chart(fig, use_container_width=True)
+                    elif mod_2['tipo'] == 'plataformas':
+                        fig = px.pie(pd.DataFrame(mod_2['itens']), values='vendas', names='plataforma', hole=0.5, color_discrete_sequence=["#FF6B35", "#3B82F6"])
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        for item in mod_2['itens']:
+                            st.info(list(item.values())[0])
+            st.write("---")
+            
+    else:
+        st.warning("Nenhum Insight da IA encontrado. Vá até a aba 'Centro de Extração' e rode os scrapers para gerar o primeiro relatório!")
+
+
+# ================================
+# TAB 3: CONFIGURAÇÕES
+# ================================
+with tab3:
+    st.markdown("### ⚙️ Treinamento do Robô")
+    st.write("Configure como a plataforma deve buscar os dados na internet.")
     st.divider()
     
     col_c1, col_c2, col_c3 = st.columns(3)
@@ -249,7 +358,6 @@ with tab2:
         st.markdown("#### 📄 Profundidade (Páginas)")
         st.write("Quantas páginas navegar em cada busca:")
         
-        # Slider altera diretamente no session state
         max_pgs = st.slider("Páginas por termo:", min_value=1, max_value=10, 
                             value=st.session_state.config.get("MAX_PAGINAS", 1), 
                             label_visibility="collapsed")
@@ -259,15 +367,15 @@ with tab2:
             update_config()
 
 # ================================
-# TAB 3: EXECUTAR
+# TAB 4: EXECUTAR
 # ================================
-with tab3:
+with tab4:
     st.markdown("### 🚀 Iniciar Varredura de Mercado")
-    st.write("Inicie os rastreadores web. Eles vão navegar silenciosamente, extrair os dados e cruzar informações.")
+    st.write("Inicie os rastreadores web. Eles vão navegar silenciosamente, extrair os dados e acionar a IA no final para cruzar informações.")
     
     plataforma_run = st.radio("Selecione o Alvo:", ["Ambas (Mercado Livre + Shopee)", "Apenas Mercado Livre", "Apenas Shopee"], horizontal=True)
     
-    if st.button("▶️ Iniciar Rastreadores Automáticos", type="primary", use_container_width=True):
+    if st.button("▶️ Iniciar Rastreadores Automáticos (IA Incluída)", type="primary", use_container_width=True):
         st.divider()
         
         flag = "--plataforma todos"
@@ -276,24 +384,22 @@ with tab3:
             
         cmd = f'"{sys.executable}" -u src/main.py {flag}'
         
-        # Em vez do terminal preto, usamos o st.status para uma UI clean e elegante
-        with st.status("🕵️‍♀️ Varrendo as plataformas de e-commerce... (clique para expandir os detalhes)", expanded=False) as status:
-            # Habilitar explicitamente encoding='utf-8' e errors='replace' previne quebras por causa de emojis e acentuações no CMD do Windows
+        with st.status("🕵️‍♀️ Varrendo as plataformas de e-commerce e rodando Inteligência Artificial...", expanded=True) as status:
             process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, encoding="utf-8", errors="replace")
             
-            # Aqui imprimimos os logs no fundo do st.status, que fica oculto se não for expandido
             for linha in process.stdout:
                 st.write(linha.strip())
-                # Atualizamos levemente a label para dar sensação de progresso real
                 if "Acessando" in linha or "Termo de busca" in linha or "Processando página" in linha:
                     status.update(label=f"🔄 Processando: {linha.strip()}", state="running")
+                elif "IA" in linha or "Insights" in linha:
+                    status.update(label=f"🧠 Módulo de Inteligência Artificial: {linha.strip()}", state="running")
                 
             process.stdout.close()
             return_code = process.wait()
             
             if return_code == 0:
-                status.update(label="🎉 Rastreamento Finalizado com Sucesso!", state="complete", expanded=False)
-                st.success("Tudo pronto! Volte para a aba 'Dashboard Analítico' para explorar os novos dados.")
+                status.update(label="🎉 Rastreamento e Geração de Insights Finalizados com Sucesso!", state="complete", expanded=False)
+                st.success("Tudo pronto! Vá para a aba '🧠 Insights da IA' para conferir o novo relatório executivo.")
                 st.balloons()
             else:
                 status.update(label="❌ Ocorreu um erro durante a varredura.", state="error", expanded=True)

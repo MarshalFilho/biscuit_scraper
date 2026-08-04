@@ -36,7 +36,7 @@ def sincronizar_sessao_nuvem(user_id):
     except Exception as e:
         print(f"⚠️ Aviso ao sincronizar sessão da nuvem: {e}")
 
-def executar_scrapers(plataforma, user_id, rodar_ia=False):
+def executar_scrapers(plataforma, user_id, rodar_ia=True):
     from utils.supabase_client import atualizar_status_scraper
     if plataforma in ["meli", "todos"]:
         print("\n=== Executando Scraper Mercado Livre ===")

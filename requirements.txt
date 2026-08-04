@@ -5,3 +5,4 @@ xlsxwriter
 playwright
 supabase
 python-dotenv
+curl_cffi
