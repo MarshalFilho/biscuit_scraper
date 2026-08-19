@@ -1,4 +1,10 @@
 import os
+import sys
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -83,8 +89,11 @@ def recarregar_config():
 recarregar_config()
 
 # Funções Getters Dinâmicas para os Scrapers
+def get_nome_projeto(): return config_atual.get("nome_projeto", "Market Scraper Pro")
+def get_nicho_atual(): return config_atual.get("nicho_atual", "biscuit")
 def get_termos_busca(): return config_atual["termos_busca"]
 def get_blacklist(): return config_atual["blacklist"]
+def get_produtos_bloqueados(): return config_atual.get("blocked_products", [])
 def get_palavras_negativas_exatas(): return config_atual["palavras_negativas_exatas"]
 def get_regras_tipo_produto(): return config_atual["regras_tipo_produto"]
 def get_regras_conteudo_busca(): return config_atual["regras_conteudo_busca"]

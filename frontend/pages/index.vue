@@ -64,17 +64,6 @@
             </div>
           </div>
 
-          <!-- Período de Análise -->
-          <div class="filter-group">
-            <label>Intervalo de Datas (Período):</label>
-            <select v-model="selectedTimeframe" class="glass-input highlight-select">
-              <option value="7">📅 Últimos 7 Dias</option>
-              <option value="15">📅 Últimos 15 Dias</option>
-              <option value="30">📅 Últimos 30 Dias</option>
-              <option value="all">♾️ Todo o Histórico</option>
-            </select>
-          </div>
-
           <!-- Categoria -->
           <div class="filter-group">
             <label>Categoria:</label>
@@ -110,36 +99,78 @@
         </div>
       </div>
 
-      <!-- Métricas Globais (KPIs) -->
-      <KpiCards 
-        :totalProducts="totalProducts"
-        :averagePrice="averagePrice"
-        :topPlatform="topPlatform"
-        :topProduct="topProduct"
-        :estimatedRevenue="estimatedRevenue"
-        :dateRangeText="dateRangeText"
+      <!-- Linha do Tempo Interativa de Coletas (Timeline & Date Picker) -->
+      <TimelineScrapeSelector 
+        :rawItems="productsRaw" 
+        @select-date="onTimelineSelectDate"
+        @compare-dates="onTimelineCompareDates"
       />
 
-      <div class="content-grid">
-        <!-- Tabela Principal -->
-        <DataTable :items="filteredProducts" class="full-width" />
-        
-        <!-- Linha 1 de Gráficos: Top Produtos + Barras de Faixa de Preço -->
-        <div class="charts-row">
-          <TopProductsChart :items="filteredProducts" class="half-width" />
-          <PriceVsSalesChart :items="filteredProducts" class="half-width" />
-        </div>
-        
-        <!-- Linha 2 de Gráficos: Vendedores em Destaque + Participação de Mercado -->
-        <div class="charts-row">
-          <TopSellersChart :items="filteredProducts" class="half-width" />
-          <MarketShareChart :items="filteredProducts" class="half-width" />
-        </div>
+      <!-- Barra de Navegação entre Visões de Inteligência de Mercado -->
+      <div class="view-tabs-bar glass-panel animate-fade-in">
+        <button 
+          :class="['tab-btn', { active: activeViewTab === 'overview' }]" 
+          @click="activeViewTab = 'overview'"
+        >
+          📊 Visão Geral de Mercado
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeViewTab === 'trending' }]" 
+          @click="activeViewTab = 'trending'"
+        >
+          🚀 Produtos em Alta & Aceleração
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeViewTab === 'pricing' }]" 
+          @click="activeViewTab = 'pricing'"
+        >
+          🏷️ Estratégias de Preço & Oportunidades
+        </button>
+      </div>
 
-        <!-- Linha 3 de Gráficos: Distribuição de Preços -->
-        <div class="charts-row">
-          <PriceDistributionChart :items="filteredProducts" class="full-width" />
+      <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Tabela e Gráficos) -->
+      <div v-if="activeViewTab === 'overview'">
+        <!-- Métricas Globais (KPIs) -->
+        <KpiCards 
+          :totalProducts="totalProducts"
+          :averagePrice="averagePrice"
+          :topPlatform="topPlatform"
+          :topProduct="topProduct"
+          :estimatedRevenue="estimatedRevenue"
+          :dateRangeText="dateRangeText"
+        />
+
+        <div class="content-grid">
+          <!-- Tabela Principal -->
+          <DataTable :items="filteredProducts" @delete-product="onDeleteProduct" class="full-width" />
+          
+          <!-- Linha 1 de Gráficos: Top Produtos + Barras de Faixa de Preço -->
+          <div class="charts-row">
+            <TopProductsChart :items="filteredProducts" class="half-width" />
+            <PriceVsSalesChart :items="filteredProducts" class="half-width" />
+          </div>
+          
+          <!-- Linha 2 de Gráficos: Vendedores em Destaque + Participação de Mercado -->
+          <div class="charts-row">
+            <TopSellersChart :items="filteredProducts" class="half-width" />
+            <MarketShareChart :items="filteredProducts" class="half-width" />
+          </div>
+
+          <!-- Linha 3 de Gráficos: Distribuição de Preços -->
+          <div class="charts-row">
+            <PriceDistributionChart :items="filteredProducts" class="full-width" />
+          </div>
         </div>
+      </div>
+
+      <!-- VISÃO 2: Ranking de Aceleração & Tendências -->
+      <div v-else-if="activeViewTab === 'trending'">
+        <TrendingProductsTab :products="filteredProducts" />
+      </div>
+
+      <!-- VISÃO 3: Monitor de Estratégias de Preço -->
+      <div v-else-if="activeViewTab === 'pricing'">
+        <PriceStrategyMonitor :products="filteredProducts" />
       </div>
     </div>
   </div>
@@ -157,6 +188,10 @@ import MarketShareChart from '~/components/MarketShareChart.client.vue'
 import PriceDistributionChart from '~/components/PriceDistributionChart.client.vue'
 import TopSellersChart from '~/components/TopSellersChart.client.vue'
 
+import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
+import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
+import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
+
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
 
@@ -166,9 +201,63 @@ const error = ref(null)
 const authUser = ref(null)
 const nomeProjeto = ref('Scraper Pro')
 
+// Estado das Visões da Dashboard
+const activeViewTab = ref('overview') // 'overview', 'trending', 'pricing'
+const timelineSelectedDate = ref(null)
+
+function onTimelineSelectDate(dateStr) {
+  timelineSelectedDate.value = dateStr
+}
+
+function onTimelineCompareDates({ dateA, dateB }) {
+  console.log("Comparando datas:", dateA, dateB)
+}
+
 // Configurações e Categorias dinâmicas
 const blacklist = ref([])
+const blockedProducts = ref([]) // Lista de objetos/links de produtos excluídos manualmente
 const categoryRules = ref([])
+
+function loadBlockedProducts() {
+  const savedBlocked = localStorage.getItem('scraper_blocked_products')
+  if (savedBlocked) {
+    try {
+      blockedProducts.value = JSON.parse(savedBlocked)
+    } catch (e) {
+      blockedProducts.value = []
+    }
+  }
+}
+
+async function onDeleteProduct(product) {
+  const identifier = product.link || product.id || product.titulo
+  const exists = blockedProducts.value.some(p => (typeof p === 'string' ? p === identifier : (p.link === product.link || p.id === product.id)))
+  
+  if (!exists) {
+    const itemToBlock = {
+      id: product.id,
+      titulo: product.titulo,
+      link: product.link,
+      plataforma: product.plataforma,
+      preco: product.preco,
+      bloqueado_em: new Date().toISOString()
+    }
+    blockedProducts.value.push(itemToBlock)
+    localStorage.setItem('scraper_blocked_products', JSON.stringify(blockedProducts.value))
+    
+    // Tenta salvar na nuvem se autenticado
+    if (authUser.value) {
+      try {
+        await supabase.from('configuracoes_scraper').upsert({
+          user_id: authUser.value.id,
+          blocked_products: blockedProducts.value
+        }, { onConflict: 'user_id' })
+      } catch (e) {
+        console.warn("Erro ao salvar blocked_products no Supabase:", e)
+      }
+    }
+  }
+}
 
 function onUpdateBlacklist(list) { blacklist.value = list }
 function onUpdateCategories(rules) { categoryRules.value = rules }
@@ -182,15 +271,33 @@ const maxPrice = ref(null)
 const minSales = ref(null)
 const hideZeroSales = ref(false)
 
+const defaultCategoryRules = [
+  { keyword: 'vela', category: 'Velas de Aniversário' },
+  { keyword: 'topo', category: 'Topos de Bolo' },
+  { keyword: 'noivinho', category: 'Topos de Bolo' },
+  { keyword: 'lembrancinha', category: 'Lembrancinhas' },
+  { keyword: 'chaveiro', category: 'Chaveiros' },
+  { keyword: 'massa', category: 'Kits & Insumos' },
+  { keyword: 'base', category: 'Kits & Insumos' },
+  { keyword: 'cortador', category: 'Kits & Insumos' },
+  { keyword: 'boneco', category: 'Bonecos & Esculturas' },
+  { keyword: 'funko', category: 'Bonecos & Esculturas' },
+  { keyword: 'escultura', category: 'Bonecos & Esculturas' }
+]
+
+const activeCategoryRules = computed(() => {
+  return categoryRules.value && categoryRules.value.length > 0 ? categoryRules.value : defaultCategoryRules
+})
+
 const dynamicCategories = computed(() => {
-  const cats = new Set(categoryRules.value.map(r => r.category))
+  const cats = new Set(activeCategoryRules.value.map(r => r.category))
   cats.add('Outros')
   return Array.from(cats)
 })
 
 function getCategoryByRules(title) {
-  const t = title.toLowerCase()
-  for (const rule of categoryRules.value) {
+  const t = (title || '').toLowerCase()
+  for (const rule of activeCategoryRules.value) {
     if (t.includes(rule.keyword.toLowerCase())) return rule.category
   }
   return 'Outros'
@@ -254,16 +361,25 @@ const lastScrapeFormatted = computed(() => {
 onMounted(async () => {
   try {
     loading.value = true
+    loadBlockedProducts()
     
-    // Tenta carregar o relatório de IA se houver no Supabase
+    // Tenta carregar relatorio de inteligencia executiva local ou nuvem
     try {
-      const { data: cfg } = await supabase.from('configuracoes_scraper').select('relatorio_insights').limit(1).single()
-      if (cfg && cfg.relatorio_insights) {
-        aiReportData.value = cfg.relatorio_insights
+      const localReport = await $fetch('/api/report')
+      if (localReport) {
+        aiReportData.value = localReport
       }
     } catch (e) {
-      // Usa o fallback mock padrão do componente AiExecutiveReport
+      console.warn("API Report local indisponivel:", e)
     }
+
+    try {
+      const { data: cfg } = await supabase.from('configuracoes_scraper').select('blocked_products').limit(1).single()
+      if (cfg && cfg.blocked_products && Array.isArray(cfg.blocked_products)) {
+        blockedProducts.value = cfg.blocked_products
+        localStorage.setItem('scraper_blocked_products', JSON.stringify(cfg.blocked_products))
+      }
+    } catch (e) {}
 
     const { data: prodData, error: prodErr } = await supabase
       .from('produtos')
@@ -357,6 +473,14 @@ const processedProducts = computed(() => {
     .filter(p => {
       const t = p.titulo.toLowerCase()
       if (blacklist.value.some(word => t.includes(word))) return false
+      
+      const isBlocked = blockedProducts.value.some(b => {
+        if (!b) return false
+        if (typeof b === 'string') return b === p.link || b === p.id || b === p.titulo
+        return (b.link && b.link === p.link) || (b.id && b.id === p.id) || (b.titulo && b.titulo === p.titulo)
+      })
+      if (isBlocked) return false
+
       return true
     })
     .sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0))
@@ -451,5 +575,46 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.view-tabs-bar {
+  display: flex;
+  gap: 0.75rem;
+  background: #ffffff;
+  padding: 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.tab-btn {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 0.75rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.25 ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.tab-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.tab-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 </style>

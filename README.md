@@ -1,128 +1,181 @@
-# Pipeline de Inteligência e Extração para E-commerce
+# 🚀 E-Commerce Market Intelligence & AI Scraping Engine
 
-Este é um pipeline automatizado de raspagem de dados e inteligência competitiva para e-commerce. O sistema utiliza **Playwright** e **BeautifulSoup** para pesquisar termos, extrair informações estruturadas de anúncios (título, preço, volume de vendas, link) do Mercado Livre, Shopee e Elo7, aplicando filtros dinâmicos de relevância antes de consolidar tudo em um relatório premium no **Excel** e em um **Dashboard Interativo** via Streamlit.
+Pipeline autônomo e genérico de raspagem de dados, inteligência competitiva e análise preditiva de mercado para e-commerce (Mercado Livre e Shopee). 
 
-O projeto segue a **Arquitetura Medalhão (Medallion Architecture)** para gerenciamento e limpeza de dados (divido em camadas Bronze, Prata e Ouro) e foi reestruturado de forma totalmente genérica, permitindo analisar qualquer nicho de mercado (como biscuit, crochê, velas, MDF, etc.) apenas alterando configurações simples.
+O sistema coleta dados de preços, estoque e velocidade de vendas, armazena em **PostgreSQL (Supabase)**, sintetiza insights estratégicos via **Google Gemini AI** e disponibiliza um dashboard em **Nuxt 3** com animações fluidas, skeletons e design moderno.
 
 ---
 
-## 📂 Estrutura do Projeto
+## 🏛️ Arquitetura do Sistema (100% Custo Zero)
+
+O projeto adota uma arquitetura bifurcada e serverless, projetada para operar no **Free Tier perpétuo**:
+
+```
+ ┌────────────────────────────────────────────────────────┐
+ │                   FRONTEND (Vercel)                    │
+ │  Nuxt 3 (SSR/Nitro) + Vue 3 + Tailwind/Glassmorphism   │
+ └───────────────────────────┬────────────────────────────┘
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+ ┌──────────────────────┐          ┌──────────────────────┐
+ │ DATABASE (Supabase)  │          │   ENGINE SCRAPER     │
+ │  PostgreSQL Relativo │          │   Google Cloud Run   │
+ │  + Realtime Status   │          │   Python + Docker    │
+ └──────────────────────┘          └──────────┬───────────┘
+                                              │
+                                              ▼
+                                   ┌──────────────────────┐
+                                   │  IA ANALYTICS ENGINE │
+                                   │  Google Gemini 2.5   │
+                                   └──────────────────────┘
+```
+
+1. **Dashboard Frontend (Vercel)**: Aplicação Nuxt 3 reativa que consome o Supabase em tempo real, exibe gráficos interativos (ApexCharts), ranking de produtos virais, monitor de guerra de preços e relatórios executivos de IA.
+2. **Engine de Extração (Google Cloud Run / Local)**: Robô em Python usando **Playwright**, **curl_cffi** (anti-bot) e **BeautifulSoup**, estruturado sob a **Arquitetura Medalhão** (Bronze ➔ Prata ➔ Ouro).
+3. **Módulo de Inteligência Artificial (Google Gemini)**: Categorização automática de novos produtos e geração de relatórios com 7 pilares estratégicos (Top Vendedores, Produtos Virais, Estratégia de SEO, Faixas de Preço/Oceano Azul, Batalha de Plataformas, Alertas e Recomendações).
+
+---
+
+## 📂 Estrutura de Diretórios
 
 ```text
 biscuit_scraper/
 │
-├── dashboard.py                     # Dashboard interativo em Streamlit (Interface principal)
-├── config_app.json                  # Configurações de busca e filtros persistentes
-├── data/                            # Camadas de dados organizadas por plataforma
-│   ├── auth/                        # Dados de login/sessão persistidos do navegador
-│   │   └── auth.json
-│   └── mercado_livre/               # Dados do Mercado Livre (exemplo de plataforma)
-│       ├── bronze/                  # HTML bruto indexado por termo e página
-│       ├── prata/                   # HTML mesclado e limpo de tags desnecessárias
-│       └── ouro/                    # JSON consolidado, limpo, filtrado e ordenado
-│           └── dados_meli.json
+├── frontend/                        # Dashboard Web em Nuxt 3
+│   ├── assets/css/main.css          # Design System (Glassmorphism, Shimmer Skeletons)
+│   ├── components/                  # Componentes Vue reativos
+│   │   ├── AiExecutiveReport.client.vue  # Relatório executivo de 7 módulos (IA)
+│   │   ├── DataTable.vue            # Tabela de produtos com Infinite Scroll anti-CLS
+│   │   ├── PriceStrategyMonitor.vue # Monitor de aumentos vs guerra de preços
+│   │   ├── TrendingProductsTab.vue  # Ranking de produtos virais / aceleração
+│   │   ├── ScraperConfig.vue        # Central de preferências & disparo com Realtime
+│   │   └── TimelineScrapeSelector.vue # Comparador histórico de coletas
+│   ├── server/api/                  # Server Routes Nitro (Webhooks e proxy Gemini)
+│   ├── biome.json                   # Configuração de Linter & Formatter ultrarrápido
+│   └── playwright.config.ts         # Testes E2E do Frontend
 │
-├── reports/                         # Relatórios exportados para análise humana
-│   └── Relatorio_Inteligencia.xlsx  # Planilha premium gerada automaticamente
+├── src/                             # Engine Python (Scraping & IA)
+│   ├── cloud_server.py              # Microserviço Flask / Webhook para o Cloud Run
+│   ├── main.py                      # Ponto de entrada CLI e execução de pipeline
+│   ├── config.py                    # Gerenciador de configurações e regras de busca
+│   ├── ai/                          # Módulos de IA (Categorizador e Prompts)
+│   ├── scrapers/                    # Robôs de coleta (Mercado Livre e Shopee)
+│   │   ├── meli_scraper.py
+│   │   ├── shopee_scraper.py
+│   │   └── login_session.py
+│   └── utils/                       # Utilitários (Supabase client, Bot detector, AI Engine)
 │
-└── src/                             # Código fonte da aplicação
-    ├── __init__.py
-    ├── config.py                    # Ponte para carregar config_app.json
-    ├── main.py                      # Ponto de entrada central (CLI)
-    │
-    ├── scrapers/                    # Robôs de coleta específicos de cada site
-    │   ├── __init__.py
-    │   ├── meli_scraper.py          # Scraper do Mercado Livre
-    │   ├── shopee_scraper.py        # Scraper da Shopee
-    │   └── elo7_scraper.py          # Scraper do Elo7
-    │
-    └── utils/                       # Ferramentas auxiliares do pipeline
-        ├── __init__.py
-        ├── gerador_excel.py         # Carrega dados Ouro e monta o Excel formatado
-        └── salvar_login.py          # Script para login manual no navegador
+├── tests/                           # Suíte de Testes Automatizados
+│   └── test_parsers.py              # Testes unitários de parsing de preço e links
+│
+├── requirements.txt                 # Dependências Python (Playwright, Supabase, Structlog, Ruff)
+├── AGENTS_GUIDELINES.md             # Diretrizes de Governança, UX e Qualidade para IAs
+├── PLANO_DESENVOLVIMENTO.md         # Roadmap e arquitetura de implantação
+└── .env.example                     # Template de variáveis de ambiente
 ```
 
 ---
 
-## ⚙️ Configurações de Busca e Filtros (`config_app.json`)
+## ⚙️ Variáveis de Ambiente (`.env`)
 
-Todas as regras de relevância e buscas ficam salvas em `config_app.json` e podem ser configuradas de forma visual e direta na aba **"⚙️ Configurações da IA"** do Dashboard Interativo.
+Crie um arquivo `.env` na raiz do projeto com base no [`.env.example`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.env.example):
 
-### Principais parâmetros configuráveis:
+```ini
+# Supabase (Banco de Dados & Autenticação)
+SUPABASE_URL=https://sua-url.supabase.co
+SUPABASE_KEY=sua-service-role-key-aqui
+SUPABASE_USER_ID=seu-uuid-de-usuario-aqui
 
-- `TERMOS_BUSCA`: Lista de palavras a pesquisar nas plataformas.
-- `PALAVRA_OBRIGATORIA_GLOBAL`: Palavra que **deve** aparecer em qualquer anúncio para ele ser válido (ex: `"biscuit"`). Se deixado em branco (`""`), essa verificação é desativada.
-- `PALAVRAS_NEGATIVAS`: Lista de palavras indesejadas (ex: ferramentas, colas, moldes, resina). Se o anúncio tiver alguma delas parcial ou totalmente no título, será sumariamente ignorado.
-- `PALAVRAS_NEGATIVAS_EXATAS`: Palavras descartadas apenas se aparecerem inteiras (evita confundir `"ração"` com `"numeração"`).
-- `REGRAS_TIPO_PRODUTO`: Garante que, se você pesquisar por `"chaveiro"`, o anúncio aceito tenha palavras como `"chaveir"`.
-- `REGRAS_CONTEUDO_BUSCA`: Validações de tema adicionais específicas por termo de busca (ex: se pesquisar `"rim"`, o título precisa ter `"rim"` ou `"rins"`).
+# Frontend Nuxt (Público)
+NUXT_PUBLIC_SUPABASE_URL=https://sua-url.supabase.co
+NUXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-aqui
 
----
+# Inteligência Artificial (Google Gemini)
+GEMINI_API_KEY=sua-gemini-api-key-aqui
 
-## 🚀 Como Usar o Projeto
-
-### 1. Pré-requisitos
-
-Certifique-se de ter o Python 3 instalado. Instale as bibliotecas necessárias rodando no seu terminal:
-
-```powershell
-pip install pandas beautifulsoup4 playwright xlsxwriter openpyxl streamlit plotly
-```
-
-E instale o navegador controlado pelo Playwright:
-
-```powershell
-playwright install
+# Webhook Cloud (Opcional - Google Cloud Run)
+SCRAPER_WEBHOOK_URL=https://seu-servico-cloudrun.a.run.app/trigger
 ```
 
 ---
 
-### 2. Acessar o Dashboard Interativo (Recomendado)
+## 🚀 Como Executar o Projeto
 
-A melhor forma de utilizar o sistema é através do painel visual. No terminal, execute:
+### 1. Rodando o Dashboard Frontend (Nuxt 3)
 
 ```powershell
-streamlit run dashboard.py
+cd frontend
+npm install --legacy-peer-deps
+npm run dev
 ```
 
-Isso abrirá uma página no seu navegador com três abas principais:
-
-1. **📊 Dashboard Analítico:** Visualize gráficos de mercado, os top nichos mais vendidos e explore os anúncios em uma tabela interativa com opções de exportação CSV.
-2. **⚙️ Configurações da IA:** Edite facilmente seus termos de busca, quantidade de páginas e palavras negativas, salvando tudo diretamente no `config_app.json`.
-3. **🚀 Centro de Extração:** Inicie varreduras (robôs) em plataformas (Mercado Livre e Shopee) com apenas um clique e acompanhe os logs em tempo real.
+Acesse no navegador: `http://localhost:3000`
 
 ---
 
-### 3. Comandos de Execução (CLI Opcional)
+### 2. Rodando o Engine de Scraping (Python)
 
-Se você preferir executar sem interface gráfica, você pode usar o terminal gerenciando tudo a partir do arquivo central `src/main.py`.
-
-#### A. Salvar Login (Evitar Bloqueios/Captchas)
-
-Se o Mercado Livre começar a pedir verificação de identidade ou Captchas constantes, você pode logar manualmente uma vez e salvar a sessão no seu computador para o robô utilizar:
+Instale as dependências e o navegador do Playwright:
 
 ```powershell
-py src/main.py --login
+pip install -r requirements.txt
+playwright install chromium
 ```
 
-_Uma janela do navegador Chrome abrirá. Faça login com seu e-mail e senha normalmente. Quando estiver logado na página inicial, volte ao terminal e pressione **ENTER**._
-
-#### B. Rodar a Raspagem Completa via CLI
-
-Para rodar a raspagem (Fases Bronze, Prata e Ouro) para uma plataforma via terminal:
-
+#### A. Execução Manual via Terminal
 ```powershell
-py src/main.py --plataforma meli
+# Executar para todas as plataformas (Meli + Shopee + IA)
+python src/main.py --plataforma todos
+
+# Executar apenas Mercado Livre
+python src/main.py --plataforma meli
+
+# Executar apenas Shopee
+python src/main.py --plataforma shopee
 ```
 
-_Ao final da coleta, ele gerará automaticamente o arquivo Excel atualizado em `reports/Relatorio_Inteligencia.xlsx`._
-
-#### C. Gerar Apenas o Excel
-
-Se você já rodou os scrapers e apenas quer gerar a planilha a partir dos dados já salvos localmente:
-
+#### B. Modo Servidor / Webhook (Cloud Run)
 ```powershell
-py src/main.py --excel
+python src/cloud_server.py
+```
+O servidor escutará na porta `8080` e responderá a requisições `POST /trigger` disparadas pelo Dashboard.
+
+#### C. Salvar Sessão de Login (Evitar CAPTCHAs)
+```powershell
+python src/main.py --login
 ```
 
-> 💡 **Nota sobre Erros de Permissão no Excel:** Se você tentar gerar a planilha enquanto o arquivo `Relatorio_Inteligencia.xlsx` estiver aberto no Microsoft Excel, o script não irá quebrar. Ele exibirá uma mensagem amigável no console solicitando que você feche a planilha e tente novamente.
+---
+
+## 🧪 Qualidade de Código e Testes
+
+O projeto segue padrões de qualidade estritos definidos no [`AGENTS_GUIDELINES.md`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/AGENTS_GUIDELINES.md):
+
+### Python (Backend)
+- **Linter & Formatação com Ruff**:
+  ```powershell
+  python -m ruff check src/ --fix
+  ```
+- **Testes Unitários com Pytest**:
+  ```powershell
+  python -m pytest tests/
+  ```
+
+### TypeScript / Vue (Frontend)
+- **Linter & Formatação com Biome**:
+  ```powershell
+  cd frontend
+  npm run lint
+  ```
+- **Testes E2E com Playwright**:
+  ```powershell
+  cd frontend
+  npm run test:e2e
+  ```
+
+---
+
+## 📄 Licença e Uso
+
+Desenvolvido para fins de inteligência competitiva e automação em e-commerce. Estrutura 100% modular e adaptável para qualquer nicho de produtos.

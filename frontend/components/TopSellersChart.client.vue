@@ -47,7 +47,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(seller, index) in topSellersList" :key="seller.name">
+          <tr v-for="(seller, index) in topSellersList" :key="seller.name" class="clickable-seller-row" @click="selectedSeller = seller">
             <td class="rank-td">#{{ index + 1 }}</td>
             <td class="seller-name-td">
               <span :class="{'text-unregistered': seller.isUnregistered}">{{ seller.name }}</span>
@@ -57,7 +57,11 @@
                 {{ seller.platform === 'meli' ? 'Mercado Livre' : 'Shopee' }}
               </span>
             </td>
-            <td>{{ seller.productCount }} anúncios</td>
+            <td class="ads-count-td">
+              <span class="ads-count-link" title="Clique para ver todos os anúncios deste vendedor">
+                {{ seller.productCount }} {{ seller.productCount === 1 ? 'anúncio' : 'anúncios' }}
+              </span>
+            </td>
             <td class="sales-td">{{ seller.totalSales.toLocaleString('pt-BR') }} un</td>
             <td class="revenue-td">R$ {{ seller.estimatedRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           </tr>
@@ -67,14 +71,15 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Modal com os Anúncios do Vendedor -->
+    <SellerProductsModal :seller="selectedSeller" @close="selectedSeller = null" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import VueApexCharts from 'vue3-apexcharts'
-
-const apexchart = VueApexCharts
+import SellerProductsModal from './SellerProductsModal.vue'
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -82,6 +87,7 @@ const props = defineProps({
 
 const isMounted = ref(false)
 const activeMode = ref('chart')
+const selectedSeller = ref(null)
 
 onMounted(() => { isMounted.value = true })
 
@@ -98,7 +104,7 @@ const topSellersList = computed(() => {
     let isUnregistered = false
 
     if (!name) {
-      name = item.plataforma === 'meli' ? 'Vendedor Mercado Livre (Coleta Antiga)' : 'Vendedor Shopee (Coleta Antiga)'
+      name = item.plataforma === 'meli' ? 'Loja Mercado Livre' : 'Loja Shopee'
       isUnregistered = true
     }
 
@@ -111,7 +117,8 @@ const topSellersList = computed(() => {
         isUnregistered,
         productCount: 0,
         totalSales: 0,
-        estimatedRevenue: 0
+        estimatedRevenue: 0,
+        products: []
       })
     }
 
@@ -119,11 +126,18 @@ const topSellersList = computed(() => {
     entry.productCount += 1
     entry.totalSales += (item.vendas_totais || 0)
     entry.estimatedRevenue += ((item.preco || 0) * (item.vendas_totais || 0))
+    entry.products.push(item)
   }
 
   return Array.from(map.values())
-    .sort((a, b) => b.totalSales - a.totalSales)
-    .slice(0, 8)
+    .sort((a, b) => {
+      const aIsGeneric = (a.name === 'Loja Shopee' || a.name === 'Loja Mercado Livre')
+      const bIsGeneric = (b.name === 'Loja Shopee' || b.name === 'Loja Mercado Livre')
+      if (aIsGeneric && !bIsGeneric) return 1
+      if (!aIsGeneric && bIsGeneric) return -1
+      return b.totalSales - a.totalSales
+    })
+    .slice(0, 10)
 })
 
 const series = computed(() => {
@@ -183,12 +197,12 @@ const chartOptions = computed(() => ({
 .toggle-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
 .toggle-sm.active { background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
 
-.chart-wrapper { min-height: 320px; }
+.chart-wrapper { height: 320px; max-height: 320px; }
 
-.sellers-table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; }
+.sellers-table-wrapper { height: 320px; max-height: 320px; overflow-y: auto; overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; }
 .sellers-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; }
 .sellers-table th, .sellers-table td { padding: 0.75rem 0.9rem; border-bottom: 1px solid #e2e8f0; font-size: 0.88rem; }
-.sellers-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; }
+.sellers-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 .rank-td { font-weight: 700; color: #2563eb; width: 40px; }
 .seller-name-td { font-weight: 600; color: #0f172a; }
 .text-unregistered { color: #64748b; font-style: italic; }
@@ -199,4 +213,14 @@ const chartOptions = computed(() => ({
 .badge-sm.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .badge-sm.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .empty-state { text-align: center; padding: 2rem !important; color: #64748b; font-style: italic; }
+
+.clickable-seller-row { cursor: pointer; transition: background 0.2s ease; }
+.clickable-seller-row:hover { background: #f8fafc; }
+
+.seller-name-td span { transition: color 0.2s ease; }
+.clickable-seller-row:hover .seller-name-td span { color: #2563eb; text-decoration: underline; }
+
+.ads-count-td { white-space: nowrap; }
+.ads-count-link { font-weight: 600; color: #0f172a; transition: color 0.2s ease; white-space: nowrap; }
+.clickable-seller-row:hover .ads-count-link, .ads-count-link:hover { color: #2563eb; text-decoration: underline; }
 </style>

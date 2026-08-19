@@ -7,42 +7,51 @@
     
     <transition name="slide-fade">
       <div v-show="!isCollapsed" class="panel-content">
+        <!-- Banner Especial de Alerta de Captcha -->
+        <div v-if="isCaptchaAlert" class="captcha-alert-banner">
+          <div class="captcha-alert-content">
+            <div class="alert-icon-box">🚨</div>
+            <div class="alert-text-box">
+              <strong>DESAFIO ANTI-ROBÔ / CAPTCHA DETECTADO!</strong>
+              <p>A Shopee ou Mercado Livre exigiu uma validação rápida. Clique ao lado para abrir o Chrome na sua tela, resolver em 10s e liberar o robô.</p>
+            </div>
+          </div>
+          <button @click="triggerWebLogin('todos')" class="btn-resolve-captcha" :disabled="isLoggingIn">
+            <span v-if="isLoggingIn">⏳ Abrindo Chrome...</span>
+            <span v-else>🔑 Resolver Captcha Agora</span>
+          </button>
+        </div>
+
         <!-- 1. Nome do Projeto -->
         <div class="form-group mt-3">
           <label>Nome do Projeto / Nicho:</label>
-          <input type="text" v-model="nomeProjeto" placeholder="Ex: Monitoramento de Biscuit & Artesanato" class="glass-input full-width" :disabled="disparoPendente" />
+          <input type="text" v-model="nomeProjeto" placeholder="Ex: Monitoramento de Nicho / E-commerce" class="glass-input full-width" :disabled="disparoPendente" />
         </div>
 
-        <!-- 2. Modo de Paginação & Autenticação -->
-        <div class="form-group mode-box">
-          <label class="section-label">🔒 Modo de Execução & Autenticação:</label>
-          <div class="mode-options">
-            <label :class="['mode-card', { active: modoPaginacao === 'anonimo' }]">
-              <input type="radio" v-model="modoPaginacao" value="anonimo" :disabled="disparoPendente" />
-              <div class="mode-info">
-                <strong>⚡ Modo Rápido / Anônimo (1 Página por busca)</strong>
-                <p>Não exige login. Coleta os top produtos principais da 1ª página sem risco de bloqueio.</p>
-              </div>
-            </label>
-
-            <label :class="['mode-card', { active: modoPaginacao === 'logado' }]">
-              <input type="radio" v-model="modoPaginacao" value="logado" :disabled="disparoPendente" />
-              <div class="mode-info">
-                <strong>🔑 Modo Profundo / Logado (Múltiplas Páginas)</strong>
-                <p>Coleta até 5+ páginas por busca injetando a sessão autenticada (`auth.json`) salva no Supabase.</p>
-              </div>
-            </label>
+        <!-- 2. Autenticação & Conexão de Contas das Lojas (1-Clique) -->
+        <div class="form-group auth-box">
+          <label class="section-label">🔒 Autenticação & Conexão das Lojas:</label>
+          <div class="auth-card-web">
+            <div class="auth-info-text">
+              <strong>🔑 Conexão Direta das Lojas (Mercado Livre & Shopee)</strong>
+              <p>Clique no botão abaixo para abrir o Chrome na sua tela, fazer o login de forma segura e salvar a sessão no robô sem precisar usar o terminal.</p>
+            </div>
+            <button 
+              @click="triggerWebLogin('todos')" 
+              class="btn-login-web" 
+              :disabled="isLoggingIn || disparoPendente"
+            >
+              <span v-if="isLoggingIn">⏳ Abrindo Navegador Chrome...</span>
+              <span v-else>🔑 Conectar Minhas Contas (1-Clique)</span>
+            </button>
           </div>
-        </div>
-
-        <!-- Upload de Sessão se modo logado -->
-        <div v-if="modoPaginacao === 'logado'" class="form-group auth-upload-box">
-          <label>🔑 Importar / Atualizar Arquivo de Sessão (`auth.json`):</label>
-          <div class="file-upload-row">
-            <input type="file" ref="fileInput" accept=".json" @change="handleFileUpload" class="file-input" :disabled="disparoPendente" />
-            <span v-if="authFileStatus" class="auth-file-status">{{ authFileStatus }}</span>
+          <div class="privacy-note">
+            <span class="lock-icon">🔒</span>
+            <span><strong>Garantia de Privacidade & Segurança:</strong> Nós <u>NÃO</u> salvamos sua senha nem seus dados pessoais. O robô utiliza apenas os cookies anônimos de sessão no seu próprio navegador para navegar sem travamentos.</span>
           </div>
-          <small class="help-text">Gere o arquivo `auth.json` usando o script local `py src/main.py --login` e faça o upload aqui para salvar no Supabase.</small>
+          <div v-if="loginStatusMsg" class="login-status-banner">
+            {{ loginStatusMsg }}
+          </div>
         </div>
 
         <!-- 3. Termos de Busca -->
@@ -67,20 +76,39 @@
           </div>
         </div>
 
-        <!-- Painel de Progresso do Robô em Tempo Real -->
-        <div v-if="disparoPendente || statusScraper" class="status-tracker-box">
-          <div class="tracker-header">
-            <div class="spinner-inline green"></div>
-            <strong>Status do Robô na Nuvem:</strong>
+        <!-- 5. Produtos Excluídos / Bloqueados Manualmente -->
+        <div class="form-group">
+          <label>🚫 Produtos Bloqueados Manualmente (Excluídos da tabela):</label>
+          <div v-if="localBlockedProducts.length === 0" class="empty-blocked-box">
+            <span>Nenhum produto bloqueado manualmente até o momento.</span>
           </div>
-          <p class="tracker-msg">{{ statusScraper || '🤖 Inicializando robô de raspagem na nuvem...' }}</p>
+          <div v-else class="blocked-items-list">
+            <div v-for="(item, idx) in localBlockedProducts" :key="idx" class="blocked-item-card">
+              <div class="blocked-item-info">
+                <strong>{{ typeof item === 'string' ? item : item.titulo }}</strong>
+                <small v-if="typeof item === 'object' && item.link" class="text-muted block-link">{{ item.link }}</small>
+              </div>
+              <button @click="unblockProduct(item)" class="btn-unblock" title="Reativar / Desbloquear este produto">🔓 Reativar</button>
+            </div>
+          </div>
         </div>
+
+        <!-- Painel de Progresso do Robô em Tempo Real -->
+        <transition name="fade">
+          <div v-if="disparoPendente || statusScraper" :class="['status-tracker-box', { 'pulse-active': disparoPendente }]">
+            <div class="tracker-header">
+              <div class="spinner-inline green"></div>
+              <strong>Status do Robô na Nuvem:</strong>
+            </div>
+            <p class="tracker-msg">{{ statusScraper || '🤖 Inicializando robô de raspagem na nuvem...' }}</p>
+          </div>
+        </transition>
 
         <!-- Ações -->
         <div class="actions">
           <button @click="saveConfigs" class="btn primary" :disabled="disparoPendente">💾 Salvar Preferências</button>
           
-          <button @click="triggerScraper" class="btn danger" :disabled="disparoPendente || !props.user">
+          <button @click="triggerScraper" class="btn danger" :disabled="disparoPendente">
             <div v-if="disparoPendente" class="spinner-inline"></div>
             <span>{{ disparoPendente ? '⏳ Robô Rodando...' : '▶️ Disparar Scraper Agora' }}</span>
           </button>
@@ -93,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted, computed } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
 const config = useRuntimeConfig()
@@ -108,12 +136,43 @@ const emit = defineEmits(['update-blacklist', 'update-project-name'])
 const nomeProjeto = ref('Meu Projeto Scraper')
 const modoPaginacao = ref('anonimo') // 'anonimo' ou 'logado'
 const localBlacklist = ref([])
+const localBlockedProducts = ref([])
 const localSearchTerms = ref([])
 const newBlacklistTag = ref('')
 const newSearchTag = ref('')
 const statusMessage = ref('')
 const authFileStatus = ref('')
 const isCollapsed = ref(false) // Aberto por padrão na página de config
+
+const isLoggingIn = ref(false)
+const loginStatusMsg = ref('')
+
+const isCaptchaAlert = computed(() => {
+  const status = (statusScraper.value || '').toLowerCase()
+  return status.includes('captcha') || status.includes('desafio') || status.includes('bloqueio') || status.includes('autentica')
+})
+
+async function triggerWebLogin(plataforma) {
+  isLoggingIn.value = true
+  loginStatusMsg.value = `⏳ Abrindo navegador Chrome para login no Mercado Livre e Shopee... Faça o login normalmente e feche a janela.`
+
+  try {
+    const res = await $fetch('/api/login-session', {
+      method: 'POST',
+      body: { plataforma }
+    })
+    if (res && res.success) {
+      loginStatusMsg.value = `✅ Conexão e sessão atualizadas com sucesso!`
+      showStatus('Sessão de login atualizada!')
+    } else {
+      loginStatusMsg.value = `⚠️ Aviso no login: ${res?.error || 'Navegador encerrado.'}`
+    }
+  } catch (err) {
+    loginStatusMsg.value = `❌ Erro ao abrir navegador de login: ${err.message}`
+  } finally {
+    isLoggingIn.value = false
+  }
+}
 
 // Variáveis de Controle e Status Realtime
 const disparoPendente = ref(false)
@@ -158,10 +217,16 @@ function toggleCollapse() {
 }
 
 async function loadConfigs() {
+  // Carrega lista de bloqueados localmente
+  const savedBlocked = localStorage.getItem('scraper_blocked_products')
+  if (savedBlocked) {
+    try { localBlockedProducts.value = JSON.parse(savedBlocked) } catch (e) { localBlockedProducts.value = [] }
+  }
+
   if (props.user) {
     const { data, error } = await supabase
       .from('configuracoes_scraper')
-      .select('nome_projeto, blacklist, termos_busca, disparo_pendente, status_scraper, modo_paginacao, auth_state_meli')
+      .select('nome_projeto, blacklist, termos_busca, disparo_pendente, status_scraper, modo_paginacao, auth_state_meli, blocked_products')
       .eq('user_id', props.user.id)
       .single()
       
@@ -171,6 +236,10 @@ async function loadConfigs() {
       if (data.auth_state_meli) authFileStatus.value = '✅ Sessão salva no Supabase'
       localBlacklist.value = data.blacklist || []
       localSearchTerms.value = data.termos_busca || []
+      if (data.blocked_products && Array.isArray(data.blocked_products)) {
+        localBlockedProducts.value = data.blocked_products
+        localStorage.setItem('scraper_blocked_products', JSON.stringify(data.blocked_products))
+      }
       if (data.disparo_pendente !== undefined) disparoPendente.value = data.disparo_pendente
       if (data.status_scraper !== undefined) statusScraper.value = data.status_scraper || ''
       
@@ -223,6 +292,17 @@ function handleFileUpload(event) {
   reader.readAsText(file)
 }
 
+async function unblockProduct(item) {
+  const targetId = typeof item === 'string' ? item : (item.link || item.id || item.titulo)
+  localBlockedProducts.value = localBlockedProducts.value.filter(p => {
+    if (typeof p === 'string') return p !== targetId
+    return p.link !== targetId && p.id !== targetId && p.titulo !== targetId
+  })
+  localStorage.setItem('scraper_blocked_products', JSON.stringify(localBlockedProducts.value))
+  await saveConfigs()
+  showStatus('Produto reativado com sucesso!')
+}
+
 function applyAiGeneratedFilters(aiData) {
   if (aiData.termos) {
     aiData.termos.forEach(t => {
@@ -246,6 +326,7 @@ async function saveConfigs() {
   localStorage.setItem('scraper_nome_projeto', nomeProjeto.value)
   localStorage.setItem('scraper_blacklist', JSON.stringify(localBlacklist.value))
   localStorage.setItem('scraper_search_terms', JSON.stringify(localSearchTerms.value))
+  localStorage.setItem('scraper_blocked_products', JSON.stringify(localBlockedProducts.value))
   
   if (props.user) {
     const { error } = await supabase.from('configuracoes_scraper').upsert(
@@ -254,7 +335,8 @@ async function saveConfigs() {
         nome_projeto: nomeProjeto.value,
         modo_paginacao: modoPaginacao.value,
         blacklist: localBlacklist.value, 
-        termos_busca: localSearchTerms.value 
+        termos_busca: localSearchTerms.value,
+        blocked_products: localBlockedProducts.value
       },
       { onConflict: 'user_id' }
     )
@@ -272,21 +354,32 @@ async function saveConfigs() {
 }
 
 async function triggerScraper() {
+  disparoPendente.value = true
+  statusScraper.value = "🚀 Robô acionado no backend local! Extraindo dados no terminal..."
+  showStatus("Disparo acionado com sucesso!")
+  
+  try {
+    const res = await $fetch('/api/trigger-local', {
+      method: 'POST',
+      body: { plataforma: 'todos' }
+    })
+    if (res?.message) {
+      showStatus(res.message, 6000)
+    }
+  } catch (err) {
+    console.error("Erro no disparo local:", err)
+    showStatus("❌ Erro ao acionar o robô local.", 6000)
+  } finally {
+    setTimeout(() => {
+      disparoPendente.value = false
+    }, 5000)
+  }
+
   if (props.user) {
-    disparoPendente.value = true
-    statusScraper.value = "Solicitação registrada! O robô na nuvem faz a verificação periódica. Os dados podem levar até 2 horas para atualizar."
-    const { error } = await supabase.from('configuracoes_scraper').upsert(
+    await supabase.from('configuracoes_scraper').upsert(
       { user_id: props.user.id, disparo_pendente: true, status_scraper: statusScraper.value },
       { onConflict: 'user_id' }
-    )
-    if (error) {
-      showStatus('Erro ao agendar disparo!')
-      disparoPendente.value = false
-      return
-    }
-    showStatus("Solicitação registrada! O robô na nuvem faz a verificação periódica. Os dados podem levar até 2 horas para atualizar.", 8000)
-  } else {
-    showStatus('Faça login para disparar o robô!')
+    ).catch(e => console.warn(e))
   }
 }
 
@@ -389,6 +482,39 @@ function handlePasteSearch(e) {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .status-msg { color: #059669; font-weight: 700; font-size: 0.9rem; }
+
+.empty-blocked-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 0.8rem 1rem; border-radius: 8px; font-size: 0.85rem; color: #64748b; font-style: italic; }
+.blocked-items-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 220px; overflow-y: auto; background: #f8fafc; padding: 0.6rem; border-radius: 8px; border: 1px solid #cbd5e1; }
+.blocked-item-card { display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; padding: 0.6rem 0.8rem; border-radius: 8px; gap: 0.8rem; }
+.blocked-item-info { display: flex; flex-direction: column; overflow: hidden; }
+.blocked-item-info strong { font-size: 0.85rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.block-link { font-size: 0.72rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-unblock { background: #f0fdf4; border: 1px solid #86efac; color: #166534; padding: 0.35rem 0.7rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0; }
+.btn-unblock:hover { background: #dcfce7; border-color: #4ade80; color: #15803d; }
+
+.auth-card-web { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #7dd3fc; border-radius: 12px; padding: 1.2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+.auth-info-text strong { display: block; color: #0369a1; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.auth-info-text p { margin: 0; font-size: 0.83rem; color: #0284c7; line-height: 1.4; }
+.btn-login-web { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; border: none; padding: 0.75rem 1.3rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; font-size: 0.9rem; box-shadow: 0 4px 6px -1px rgba(2, 132, 199, 0.3); }
+.btn-login-web:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 12px -2px rgba(2, 132, 199, 0.4); }
+.btn-login-web:disabled { opacity: 0.7; cursor: not-allowed; }
+.login-status-banner { background: #e0f2fe; border-left: 4px solid #0284c7; color: #0369a1; font-weight: 600; padding: 0.8rem 1rem; border-radius: 6px; font-size: 0.88rem; margin-top: 0.8rem; }
+.privacy-note { display: flex; align-items: flex-start; gap: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.8rem; color: #64748b; margin-top: 0.6rem; line-height: 1.4; }
+.privacy-note u { text-decoration: underline; color: #0f172a; }
+
+.captcha-alert-banner { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 2px solid #ef4444; border-radius: 12px; padding: 1rem 1.2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.2rem; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25); animation: pulse-alert 2s infinite; }
+.captcha-alert-content { display: flex; align-items: center; gap: 0.8rem; }
+.alert-icon-box { font-size: 1.6rem; }
+.alert-text-box strong { display: block; color: #991b1b; font-size: 0.95rem; }
+.alert-text-box p { margin: 0.2rem 0 0 0; color: #b91c1c; font-size: 0.83rem; line-height: 1.3; }
+.btn-resolve-captcha { background: #dc2626; color: #ffffff; border: none; padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; font-size: 0.88rem; white-space: nowrap; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.4); }
+.btn-resolve-captcha:hover:not(:disabled) { background: #b91c1c; transform: scale(1.03); }
+
+@keyframes pulse-alert {
+  0% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { border-color: #f87171; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
 
 .slide-fade-enter-active, .slide-fade-leave-active { transition: all 0.3s ease; }
 .slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-10px); }

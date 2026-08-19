@@ -59,39 +59,23 @@ const promptText = ref('')
 const isProcessing = ref(false)
 const aiResult = ref(null)
 
-function processNaturalLanguage() {
+async function processNaturalLanguage() {
   if (!promptText.value.trim()) return
   
   isProcessing.value = true
-  
-  setTimeout(() => {
-    const text = promptText.value.toLowerCase()
-    const termos = []
-    const blacklist = []
-
-    // Heurística de IA para extração de intenção
-    if (text.includes('topo') || text.includes('bolo')) {
-      termos.push('topo de bolo biscuit', 'vela biscuit personalizada')
+  try {
+    const res = await $fetch('/api/ai-filter', {
+      method: 'POST',
+      body: { prompt: promptText.value }
+    })
+    if (res) {
+      aiResult.value = res
     }
-    if (text.includes('lembrancinha') || text.includes('festa')) {
-      termos.push('lembrancinha biscuit', 'kit lembrancinha biscuit')
-    }
-    if (termos.length === 0) {
-      termos.push('biscuit artesanato', 'peça biscuit')
-    }
-
-    // Identificação de exclusões (blacklist)
-    if (text.includes('sem') || text.includes('não quero') || text.includes('remover') || text.includes('menos')) {
-      if (text.includes('molde') || text.includes('silicone')) blacklist.push('molde', 'silicone')
-      if (text.includes('esteca') || text.includes('ferramenta')) blacklist.push('esteca', 'ferramenta')
-      if (text.includes('cola') || text.includes('massa')) blacklist.push('massa', 'cola')
-    } else {
-      blacklist.push('molde', 'silicone', 'ferramenta')
-    }
-
-    aiResult.value = { termos, blacklist }
+  } catch (err) {
+    console.error("Erro ao chamar Gerador de Filtros IA:", err)
+  } finally {
     isProcessing.value = false
-  }, 700)
+  }
 }
 
 function applyAiFilters() {

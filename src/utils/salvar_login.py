@@ -1,10 +1,12 @@
-import sys
 import os
+import sys
+
 from playwright.sync_api import sync_playwright
 
 # Permite importação dos módulos da pasta src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import AUTH_DIR
+
 
 def gerar_sessao(plataforma="meli"):
     with sync_playwright() as p:

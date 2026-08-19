@@ -23,13 +23,27 @@
         </div>
 
         <!-- Conteúdo do Módulo Ativo -->
-        <div v-if="currentModule" class="module-card mt-3">
-          <div class="card-top">
-            <h4>{{ currentModule.titulo }}</h4>
-            <span class="update-tag">📅 Atualizado em {{ reportData.atualizado_em || 'hoje' }}</span>
+        <div class="module-card mt-3">
+          <div v-if="isLoading">
+            <div class="card-top mb-2">
+              <div class="skeleton skeleton-title" style="width: 40%"></div>
+              <div class="skeleton skeleton-text" style="width: 20%"></div>
+            </div>
+            <div class="skeleton skeleton-text" style="width: 80%"></div>
+            <div class="skeleton skeleton-text" style="width: 60%; margin-bottom: 2rem;"></div>
+            
+            <div class="items-grid">
+              <div class="skeleton skeleton-card" v-for="i in 3" :key="'skel'+i"></div>
+            </div>
           </div>
+          
+          <div v-else-if="currentModule">
+            <div class="card-top">
+              <h4>{{ currentModule.titulo }}</h4>
+              <span class="update-tag">📅 Atualizado em {{ reportData.atualizado_em || 'hoje' }}</span>
+            </div>
 
-          <p class="module-summary">{{ currentModule.resumo }}</p>
+            <p class="module-summary">{{ currentModule.resumo }}</p>
 
           <!-- Renderização Específica por Tipo de Módulo -->
           <!-- 1. Vendedores -->
@@ -78,17 +92,21 @@
           <!-- 5. Plataformas -->
           <div v-else-if="currentModule.tipo === 'plataformas'" class="items-grid">
             <div v-for="(plat, index) in currentModule.itens" :key="index" class="item-card flex-between">
-              <strong>{{ plat.plataforma }}</strong>
-              <span class="sales-tag">{{ plat.vendas.toLocaleString('pt-BR') }} vendas totais</span>
+              <strong>{{ plat.nome || plat.plataforma || (index === 0 ? 'Mercado Livre' : 'Shopee') }}</strong>
+              <span class="sales-tag">
+                {{ (plat.vendas || 0).toLocaleString('pt-BR') }} vendas
+                <small v-if="plat.share"> ({{ plat.share }}% share)</small>
+              </span>
             </div>
           </div>
 
-          <!-- 6. Alertas / 7. Recomendações -->
+          <!-- 6. Alertas / 7. Recomendações / Oportunidades -->
           <div v-else class="list-cards">
             <div v-for="(item, index) in currentModule.itens" :key="index" class="action-card">
               <span class="icon">💡</span>
-              <p>{{ item.dica || item.alerta }}</p>
+              <p>{{ typeof item === 'string' ? item : (item.dica || item.alerta || item.texto || item.resumo || JSON.stringify(item)) }}</p>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -100,6 +118,10 @@
 import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
+  isLoading: {
+    type: Boolean,
+    default: false
+  },
   reportData: {
     type: Object,
     default: () => ({

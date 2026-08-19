@@ -1,20 +1,24 @@
 import os
 from datetime import datetime
+
 from dotenv import load_dotenv
-from supabase import create_client, Client
+
+from supabase import Client, create_client
 
 load_dotenv()
 
 def conectar_supabase() -> Client:
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
     
     if not url or not key:
-        raise ValueError("Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY não configuradas.")
+        raise ValueError("Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY (ou SUPABASE_SERVICE_ROLE_KEY) não configuradas.")
         
     return create_client(url, key)
 
 def atualizar_status_scraper(user_id, status_mensagem):
+    if not user_id:
+        return
     try:
         supabase = conectar_supabase()
         supabase.table("configuracoes_scraper").update({"status_scraper": status_mensagem}).eq("user_id", user_id).execute()
@@ -27,9 +31,13 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     Verifica se o produto existe. Se não, insere.
     Retorna o UUID do produto no banco.
     """
-    # Verifica se já existe
+    # 1. Verifica se já existe por id_externo
     response = supabase.table("produtos").select("id").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
     
+    # 2. Fallback por título se for um link de clique patrocinado
+    if (not response.data or len(response.data) == 0) and titulo:
+        response = supabase.table("produtos").select("id").eq("plataforma", plataforma).eq("titulo", titulo).execute()
+
     if response.data and len(response.data) > 0:
         produto_id = response.data[0]["id"]
         # Se recebemos vendedor e o registro antigo não tinha, atualiza

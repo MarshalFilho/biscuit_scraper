@@ -39,8 +39,13 @@
             <th class="action-th">Ações</th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="item in paginatedData" :key="item.id">
+        <tbody v-if="isLoading">
+          <tr v-for="i in 10" :key="'skel-dt'+i">
+            <td colspan="8"><div class="skeleton skeleton-text" style="height: 36px"></div></td>
+          </tr>
+        </tbody>
+        <tbody v-else>
+          <tr v-for="item in visibleData" :key="item.id">
             <td>
               <span :class="['badge', item.plataforma]">
                 <svg v-if="item.plataforma === 'meli'" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="badge-icon">
@@ -57,9 +62,12 @@
             <td>
               <span class="badge category">{{ item.categoria }}</span>
             </td>
-            <td class="title-cell" :title="item.titulo">
+            <td class="title-cell clickable-title" :title="item.titulo" @click="openModal(item)">
               <span v-if="item.isNew" class="badge-new" title="Identificado recentemente">✨ Novo</span>
-              {{ item.titulo }}
+              <div class="title-text">{{ item.titulo }}</div>
+              <small v-if="item.vendedor" class="seller-subtext" :title="'Vendedor / Loja: ' + item.vendedor">
+                {{ item.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ item.vendedor }}
+              </small>
             </td>
             
             <!-- Preços -->
@@ -68,12 +76,12 @@
             <!-- Histórico -->
             <td class="old-price-cell text-muted">
               <span v-if="item.hist">R$ {{ item.hist.preco.toFixed(2).replace('.', ',') }}</span>
-              <span v-else>-</span>
+              <span v-else class="text-muted">-</span>
             </td>
             
             <td class="variation-cell">
-              <span v-if="item.varInfo" :class="{'text-red': item.varInfo.isPositive, 'text-green': item.varInfo.isNegative}">
-                {{ item.varInfo.isPositive ? '▲' : (item.varInfo.isNegative ? '▼' : '') }}
+              <span v-if="item.varInfo" :class="{'badge-price-up': item.varInfo.isPositive, 'badge-price-down': item.varInfo.isNegative}">
+                {{ item.varInfo.isPositive ? '▲' : '▼' }}
                 R$ {{ Math.abs(item.varInfo.diff).toFixed(2).replace('.', ',') }}
                 <small>({{ item.varInfo.perc > 0 ? '+' : '' }}{{ item.varInfo.perc.toFixed(1) }}%)</small>
               </span>
@@ -82,14 +90,18 @@
             
             <td class="sales-diff-cell">
               <span class="sales-value">{{ item.vendas_totais || 0 }} un</span>
-              <small v-if="item.salesDiff !== null && item.salesDiff > 0" class="text-green fw-bold block-diff">
-                (+{{ item.salesDiff }} recentes)
-              </small>
+              <span v-if="item.salesDiff !== null && item.salesDiff > 0" class="badge-growth" title="Vendas novas registradas no período selecionado">
+                +{{ item.salesDiff }}
+              </span>
+              <span v-else-if="item.salesDiff === 0" class="badge-stable" title="Sem novas vendas no período">
+                0
+              </span>
             </td>
             
             <td class="action-cell">
               <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
               <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
+              <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" title="Excluir / Bloquear este produto">🗑️</button>
             </td>
           </tr>
           <tr v-if="filteredData.length === 0">
@@ -99,11 +111,9 @@
       </table>
     </div>
 
-    <!-- Paginação -->
-    <div class="pagination" v-if="totalPages > 1">
-      <button :disabled="currentPage === 1" @click="currentPage--" class="page-btn">Anterior</button>
-      <span class="page-info">Página <strong>{{ currentPage }}</strong> de {{ totalPages }}</span>
-      <button :disabled="currentPage === totalPages" @click="currentPage++" class="page-btn">Próxima</button>
+    <!-- Paginação removida em favor de Infinite Scrolling -->
+    <div v-if="!isLoading && visibleLimit < filteredData.length" class="text-center mt-3 mb-2">
+      <button @click="loadMore" class="btn outline-btn">Carregar mais produtos ↓</button>
     </div>
 
     <!-- Modal Analítico -->
@@ -116,12 +126,14 @@ import { ref, computed, watch } from 'vue'
 import ProductModal from './ProductModal.vue'
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  isLoading: { type: Boolean, default: false }
 })
 
+const emit = defineEmits(['delete-product'])
+
 const search = ref('')
-const currentPage = ref(1)
-const itemsPerPage = 12
+const visibleLimit = ref(50) // Começa com 50 itens
 const selectedProduct = ref(null)
 
 // Ordenação interativa por coluna
@@ -137,13 +149,19 @@ function sortBy(key) {
   }
 }
 
-// Zera a página quando busca ou ordena
+// Zera o limite visível quando busca ou ordena
 watch([search, sortKey, sortOrder], () => {
-  currentPage.value = 1
+  visibleLimit.value = 50
 })
 
 function openModal(item) {
   selectedProduct.value = item
+}
+
+function confirmDelete(item) {
+  if (confirm(`Deseja realmente excluir/bloquear o produto abaixo?\n\n"${item.titulo}"\n\nEle não aparecerá mais nos gráficos, tabelas e buscas.`)) {
+    emit('delete-product', item)
+  }
 }
 
 const filteredData = computed(() => {
@@ -178,13 +196,13 @@ const filteredData = computed(() => {
   })
 })
 
-const totalPages = computed(() => Math.ceil(filteredData.value.length / itemsPerPage) || 1)
-
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredData.value.slice(start, end)
+const visibleData = computed(() => {
+  return filteredData.value.slice(0, visibleLimit.value)
 })
+
+function loadMore() {
+  visibleLimit.value += 50
+}
 
 function exportToCSV() {
   if (filteredData.value.length === 0) return
@@ -251,15 +269,24 @@ function exportToCSV() {
 .data-table tbody tr { transition: background 0.2s ease; }
 .data-table tbody tr:hover { background: #f8fafc; }
 
-.title-cell { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.title-cell { max-width: 260px; font-weight: 500; }
+.clickable-title { cursor: pointer; transition: color 0.2s ease; }
+.clickable-title:hover .title-text { color: #2563eb; text-decoration: underline; }
+.title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seller-subtext { display: block; font-size: 0.73rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.15rem; }
+
 .price-cell, .old-price-cell, .variation-cell, .sales-diff-cell { white-space: nowrap; }
 .price-cell { font-weight: 700; color: #0f172a; }
 
 .text-muted { color: var(--text-muted); }
 .text-red { color: #dc2626; font-weight: bold; }
 .text-green { color: #16a34a; font-weight: bold; }
-.sales-value { font-weight: 700; color: #0f172a; }
-.block-diff { display: block; font-size: 0.75rem; }
+.sales-value { font-weight: 700; color: #0f172a; margin-right: 0.4rem; }
+
+.badge-growth { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 99px; font-size: 0.72rem; font-weight: 800; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-stable { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.badge-price-up { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.badge-price-down { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
 
 .badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; }
 .badge.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
@@ -276,6 +303,8 @@ function exportToCSV() {
 .action-btn-icon:hover { background: #dbeafe; border-color: #93c5fd; transform: translateY(-1px); }
 .link-btn-icon { background: #f8fafc; color: #475569; border-color: #cbd5e1; font-weight: bold; }
 .link-btn-icon:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px); }
+.delete-btn-icon { background: #fef2f2; color: #dc2626; border-color: #fca5a5; font-size: 0.85rem; }
+.delete-btn-icon:hover { background: #fee2e2; border-color: #f87171; transform: translateY(-1px); }
 .empty-state { text-align: center; padding: 3rem !important; color: var(--text-muted); font-style: italic; }
 
 .pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }

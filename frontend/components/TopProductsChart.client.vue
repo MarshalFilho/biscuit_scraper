@@ -16,9 +16,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import VueApexCharts from 'vue3-apexcharts'
 
-const apexchart = VueApexCharts
 const platformFilter = ref('all')
 
 const props = defineProps({

@@ -1,15 +1,16 @@
 import os
 import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
 import json
 import time
+
 from bs4 import BeautifulSoup
 
 # Ajuste de path para importar config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 from scrapers.meli_scraper import extrair_preco_card_meli, limpar_vendas
-from scrapers.shopee_scraper import extrair_preco_card_shopee, limpar_vendas as limpar_vendas_shopee
 
 try:
     from curl_cffi import requests
@@ -81,7 +82,7 @@ def testar_mercado_livre_leve():
         preco_val, debug_preco = extrair_preco_card_meli(card)
         vendas = limpar_vendas(card.text)
         
-        print(f"\n[Exemplo Ouro extraído do HTML Leve]")
+        print("\n[Exemplo Ouro extraído do HTML Leve]")
         print(f"Título: {titulo}")
         print(f"Preço Promocional Limpo: R$ {preco_val} (Debug: {debug_preco})")
         print(f"Vendas Estimadas: {vendas}")
@@ -131,7 +132,7 @@ def testar_shopee_leve():
             preco_val = item.get("price", 0) / 100000
             vendas = item.get("sold", 0)
             
-            print(f"\n[Exemplo Ouro extraído da API Leve]")
+            print("\n[Exemplo Ouro extraído da API Leve]")
             print(f"Título: {titulo}")
             print(f"Preço Promocional Limpo: R$ {preco_val:.2f}")
             print(f"Vendas Estimadas: {vendas}")

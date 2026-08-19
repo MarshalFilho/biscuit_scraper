@@ -1,200 +1,109 @@
-# 🚀 Plano de Desenvolvimento e Roadmap (`biscuit_scraper`)
+# 🚀 Plano de Desenvolvimento & Arquitetura Oficial de Produção
 
-> **Documento Interno de Acompanhamento**  
-> *Este arquivo está listado no `.gitignore` para não ser sincronizado no repositório público.*
-
----
-
-## 📌 Visão Geral do Projeto & Arquitetura Alvo
-
-- **Front-end / Dashboard:** Nuxt 3 + Vue 3 (Hospedado no GitHub Pages: `https://marshalfilho.github.io/biscuit_scraper/`)
-- **Banco de Dados & Backend Serverless:** Supabase (PostgreSQL + API REST / Realtime)
-- **Robô de Raspagem:** Python + Playwright + BeautifulSoup (`src/main.py`)
-- **Automação Nuvem:** GitHub Actions (`.github/workflows/`)
-- **Inteligência Artificial:** API Gemini / OpenAI (Categorização, Insights e Auxílio de Filtros)
+Este documento é a referência oficial da arquitetura do sistema, contemplando os **recursos já implementados no código-fonte** e a **arquitetura de produção na nuvem (100% Custo Zero)** validada para publicação.
 
 ---
 
-## 🗺️ Roadmap de Execução (Do Mais Fácil ao Mais Difícil)
+## 📌 PARTE 1: FUNCIONALIDADES E RECURSOS JÁ IMPLEMENTADOS
+
+O sistema possui uma arquitetura funcional composta por um motor de extração em Python com Playwright, inteligência generativa com a API do Google Gemini e um Dashboard em Nuxt 3.
+
+### 1.1. Motor de Extração & Scraping (Mercado Livre + Shopee)
+- **Extração Precisa de Preços**: Filtro de preços cortados (`<del>`, `<s>`), ofertas promocionais e banners de frete grátis (*"Frete grátis em R$ 140"*), capturando o valor à vista real.
+- **Deduplicação Inteligente**: Normalização de URLs patrocinadas (`click1.mercadolivre.com.br/...`) e agrupamento automático por título/ID no banco de dados para evitar registros duplicados.
+- **Detecção de CAPTCHAs & Bot Blocks**: Mapeamento de desafios anti-robô e atualização em tempo real do status no banco.
+- **Script de Purga Total**: Ferramenta de limpeza (`py src/utils/limpar_dados_antigos.py --reset-total`) para zerar históricos locais e remotos quando necessário.
+
+### 1.2. Módulo de Inteligência Artificial Generativa (Google Gemini API)
+- **100% Genérico e Multinicho**: Prompts e análises parametrizados dinamicamente com base no `nome_projeto` do usuário, adaptando-se a qualquer segmento de e-commerce.
+- **Otimização de Tokens (>80%)**: Envio de payload minimalista `[{t, p, plat, v, d}]` e recepção em formato JSON estrito (`response_mime_type="application/json"`).
+- **Relatório Executivo de 7 Módulos**:
+  1. *Lojas & Vendedores Líderes*: Ranking de vendedores por faturamento e volume.
+  2. *Produtos Virais & Mais Vendidos*: Itens de maior velocidade de vendas.
+  3. *Palavras-Chave de Alta Conversão*: Análise de termos SEO líderes.
+  4. *Zonas de Preço & Oceano Azul*: Mapeamento de volume por faixa de valor.
+  5. *Comparativo entre Plataformas*: Participação de mercado (% Share ML vs Shopee).
+  6. *Recomendações Estratégicas da IA*: Diagnósticos de precificação e logística.
+  7. *Oportunidades de Nicho*: Identificação de demandas reprimidas.
+- **Gerador de Filtros por Linguagem Natural**: Endpoint em Nuxt que interpreta o texto livre do usuário e gera os termos de busca e blacklist sem omissão de itens.
+
+### 1.3. Frontend Dashboard (Nuxt 3)
+- **Linha do Tempo Histórica (`TimelineScrapeSelector.vue`)**: Inspeção por data e *Modo Comparar Datas* (Data A vs Data B).
+- **Ranking de Produtos Virais (`TrendingProductsTab.vue`)**: Destaque para produtos em aceleração de vendas.
+- **Monitor de Guerra de Preços & Margens (`PriceStrategyMonitor.vue`)**: Separação de anúncios em aumento de preço vs descontos.
+- **Central de Conexão das Lojas de 1-Clique**:
+  - Botão de login que abre o navegador para validação de sessão de forma transparente.
+  - Banner explicativo de garantia de privacidade (não salvamento de senhas).
+  - Alerta pulsante de CAPTCHA detectado com atalho para resolução na Web.
+
+### 1.4. Infraestrutura de Container Pré-Configurada
+- `Dockerfile` configurado com Python e dependências do Playwright.
+- Servidor Webhook Flask (`src/cloud_server.py`) pronto na porta `8080`.
 
 ---
 
-### 🟢 FASE 1: Ajustes Rápidos de Interface & UX Simples (Quick Wins)
-*Objetivo: Pequenas melhorias visuais e funcionais no front-end para rápido retorno visual.*
+## 📌 PARTE 2: ARQUITETURA OFICIAL DE PRODUÇÃO NA NUVEM (100% CUSTO ZERO)
 
-#### 1.1. Alternador de Plataformas (Toggle Group em vez de Select)
-- **O que fazer:** Substituir o elemento `<select>` de seleção de plataforma por um grupo de botões estilo *Toggle* (`[ Ambas ] [ Shopee ] [ Mercado Livre ]`).
-- **Arquivos afetados:** [`frontend/pages/index.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/pages/index.vue)
-- **Benefício:** Acesso direto com 1 clique, visual moderno e melhor usabilidade em dispositivos móveis.
+A infraestrutura de produção foi desenhada para rodar 100% online sem depender de máquina local ligada e sem custos de hospedagem (Free Tier perene).
 
-#### 1.2. Ordenação Interativa na Tabela por Cabeçalho de Coluna
-- **O que fazer:**
-  - Remover o dropdown estático "Ordenar por".
-  - Tornar os cabeçalhos da tabela (`Título`, `Preço`, `Vendas`, `Variação`, `Plataforma`) clicáveis.
-  - Alternar ordenação ao clicar: `Crescente (▲)` ➔ `Decrescente (▼)` ➔ `Padrão`.
-- **Arquivos afetados:** [`frontend/components/DataTable.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/components/DataTable.vue)
-
-#### 1.3. Mudar Paleta de Cores (Design Mais Claro e Amigável)
-- **O que fazer:**
-  - Substituir o tema escuro/neon ("gritando IA") por um tema claro (*Light Mode*), com tons pastéis suaves, fundo neutro e alto contraste de texto.
-  - Adequar tipografia e tamanho de fontes pensando em clientes mais velhos/sêniores.
-- **Arquivos afetados:** [`frontend/assets/css/main.css`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/assets/css/main.css) (ou estilos globais no Nuxt).
-
-#### 1.4. Reformulação do Botão e Modal "Raio-X" (Detalhes do Produto)
-- **O que fazer:**
-  - Mudar o nome do botão "Raio-X" para **"🔎 Análise do Anúncio"** ou **"📊 Ver Detalhes"**.
-  - Enriquecer o modal ([`ProductModal.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/components/ProductModal.vue)):
-    - Exibir foto do produto, vendedor, plataforma, link direto.
-    - Gráfico de histórico de preço e variação de vendas no período selecionado.
-    - Tag da Categoria definida pela IA.
-
----
-
-### 🟡 FASE 2: Métricas de Período, Filtros Globais & Novos Gráficos
-*Objetivo: Tornar o dashboard verdadeiramente dinâmico com base em intervalos de tempo.*
-
-#### 2.1. Filtro Global de Período no Topo
-- **O que fazer:**
-  - Criar um seletor de intervalo de tempo fixo no topo da página:
-    - `[ Últimos 7 dias ] [ Últimos 15 dias ] [ Últimos 30 dias ] [ Todo o Período ] [ Personalizado ]`
-  - Este filtro deve governar todos os componentes da página (KPIs, gráficos, tabelas e vendedores).
-- **Arquivos afetados:** [`frontend/pages/index.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/pages/index.vue)
-
-#### 2.2. Cartões de Métricas (KPIs) com Indicadores de Data Claros
-- **O que fazer:**
-  - Adicionar um sub-título explicativo no topo do dashboard: ex: *"Exibindo dados coletados de **01/07/2026** a **23/07/2026**"*.
-  - Exibir a variação percentual clara (ex: `+18% vendas em relação ao período anterior`).
-- **Arquivos afetados:** [`frontend/components/KpiCards.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/components/KpiCards.vue)
-
-#### 2.3. Clareza na Tabela de Comparação (Aumento de Vendas e Preços)
-- **O que fazer:**
-  - Ajustar a lógica da coluna de vendas para mostrar a diferença exata no período: ex: `+15 vendas (7 dias)` ou `-2 vendas`.
-  - Deixar explícito que o aumento é calculado subtraindo `(Vendas na data final) - (Vendas na data inicial do filtro)`.
-
-#### 2.4. Substituição do Gráfico de Dispersão ("Bolinha") por Gráfico de Barras
-- **O que fazer:**
-  - Substituir o gráfico de dispersão ([`PriceVsSalesChart.client.vue`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/frontend/components/PriceVsSalesChart.client.vue)) por um **Gráfico de Barras / Histograma de Faixas de Preço** (ex: *Volume de Vendas por Faixa de Preço: R$0-20, R$20-50, R$50-100, R$100+*).
-
-#### 2.5. Novo Módulo / Visão de Vendedores (Top Sellers)
-- **O que fazer:**
-  - Criar um novo componente `TopSellersChart.vue` ou tabela dedicada de vendedores:
-    - Vendedores que mais venderam no período.
-    - Quantidade de anúncios por vendedor.
-    - Categorias principais onde cada vendedor atua.
-
-#### 2.6. Organização das Páginas (Arquitetura Multi-Página)
-- **O que fazer:**
-  - Dividir a aplicação em 2 páginas/abas principais via barra de navegação superior:
-    1. **📊 Painel Analítico (`/`):** KPIs, Filtro de Data, Gráficos, Vendedores, Tabela de Anúncios e Insights da IA.
-    2. **⚙️ Configurações & Scraper (`/config`):** Ajustes de busca, palavras negativas, gerador por IA, disparo manual e logs do robô.
-- **Arquivos afetados:** `frontend/pages/index.vue` e `frontend/pages/config.vue` (novo).
+```
+   ┌─────────────────────────────────────────────────────────────┐
+   │                    PAINEL WEB / DASHBOARD                   │
+   │                    Hospedado na VERCEL                      │
+   │               (Nuxt 3 SSR + Server Routes)                  │
+   └───────────────┬─────────────────────────────┬───────────────┘
+                   │                             │
+    1. Escuta Status Realtime     2. Disparo Webhook (POST /trigger)
+                   │                             │
+                   ▼                             ▼
+   ┌─────────────────────────────┐   ┌───────────────────────────┐
+   │    BANCO DE DADOS NUVEM     │   │   ENGINE DE SCRAPING & IA │
+   │          SUPABASE           │   │     GOOGLE CLOUD RUN      │
+   │  (PostgreSQL + Websockets)  │   │  (Playwright Docker + IA)  │
+   └───────────────▲─────────────┘   └───────────▲───────────────┘
+                   │                             │
+                   └────── 3. Salva Coletas ─────┘
+                                                 │
+                                 4. Ativação Cron Diária (03:00)
+                                                 │
+                                     ┌───────────┴───────────┐
+                                     │ GOOGLE CLOUD SCHEDULER│
+                                     └───────────────────────┘
+```
 
 ---
 
-### 🟠 FASE 3: Correção do GitHub Actions & Acompanhamento de Progresso
-*Objetivo: Garantir execução automatizada estável e feedback visual em tempo real.*
+### Componente 1: Hospedagem Frontend — **Vercel**
+- **Provedor**: Vercel (Plano Hobby / Free Tier).
+- **Função**: Publicação da aplicação Web construída em **Nuxt 3** (`frontend/`).
+- **Recursos**:
+  - Compilação automática de rotas do Nitro (`/api/report`, `/api/ai-filter`, `/api/trigger-scrape`) como Serverless Functions.
+  - Suporte nativo a SSR (Server-Side Rendering) e SSL (HTTPS) automático.
+  - Deploy contínuo via integração com o repositório do GitHub (CI/CD).
 
-#### 3.1. Correção e Homologação das GitHub Actions
-- **O que fazer:**
-  - Revisar [`scraper_bot.yml`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.github/workflows/scraper_bot.yml) e [`scraper_semanal.yml`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.github/workflows/scraper_semanal.yml).
-  - Garantir injeção correta dos *Secrets*: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_USER_ID`.
-  - Configurar disparo agendado (`cron: '0 3 * * 1'`) e disparo manual (`workflow_dispatch`).
+### Componente 2: Banco de Dados na Nuvem — **Supabase**
+- **Provedor**: Supabase (PostgreSQL Gerenciado / Free Tier de 500 MB).
+- **Função**: Armazenamento relacional de produtos, históricos de coletas e configurações do scraper.
+- **Recursos**:
+  - Realtime Subscriptions via Websockets: O dashboard atualiza a tela do usuário instantaneamente quando o robô envia atualizações de status.
+  - Compatibilidade 100% com o código Python (`supabase-py`) e Vue (`@supabase/supabase-js`).
 
-#### 3.2. Acompanhamento de Progresso em Tempo Real (Disparo Manual)
-- **O que fazer:**
-  - Quando o usuário clicar em "Iniciar Raspagem" no dashboard:
-    - O Python envia atualizações detalhadas do status para a coluna `status_scraper` na tabela `configuracoes_scraper` do Supabase.
-    - O front-end Vue escuta essa coluna (via Supabase Realtime ou Polling de 3s) e exibe uma barra de progresso / modal com as etapas:
-      - `[1/4] Acessando Mercado Livre...`
-      - `[2/4] Extraindo anúncios e preços...`
-      - `[3/4] Executando análise e categorização de IA...`
-      - `[4/4] Finalizado com sucesso!`
-
-#### 3.3. Solução Elegante para Sessão de Login & Controle de Páginas
-- **Regra de Negócio de Autenticação:**
-  1. **Modo Rápido / Anônimo (1 Página por busca):**
-     - Não exige login. O robô raspa apenas a primeira página de cada termo de busca (ideal para coletas rápidas e sem fricção).
-  2. **Modo Profundo / Logado (Múltiplas Páginas):**
-     - Exige sessão salva no Supabase. A Shopee e Mercado Livre bloqueiam paginação contínua sem autenticação.
-     - **Como Funciona:** O usuário realiza o login 1 vez (localmente ou via importador no Dashboard) e salva a sessão no Supabase. O GitHub Actions lê o `auth.json` da nuvem e raspa quantas páginas o usuário definiu (ex: 3 a 5+ páginas por busca).
+### Componente 3: Engine de Scraping & Automação — **Google Cloud Run + Cloud Scheduler**
+- **Provedor**: Google Cloud Run + Google Cloud Scheduler (Free Tier GCP: 2M chamadas/mês).
+- **Função**: Execução do Playwright Chromium Headless e geração do relatório de IA via container Docker.
+- **Recursos**:
+  - **Container Serverless (`src/cloud_server.py`)**: Publicado via Dockerfile expondo a porta `8080`.
+  - **Disparo Sob Demanda**: Ao clicar em *"Disparar Scraper Agora"* no site, a Vercel faz um POST para o Cloud Run, que executa a raspagem com resposta imediata.
+  - **Disparo Programado (Cron Job)**: O Cloud Scheduler executa uma chamada HTTP às 03:00 todos os dias para manter o histórico atualizado.
+  - **Scale to Zero**: O container escala para zero quando ocioso, garantindo consumo dentro da cota gratuita do GCP.
 
 ---
 
-### 🔴 FASE 4: Integração Avançada de IA & Assistente Inteligente
-*Objetivo: Automatizar tarefas complexas e reduzir o esforço cognitivo do usuário.*
+## 📌 PARTE 3: CHECKLIST DE DEPLOY & EXECUÇÃO
 
-#### 4.1. Categorização Automática de Produtos por IA (Pós-Scraping)
-- **O que fazer:**
-  - Após o robô raspar os produtos, o script Python aciona a API da IA (Gemini ou OpenAI) enviando os títulos e preços dos novos anúncios.
-  - A IA classifica cada produto em categorias pré-definidas ou dinâmicas (ex: *"Topo de Bolo"*, *"Lembrancinhas"*, *"Ferramentas/Moldes"*, *"Insumos/Massa"*).
-  - Salva o resultado no campo `categoria_ia` da tabela `produtos` no Supabase.
-
-#### 4.2. Geração Automatizada de Insights Executivos pela IA (Relatório de Inteligência)
-- **O que fazer:**
-  - Ao final do scraping, o Python cruza os dados do histórico no Supabase e aciona a IA para gerar um relatório analítico estruturado (salvo na tabela `insights_ia`).
-  - **Módulos de Insights Gerados pela IA:**
-    1. **🚀 Vendedores em Maior Ascensão (Top Growth Sellers):**
-       - Identificar quais vendedores tiveram o maior crescimento absoluto e percentual de vendas entre as últimas coletas (ex: *"Vendedor X cresceu +42% em vendas esta semana no Mercado Livre"*).
-       - Identificar novos vendedores que acabaram de entrar no ranking com alto volume.
-    2. **🔥 Produtos Virais / Tendências Quentes (Trending Products):**
-       - Anúncios com aceleração atípica de vendas em curtos intervalos de tempo.
-       - Lançamentos recentes com alta conversão.
-    3. **🎯 Estratégia de Títulos & SEO para E-commerce:**
-       - Análise dos termos mais recorrentes nos 10 anúncios mais vendidos (ex: *"80% dos anúncios topo de vendas utilizam as palavras 'Kit', 'Pronta Entrega' e 'Personalizado'"*).
-    4. **💡 Lacunas de Preço & Oportunidades de Mercado (Oceanos Azuis):**
-       - A IA mapeia faixas de preço desatendidas onde a demanda é alta mas há pouca concorrência (ex: *"Faixa de R$ 40,00 a R$ 65,00 possui alta demanda e apenas 2 concorrentes ativos no Mercado Livre"*).
-    5. **⚔️ Comparativo de Força entre Plataformas (Mercado Livre vs Shopee):**
-       - Qual plataforma domina qual subclasse de produto (ex: *"Shopee domina 70% das vendas de insumos/massas, enquanto Mercado Livre domina 80% das peças prontas/personalizadas"*).
-    6. **📉 Alertas de Estagnação & Queda de Preço (Guerra de Preços):**
-       - Anúncios que sofreram queda acentuada de vendas ou vendedores que reduziram preços para desovar estoque.
-    7. **💡 Recomendações Práticas de Ação (Para o Negócio):**
-       - A IA sugere ações diretas para a tomada de decisão (ex: *"Recomendação: Crie um anúncio de Kit com 5 peças de lembrancinhas na faixa de R$ 45,00, aproveitando o vácuo de concorrência detectado no Shopee."*).
-  - **Exibição no Front-end:** O Painel Analítico terá um painel retrátil ou carrossel de *Cards de Insights Inteligentes* no topo, com linguagem clara e visualmente fácil de ler.
-
-
-#### 4.3. Gerador Assistido de Filtros (IA para Palavras Positivas/Negativas)
-- **O que fazer:**
-  - Na página de configurações, adicionar o campo: *"Descreva em linguagem natural o que deseja monitorar"*.
-  - *Exemplo de input:* `"Quero analisar vendas de lembrancinhas de biscuit para festa infantil, mas não quero ver ferramentas, moldes de silicone nem colas."`
-  - A IA processa e sugere automaticamente:
-    - `TERMOS_BUSCA`: `["lembrancinha biscuit", "topo de bolo biscuit"]`
-    - `PALAVRA_OBRIGATORIA`: `"biscuit"`
-    - `PALAVRAS_NEGATIVAS`: `["molde", "silicone", "cola", "esteca", "ferramenta"]`
-  - O usuário só precisa revisar e clicar em **Salvar**.
-
----
-
-### 🟣 FASE 5: Arquitetura 100% Dinâmica (Configuração Orientada a Banco / Multi-Nicho)
-*Objetivo: Tornar o software agnóstico a nicho (reutilizável para qualquer produto/cliente).*
-
-#### 5.1. Eliminar Qualquer Código "Hardcoded"
-- **O que fazer:**
-  - Garantir que nenhum termo como `"biscuit"` ou categorias específicas fiquem gravados de forma fixa no código Python ou JS.
-  - Toda a inteligência de busca, títulos das páginas, marcas e regras são carregadas da tabela `configuracoes_scraper` do cliente logado no Supabase.
-- **Resultado:** O mesmo Dashboard e Scraper pode ser vendido ou reutilizado para nichos como Crochê, Velas Aromáticas, Artigos em MDF, Impressão 3D, Moda, etc.
-
----
-
-## 📝 Checklist de Acompanhamento (Status)
-
-| Item | Descrição | Complexidade | Status |
-| :--- | :--- | :--- | :---: |
-| 1.1 | Alternador de Plataformas (Toggle) | 🟢 Fácil | ✅ Concluído |
-| 1.2 | Ordenação por Coluna na Tabela | 🟢 Fácil | ✅ Concluído |
-| 1.3 | Paleta de Cores Suave (Light Mode) | 🟢 Fácil | ✅ Concluído |
-| 1.4 | Reformulação do Modal "Raio-X" | 🟢 Fácil | ✅ Concluído |
-| 2.1 | Filtro Global de Período no Topo | 🟡 Média | ✅ Concluído |
-| 2.2 | KPIs com Datas Explícitas | 🟡 Média | ✅ Concluído |
-| 2.3 | Tabela de Comparação com Período Claro | 🟡 Média | ✅ Concluído |
-| 2.4 | Gráfico de Barras (Substituindo Dispersão) | 🟡 Média | ✅ Concluído |
-| 2.5 | Módulo de Análise de Vendedores | 🟡 Média | ✅ Concluído |
-| 2.6 | Separação em 2 Páginas (Dashboard / Config) | 🟡 Média | ✅ Concluído |
-| 3.1 | Correção das GitHub Actions | 🟠 Média/Alta | ✅ Concluído |
-| 3.2 | Progresso em Tempo Real do Scraping | 🟠 Média/Alta | ✅ Concluído |
-| 3.3 | Gestão de Sessão & Controle de Páginas | 🟠 Média/Alta | ✅ Concluído |
-| 4.1 | Categorização Automática por IA | 🔴 Complexo | ✅ Concluído |
-| 4.2 | Relatório de Insights por IA | 🔴 Complexo | ✅ Concluído |
-| 4.3 | Gerador de Filtros Assistido por IA | 🔴 Complexo | ✅ Concluído |
-| 5.1 | Arquitetura 100% Genérica por Banco | 🟣 Estrutural | ✅ Concluído |
-
----
+- [x] **Código & Containers**: `Dockerfile`, `src/cloud_server.py` e endpoints do Nuxt prontos.
+- [x] **IA Generativa**: Integração com Gemini API (`gemini-flash-latest`) validada.
+- [x] **Variáveis de Ambiente**: Arquivo [`.env.example`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.env.example) estruturado.
+- [x] **Passo 1 (Banco de Dados Cloud)**: Tabelas e Realtime configurados no Supabase Cloud.
+- [ ] **Passo 2 (Frontend Vercel)**: Conectar o repositório GitHub na Vercel e adicionar as variáveis do `.env` *(Em andamento)*.
+- [ ] **Passo 3 (Engine GCP)**: Publicar o container no Google Cloud Run e configurar o Cloud Scheduler.

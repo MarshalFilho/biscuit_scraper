@@ -1,10 +1,5 @@
 <template>
   <div class="kpi-container">
-    <div class="kpi-date-banner" v-if="dateRangeText">
-      <span class="banner-icon">📅</span>
-      <span><strong>Período das Informações:</strong> {{ dateRangeText }}</span>
-    </div>
-
     <div class="kpi-grid">
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.1s;">
         <div class="kpi-icon blue">📦</div>

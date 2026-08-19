@@ -1,6 +1,8 @@
-import unicodedata
 import re
+import unicodedata
+
 import config
+
 
 def normalizar_texto(texto):
     """
@@ -26,9 +28,23 @@ def verificar_relevancia(titulo, termo_busca):
             return False
             
     # 2. Palavras Negativas (parcial)
+    DEFAULT_FORBIDDEN = ["moedor", "pimenta", "e-taster", "elétrico", "eletrico"]
+    for forbidden in DEFAULT_FORBIDDEN:
+        if forbidden in titulo_norm:
+            return False
+
     for neg in config.get_blacklist():
         if normalizar_texto(neg) in titulo_norm:
             return False
+
+    # 2.1 Produtos Bloqueados Manualmente
+    for item_bloqueado in config.get_produtos_bloqueados():
+        if not item_bloqueado: continue
+        if isinstance(item_bloqueado, str):
+            if normalizar_texto(item_bloqueado) in titulo_norm: return False
+        elif isinstance(item_bloqueado, dict):
+            tit_b = normalizar_texto(item_bloqueado.get("titulo", ""))
+            if tit_b and tit_b in titulo_norm: return False
             
     # 3. Palavras Negativas Exatas
     palavras = re.split(r'\W+', titulo_norm)

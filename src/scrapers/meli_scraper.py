@@ -1,20 +1,22 @@
-import sys
 import os
+import sys
 import unicodedata
+
 sys.stdout.reconfigure(encoding='utf-8')
 import json
+import random
 import re
 import time
-import random
+
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
 # Permite importação dos módulos da pasta src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import get_platform_dirs, AUTH_DIR
 import config
+from config import AUTH_DIR, get_platform_dirs
 from utils.relevancia import verificar_relevancia
-from utils.supabase_client import conectar_supabase, upsert_produto, registrar_historico
+from utils.supabase_client import conectar_supabase, registrar_historico, upsert_produto
 
 # Configuração dinâmica de diretórios para o Mercado Livre
 PLATFORM_DIRS = get_platform_dirs("mercado_livre")
@@ -41,31 +43,48 @@ def limpar_preco(texto_preco):
 def extrair_preco_card_meli(produto):
     """
     Extrai com precisão o preço promocional/vigente do card do Mercado Livre,
-    filtrando preços originais cortados, parcelamentos e anúncios relacionados.
+    filtrando rigorosamente preços originais riscados, parcelamentos e anúncios relacionados.
     """
-    container_atual = produto.find(class_=re.compile(r"poly-price__current|andes-money-amount--main-price|poly-component__price"))
+    container_atual = produto.find(class_=re.compile(r"poly-price__current|ui-search-price__second-line|andes-money-amount--main-price"))
+
     if not container_atual:
         cand_amounts = produto.find_all("span", class_=re.compile(r"andes-money-amount|price-tag-amount"))
         for cand in cand_amounts:
-            parent_classes = " ".join([c for parent in cand.parents for c in parent.get("class", [])])
-            if "previous" not in parent_classes and "original" not in parent_classes and "installment" not in parent_classes and "poly-price__installments" not in parent_classes:
+            is_previous = False
+            for p in [cand] + list(cand.parents):
+                p_classes = " ".join(p.get("class", [])) if hasattr(p, "get") and p.get("class") else ""
+                p_tag = getattr(p, "name", "")
+                if "previous" in p_classes or "original" in p_classes or "installment" in p_classes or "poly-price__original" in p_classes or p_tag in ["s", "del", "strike"]:
+                    is_previous = True
+                    break
+            if not is_previous:
                 container_atual = cand
                 break
+
     if not container_atual:
         container_atual = produto
 
-    frac_tag = container_atual.find("span", class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
-    cents_tag = container_atual.find("span", class_=re.compile(r"andes-money-amount__cents|price-tag-cents"))
+    frac_tags = container_atual.find_all("span", class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
+    for frac_tag in frac_tags:
+        is_bad = False
+        for p in [frac_tag] + list(frac_tag.parents):
+            if p == container_atual and container_atual != produto: break
+            p_classes = " ".join(p.get("class", [])) if hasattr(p, "get") and p.get("class") else ""
+            p_tag = getattr(p, "name", "")
+            if "previous" in p_classes or "original" in p_classes or "installment" in p_classes or "poly-price__original" in p_classes or p_tag in ["s", "del", "strike"]:
+                is_bad = True
+                break
+        if not is_bad:
+            frac_str = frac_tag.text.strip().replace(".", "")
+            parent_amount = frac_tag.find_parent("span", class_=re.compile(r"andes-money-amount|price-tag-amount"))
+            cents_tag = parent_amount.find("span", class_=re.compile(r"andes-money-amount__cents|price-tag-cents")) if parent_amount else None
+            cents_str = cents_tag.text.strip() if cents_tag else "00"
+            try:
+                price_val = float(f"{frac_str}.{cents_str}")
+                return price_val, f"Preço Vigente OK: R$ {price_val:.2f}"
+            except ValueError: pass
+
     raw_text = container_atual.text.strip()
-    
-    if frac_tag:
-        frac_str = frac_tag.text.strip().replace(".", "")
-        cents_str = cents_tag.text.strip() if cents_tag else "00"
-        try:
-            price_val = float(f"{frac_str}.{cents_str}")
-            return price_val, f"Fração='{frac_tag.text}', Cents='{cents_str}' (Bruto: '{raw_text}')"
-        except ValueError: pass
-        
     price_val = limpar_preco(raw_text)
     return price_val, f"Texto Bruto: '{raw_text}'"
 
@@ -103,44 +122,49 @@ def fase_bronze():
     Fase Bronze: Abre o navegador, acessa o Mercado Livre e salva a página HTML bruta
     de cada termo de busca na pasta data/mercado_livre/bronze/ (coleta até N páginas).
     """
-    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...")
+    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...", flush=True)
+    
+    auth_dir = AUTH_DIR
+    profile_dir = os.path.join(auth_dir, "chrome_profile_meli")
+    os.makedirs(profile_dir, exist_ok=True)
+    
+    is_headless = os.environ.get("HEADLESS", "false").lower() == "true"
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
-        ) 
-        
-        auth_path = os.path.join(AUTH_DIR, "auth_meli.json")
-        context_args = {
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        chrome_installed = os.path.exists(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+        launch_args = {
+            "user_data_dir": profile_dir,
+            "headless": is_headless,
+            "args": [
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage"
+            ],
             "viewport": {"width": 1366, "height": 768},
             "locale": "pt-BR",
             "timezone_id": "America/Sao_Paulo",
-            "extra_http_headers": {
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-                "sec-ch-ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Windows"',
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-            }
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         }
-        if os.path.exists(auth_path):
-            context_args["storage_state"] = auth_path
-            
-        context = browser.new_context(**context_args)
-        page = context.new_page()
+        if chrome_installed:
+            launch_args["channel"] = "chrome"
+
+        context = p.chromium.launch_persistent_context(**launch_args)
+        page = context.pages[0] if context.pages else context.new_page()
         page.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
             Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
             window.chrome = { runtime: {} };
         """)
+
+        # Inicializa a sessão navegando pela página principal do Mercado Livre
+        try:
+            print("🌐 Inicializando sessão de navegação no Mercado Livre...", flush=True)
+            page.goto("https://www.mercadolivre.com.br", wait_until="domcontentloaded", timeout=30000)
+            time.sleep(2)
+        except Exception as e:
+            print(f"⚠️ Aviso ao carregar página principal: {e}", flush=True)
  
         for termo in config.get_termos_busca():
             nome_arquivo_base = termo.replace(" ", "_")
@@ -175,13 +199,8 @@ def fase_bronze():
                     time.sleep(random.uniform(1.0, 2.0))
                 
                 # Checagem de Captcha
-                if "/captcha/" in page.url or "abuse-china-wall" in page.content():
-                    print("   ⚠️ CAPTCHA detectado! Resolva no navegador...")
-                    try:
-                        page.wait_for_selector(".ui-search-results, .poly-search-results", timeout=60000)
-                    except:
-                        print("   ⏳ Falha no captcha ou timeout excedido. Pulando termo...")
-                        break
+                from utils.bot_detector import verificar_bloqueio_meli
+                verificar_bloqueio_meli(page)
                 
                 html_renderizado = page.content()
                 
@@ -189,8 +208,7 @@ def fase_bronze():
                 curr_url = page.url
                 html_len = len(html_renderizado)
                 print(f"   🔍 [DIAGNÓSTICO ML BRONZE] Título: '{title}' | URL: '{curr_url}' | Tamanho HTML: {html_len} bytes")
-                if "captcha" in curr_url.lower() or "blocked" in title.lower() or "denied" in title.lower():
-                    print(f"   ⚠️ ALERTA DE BLOQUEIO [ML]: O Mercado Livre enviou página de captcha/bloqueio!")
+                verificar_bloqueio_meli(page, html_content=html_renderizado)
 
                 # Salva o arquivo Bronze localmente
                 bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{pagina}.html")
@@ -222,8 +240,8 @@ def fase_bronze():
                     
                 time.sleep(random.uniform(4.5, 7.2))
  
-        browser.close()
-    print("✅ [Etapa Bronze] Concluída!")
+        context.close()
+    print("✅ [Etapa Bronze] Concluída!", flush=True)
 
 def fase_prata():
     """
@@ -290,6 +308,8 @@ def fase_ouro():
     """
     print("\n🚀 [Etapa Ouro] Iniciando extração e deduplicação de dados (Prata -> Ouro)...")
     todos_dados_ouro = []
+    urls_processadas = set()
+    titulos_processados = set()
     
     for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
@@ -338,7 +358,6 @@ def fase_ouro():
                     produtos_cards.append(parent_card)
         
         resultados_ouro = []
-        urls_processadas = set()
         
         for produto in produtos_cards:
             try:
@@ -353,9 +372,15 @@ def fase_ouro():
                 link_tag = produto.find("a")
                 url_anuncio = link_tag["href"] if link_tag and "href" in link_tag.attrs else ""
                 
-                if not url_anuncio or url_anuncio in urls_processadas:
+                if not url_anuncio:
+                    continue
+                
+                # Deduplicação por Título normalizado ou URL
+                norm_title = re.sub(r"[^\w\s]", "", titulo.lower()).strip()
+                if url_anuncio in urls_processadas or norm_title in titulos_processados:
                     continue
                 urls_processadas.add(url_anuncio)
+                titulos_processados.add(norm_title)
                 
                 preco, preco_debug_log = extrair_preco_card_meli(produto)
                 print(f"   🔎 [AUDITORIA PREÇO ML] '{titulo[:35]}...' => R$ {preco:.2f} ({preco_debug_log})")
@@ -369,11 +394,37 @@ def fase_ouro():
                     titulo_normalizado = titulo.strip().lower()
                     vendas = reviews_map.get(titulo_normalizado, 0)
                 
-                # Extrai vendedor do HTML
+                # Extrai vendedor do HTML (Prioridade para Nome do Vendedor/Loja Oficial, Fallback para Localização e ID Único)
                 vendedor_tag = produto.find(["span", "div", "a"], class_=re.compile(r"poly-component__seller|ui-search-official-store-label|ui-search-item__group__element|ui-search-item__seller"))
                 vendedor = None
                 if vendedor_tag:
-                    vendedor = vendedor_tag.text.replace("Por", "").replace("por", "").strip()
+                    raw_seller = vendedor_tag.text.replace("Por", "").replace("por", "").strip()
+                    if raw_seller and len(raw_seller) < 45:
+                        vendedor = raw_seller
+                
+                loc_name = None
+                loc_tag = produto.find(["span", "div"], class_=re.compile(r"ui-search-item__location|poly-component__location"))
+                if loc_tag and loc_tag.text.strip() and len(loc_tag.text.strip()) < 40:
+                    loc_name = loc_tag.text.strip()
+                if not loc_name:
+                    loc_match = re.search(r"\b(São Paulo|Minas Gerais|Santa Catarina|Rio de Janeiro|Paraná|Rio Grande do Sul|Bahia|Ceará|Pernambuco|Goiás|Espírito Santo|Distrito Federal|Maranhão|Paraíba|Amazonas|Mato Grosso|Rio Grande do Norte|Piauí|Alagoas|Sergipe|Rondônia|Tocantins|Acre|Amapá|Roraima|Internacional)\b", produto.text)
+                    if loc_match:
+                        loc_name = loc_match.group(1)
+
+                # Extrai sufixo do ID do anúncio ML (ex: MLB-4211214797 -> #4797)
+                ml_id_match = re.search(r"MLB-?(\d+)", url_anuncio)
+                ml_suffix = ml_id_match.group(1)[-4:] if ml_id_match else None
+
+                if vendedor:
+                    pass
+                elif loc_name and ml_suffix:
+                    vendedor = f"Loja em {loc_name} (#{ml_suffix})"
+                elif loc_name:
+                    vendedor = f"Loja em {loc_name}"
+                elif ml_suffix:
+                    vendedor = f"Loja Mercado Livre (#{ml_suffix})"
+                else:
+                    vendedor = "Loja Mercado Livre"
                 
                 resultados_ouro.append({
                     "termo_busca": termo,
@@ -384,7 +435,7 @@ def fase_ouro():
                     "url_anuncio": url_anuncio,
                     "vendedor": vendedor
                 })
-            except Exception as e:
+            except Exception:
                 continue
   
         if len(resultados_ouro) == 0:

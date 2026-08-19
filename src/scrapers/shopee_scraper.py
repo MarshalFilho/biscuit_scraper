@@ -1,20 +1,21 @@
-import sys
 import os
-import unicodedata
+import sys
+
 sys.stdout.reconfigure(encoding='utf-8')
 import json
+import random
 import re
 import time
-import random
+
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 
 # Permite importação dos módulos da pasta src
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import get_platform_dirs, AUTH_DIR
 import config
+from config import AUTH_DIR, get_platform_dirs
 from utils.relevancia import verificar_relevancia
-from utils.supabase_client import conectar_supabase, upsert_produto, registrar_historico
+from utils.supabase_client import conectar_supabase, registrar_historico, upsert_produto
 
 # Configuração dinâmica de diretórios para a Shopee
 PLATFORM_DIRS = get_platform_dirs("shopee")
@@ -45,8 +46,14 @@ def extrair_preco_card_shopee(produto):
         for elem in elementos_preco:
             p_elem = elem.parent
             if p_elem:
-                parent_classes = " ".join([c for p in p_elem.parents for c in p.get("class", [])])
-                if "discount" in parent_classes.lower() or "original" in parent_classes.lower():
+                is_bad = False
+                for p in [p_elem] + list(p_elem.parents):
+                    p_classes = " ".join(p.get("class", [])) if hasattr(p, "get") and p.get("class") else ""
+                    p_tag = getattr(p, "name", "")
+                    if "discount" in p_classes.lower() or "original" in p_classes.lower() or "strike" in p_classes.lower() or "previous" in p_classes.lower() or p_tag in ["s", "del", "strike"]:
+                        is_bad = True
+                        break
+                if is_bad:
                     continue
                     
                 full_txt = p_elem.parent.text if p_elem.text.strip() == "R$" and p_elem.parent else p_elem.text
@@ -79,48 +86,43 @@ def fase_bronze():
     """
     print(f"\n🚀 [Etapa Bronze - Shopee] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...")
     
+    auth_dir = AUTH_DIR
+    profile_dir = os.path.join(auth_dir, "chrome_profile_shopee")
+    os.makedirs(profile_dir, exist_ok=True)
+    
+    is_headless = os.environ.get("HEADLESS", "false").lower() == "true"
+    
     with sync_playwright() as p:
-        browser_args = {
-            "headless": True,
-            "args": ["--disable-blink-features=AutomationControlled", "--no-sandbox"]
-        }
-        chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-        if os.path.exists(chrome_path):
-            browser_args["executable_path"] = chrome_path
-            
-        browser = p.chromium.launch(**browser_args) 
-        
-        auth_path = os.path.join(AUTH_DIR, "auth_shopee.json")
-        context_args = {
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        chrome_installed = os.path.exists(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
+        launch_args = {
+            "user_data_dir": profile_dir,
+            "headless": is_headless,
+            "args": [
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-web-security",
+                "--disable-features=IsolateOrigins,site-per-process"
+            ],
             "viewport": {"width": 1366, "height": 768},
             "locale": "pt-BR",
             "timezone_id": "America/Sao_Paulo",
-            "extra_http_headers": {
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-                "sec-ch-ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-                "sec-ch-ua-mobile": "?0",
-                "sec-ch-ua-platform": '"Windows"',
-                "sec-fetch-dest": "document",
-                "sec-fetch-mode": "navigate",
-                "sec-fetch-site": "none",
-                "sec-fetch-user": "?1",
-                "upgrade-insecure-requests": "1"
-            }
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         }
-        if os.path.exists(auth_path):
-            context_args["storage_state"] = auth_path
-            
-        context = browser.new_context(**context_args)
+        if chrome_installed:
+            launch_args["channel"] = "chrome"
+
+        context = p.chromium.launch_persistent_context(**launch_args)
 
         for termo in config.get_termos_busca():
             page = context.new_page()
             page.add_init_script("""
+                delete Object.getPrototypeOf(navigator).webdriver;
                 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
                 Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
-                window.chrome = { runtime: {} };
+                window.chrome = { runtime: { connect: () => {}, sendMessage: () => {} } };
             """)
             nome_arquivo_base = termo.replace(" ", "_")
             print(f"\n🔎 Termo de busca: '{termo}'")
@@ -132,13 +134,38 @@ def fase_bronze():
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                time.sleep(random.uniform(2.0, 4.0))
+                
+                # VERIFICAÇÃO RIGOROSA ANTI-ROBÔ / CAPTCHA
+                from utils.bot_detector import (
+                    notificar_e_interromper_bloqueio,
+                    verificar_bloqueio_shopee,
+                )
+                verificar_bloqueio_shopee(page)
+
                 try:
-                    page.wait_for_selector('a[href*="-i."], [data-sqe="item"], .shopee-search-item-result__item', timeout=15000)
+                    page.wait_for_selector('a[href*="-i."], [data-sqe="item"], .shopee-search-item-result__item', timeout=12000)
                 except Exception:
-                    pass
+                    # Checa novamente se o motivo do timeout foi um captcha
+                    verificar_bloqueio_shopee(page)
+
             except Exception as e:
+                from utils.bot_detector import (
+                    BotDetectionError,
+                    notificar_e_interromper_bloqueio,
+                )
+                if isinstance(e, BotDetectionError):
+                    try: page.close()
+                    except: pass
+                    try: context.close()
+                    except: pass
+                    raise e
+                
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}")
-                page.close()
+                if "closed" in str(e).lower() or "target" in str(e).lower():
+                    notificar_e_interromper_bloqueio("Shopee", detalhe="O navegador foi fechado ou bloqueado pela Shopee.")
+                try: page.close()
+                except Exception: pass
                 continue
                 
             max_pags = config.get_max_paginas()
@@ -149,6 +176,8 @@ def fase_bronze():
                 try:
                     # Checagem de segurança da Shopee (Login modal ou Captcha)
                     time.sleep(random.uniform(3.0, 5.0))
+                    verificar_bloqueio_shopee(page)
+
                     if page.locator(".shopee-popup__close-btn").is_visible():
                         page.locator(".shopee-popup__close-btn").click()
                         print("   ℹ️ Modal promocional fechado.")
@@ -165,8 +194,9 @@ def fase_bronze():
                     curr_url = page.url
                     html_len = len(html_renderizado)
                     print(f"   🔍 [DIAGNÓSTICO SHOPEE BRONZE] Título: '{title}' | URL: '{curr_url}' | Tamanho HTML: {html_len} bytes")
-                    if "captcha" in curr_url.lower() or "verify" in curr_url.lower() or "blocked" in title.lower():
-                        print(f"   ⚠️ ALERTA DE BLOQUEIO [SHOPEE]: A Shopee enviou página de captcha/verificação!")
+                    
+                    # VERIFICAÇÃO RIGOROSA ANTI-ROBÔ / CAPTCHA NO CONTEÚDO
+                    verificar_bloqueio_shopee(page, html_content=html_renderizado)
 
                     bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{pagina}.html")
                     with open(bronze_path, "w", encoding="utf-8") as f:
@@ -199,8 +229,8 @@ def fase_bronze():
             print(f"   ⏳ Aguardando {tempo_espera:.1f}s antes da próxima busca...")
             time.sleep(tempo_espera)
 
-        browser.close()
-    print("✅ [Etapa Bronze] Concluída!")
+        context.close()
+    print("✅ [Etapa Bronze - Shopee] Concluída!")
 
 
 def fase_prata():
@@ -265,6 +295,8 @@ def fase_prata():
 def fase_ouro():
     print("\n🚀 [Etapa Ouro] Extração e deduplicação Shopee (Prata -> Ouro)...")
     todos_dados_ouro = []
+    urls_processadas = set()
+    titulos_processados = set()
     
     for termo in config.get_termos_busca():
         nome_arquivo_base = termo.replace(" ", "_")
@@ -281,7 +313,6 @@ def fase_ouro():
         if not produtos_cards:
             produtos_cards = soup.find_all("a", attrs={"data-sqe": "link"})
         resultados_ouro = []
-        urls_processadas = set()
         
         for produto in produtos_cards:
             try:
@@ -292,10 +323,6 @@ def fase_ouro():
                     
                 url_path = link_tag["href"]
                 url_anuncio = f"https://shopee.com.br{url_path}" if url_path.startswith("/") else url_path
-                
-                # Deduplicação
-                if url_anuncio in urls_processadas: continue
-                urls_processadas.add(url_anuncio)
                 
                 # A Shopee costuma colocar o título dentro de uma div com linha cortada
                 titulo_tag = produto.find("div", class_=re.compile(r"ie3A\+n|bName"))
@@ -309,6 +336,13 @@ def fase_ouro():
                 if not titulo or not verificar_relevancia(titulo, termo):
                     continue
 
+                # Deduplicação por Título normalizado ou URL
+                norm_title = re.sub(r"[^\w\s]", "", titulo.lower()).strip()
+                if url_anuncio in urls_processadas or norm_title in titulos_processados:
+                    continue
+                urls_processadas.add(url_anuncio)
+                titulos_processados.add(norm_title)
+
                 # 2. PREÇO
                 preco, preco_debug_log = extrair_preco_card_shopee(produto)
                 print(f"   🔎 [AUDITORIA PREÇO SHOPEE] '{titulo[:35]}...' => R$ {preco:.2f} ({preco_debug_log})")
@@ -320,9 +354,38 @@ def fase_ouro():
                     vendas_texto = elementos_vendas[0].parent.text
                 vendas = limpar_vendas(vendas_texto)
 
-                # Extrai vendedor ou localização da loja
-                vendedor_tag = produto.find(["div", "span"], class_=re.compile(r"shopee-search-item-result__shop-location|z1678"))
-                vendedor = vendedor_tag.text.strip() if vendedor_tag else None
+                # Extrai vendedor (Nome da loja em prioridade, com fallback para Cidade/Estado e ID Único da Loja)
+                vendedor = None
+                shop_name_tag = produto.find(["div", "span", "a"], class_=re.compile(r"shopee-search-item-result__shop-name|shop-name|seller-name|username", re.IGNORECASE))
+                if shop_name_tag and shop_name_tag.text.strip() and len(shop_name_tag.text.strip()) < 40:
+                    vendedor = shop_name_tag.text.strip()
+
+                # Busca localização (Cidade/Estado)
+                loc_name = None
+                vendedor_tag = produto.find(["div", "span"], class_=re.compile(r"shopee-search-item-result__shop-location"))
+                if vendedor_tag and vendedor_tag.text.strip() and len(vendedor_tag.text.strip()) < 40:
+                    loc_name = vendedor_tag.text.strip()
+                if not loc_name:
+                    loc_match = re.search(r"\b(São Paulo|Minas Gerais|Santa Catarina|Rio de Janeiro|Paraná|Rio Grande do Sul|Bahia|Ceará|Pernambuco|Goiás|Espírito Santo|Distrito Federal|Maranhão|Paraíba|Amazonas|Mato Grosso|Rio Grande do Norte|Piauí|Alagoas|Sergipe|Rondônia|Tocantins|Acre|Amapá|Roraima|Internacional)\b", produto.text)
+                    if loc_match:
+                        loc_name = loc_match.group(1)
+
+                # Extrai ID único da Loja na Shopee a partir do link (-i.SHOPID.ITEMID)
+                shop_id = None
+                shop_match = re.search(r"-i\.(\d+)\.", url_anuncio)
+                if shop_match:
+                    shop_id = shop_match.group(1)[-4:]
+
+                if vendedor:
+                    pass
+                elif loc_name and shop_id:
+                    vendedor = f"Loja em {loc_name} (#{shop_id})"
+                elif loc_name:
+                    vendedor = f"Loja em {loc_name}"
+                elif shop_id:
+                    vendedor = f"Loja Shopee (#{shop_id})"
+                else:
+                    vendedor = "Loja Shopee"
 
                 resultados_ouro.append({
                     "termo_busca": termo,
@@ -333,7 +396,7 @@ def fase_ouro():
                     "url_anuncio": url_anuncio,
                     "vendedor": vendedor
                 })
-            except Exception as e:
+            except Exception:
                 continue
 
         print(f"   🥇 OURO: {len(resultados_ouro)} produtos extraídos para '{termo}'.")

@@ -29,6 +29,13 @@
             <span class="card-value sales">{{ product.vendas_totais || 0 }} unidades</span>
           </div>
 
+          <div class="summary-card" v-if="product.vendedor">
+            <span class="card-label">Vendedor / Origem</span>
+            <span class="card-value seller">
+              {{ product.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ product.vendedor }}
+            </span>
+          </div>
+
           <div class="summary-card">
             <span class="card-label">Anúncio Original</span>
             <a :href="product.link" target="_blank" class="store-link-btn">Acessar na Loja ↗</a>

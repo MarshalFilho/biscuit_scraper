@@ -18,6 +18,7 @@ __pycache__/
 !package-lock.json
 !frontend/package.json
 !frontend/package-lock.json
+!frontend/biome.json
 !config_app.json
 *.xlsx
 *.csv
@@ -44,6 +45,11 @@ Thumbs.db
 
 # Documentation / Roadmap
 PLANO_DESENVOLVIMENTO.md
-GUIA_CONFIGURACAO_NUVEM.md
+AGENTS_GUIDELINES.md
+AGENTS.md
+
+# Local config & data
+config_app.json
+data/
 
 

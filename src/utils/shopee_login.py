@@ -1,10 +1,11 @@
 import os
 import sys
-import time
+
 from playwright.sync_api import sync_playwright
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import AUTH_DIR
+
 
 def login_shopee():
     print("\n=== Login Manual Shopee ===")
