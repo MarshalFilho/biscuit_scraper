@@ -1,109 +1,91 @@
-# 🚀 Plano de Desenvolvimento & Arquitetura Oficial de Produção
+# 🚀 Plano de Desenvolvimento & Arquitetura Oficial (Multi-Tenant & Backend Only)
 
-Este documento é a referência oficial da arquitetura do sistema, contemplando os **recursos já implementados no código-fonte** e a **arquitetura de produção na nuvem (100% Custo Zero)** validada para publicação.
-
----
-
-## 📌 PARTE 1: FUNCIONALIDADES E RECURSOS JÁ IMPLEMENTADOS
-
-O sistema possui uma arquitetura funcional composta por um motor de extração em Python com Playwright, inteligência generativa com a API do Google Gemini e um Dashboard em Nuxt 3.
-
-### 1.1. Motor de Extração & Scraping (Mercado Livre + Shopee)
-- **Extração Precisa de Preços**: Filtro de preços cortados (`<del>`, `<s>`), ofertas promocionais e banners de frete grátis (*"Frete grátis em R$ 140"*), capturando o valor à vista real.
-- **Deduplicação Inteligente**: Normalização de URLs patrocinadas (`click1.mercadolivre.com.br/...`) e agrupamento automático por título/ID no banco de dados para evitar registros duplicados.
-- **Detecção de CAPTCHAs & Bot Blocks**: Mapeamento de desafios anti-robô e atualização em tempo real do status no banco.
-- **Script de Purga Total**: Ferramenta de limpeza (`py src/utils/limpar_dados_antigos.py --reset-total`) para zerar históricos locais e remotos quando necessário.
-
-### 1.2. Módulo de Inteligência Artificial Generativa (Google Gemini API)
-- **100% Genérico e Multinicho**: Prompts e análises parametrizados dinamicamente com base no `nome_projeto` do usuário, adaptando-se a qualquer segmento de e-commerce.
-- **Otimização de Tokens (>80%)**: Envio de payload minimalista `[{t, p, plat, v, d}]` e recepção em formato JSON estrito (`response_mime_type="application/json"`).
-- **Relatório Executivo de 7 Módulos**:
-  1. *Lojas & Vendedores Líderes*: Ranking de vendedores por faturamento e volume.
-  2. *Produtos Virais & Mais Vendidos*: Itens de maior velocidade de vendas.
-  3. *Palavras-Chave de Alta Conversão*: Análise de termos SEO líderes.
-  4. *Zonas de Preço & Oceano Azul*: Mapeamento de volume por faixa de valor.
-  5. *Comparativo entre Plataformas*: Participação de mercado (% Share ML vs Shopee).
-  6. *Recomendações Estratégicas da IA*: Diagnósticos de precificação e logística.
-  7. *Oportunidades de Nicho*: Identificação de demandas reprimidas.
-- **Gerador de Filtros por Linguagem Natural**: Endpoint em Nuxt que interpreta o texto livre do usuário e gera os termos de busca e blacklist sem omissão de itens.
-
-### 1.3. Frontend Dashboard (Nuxt 3)
-- **Linha do Tempo Histórica (`TimelineScrapeSelector.vue`)**: Inspeção por data e *Modo Comparar Datas* (Data A vs Data B).
-- **Ranking de Produtos Virais (`TrendingProductsTab.vue`)**: Destaque para produtos em aceleração de vendas.
-- **Monitor de Guerra de Preços & Margens (`PriceStrategyMonitor.vue`)**: Separação de anúncios em aumento de preço vs descontos.
-- **Central de Conexão das Lojas de 1-Clique**:
-  - Botão de login que abre o navegador para validação de sessão de forma transparente.
-  - Banner explicativo de garantia de privacidade (não salvamento de senhas).
-  - Alerta pulsante de CAPTCHA detectado com atalho para resolução na Web.
-
-### 1.4. Infraestrutura de Container Pré-Configurada
-- `Dockerfile` configurado com Python e dependências do Playwright.
-- Servidor Webhook Flask (`src/cloud_server.py`) pronto na porta `8080`.
+Este documento é a referência oficial da arquitetura do sistema, contemplando os **recursos implementados**, a **reestruturação de segurança multi-tenant** e os **próximos passos de evolução do produto**.
 
 ---
 
-## 📌 PARTE 2: ARQUITETURA OFICIAL DE PRODUÇÃO NA NUVEM (100% CUSTO ZERO)
+## 🏛️ PARTE 1: NOVA ARQUITETURA DE SEGURANÇA E MODELO DE OPERAÇÃO
 
-A infraestrutura de produção foi desenhada para rodar 100% online sem depender de máquina local ligada e sem custos de hospedagem (Free Tier perene).
+Para garantir segurança máxima, **custo zero perpétuo** e evitar vulnerabilidades (como usuários mal-intencionados disparando requisições excessivas que onerem o servidor ou a invasão de scripts locais), o sistema adota um modelo **Multi-Tenant com Scraping Exclusivo no Backend**:
 
 ```
-   ┌─────────────────────────────────────────────────────────────┐
-   │                    PAINEL WEB / DASHBOARD                   │
-   │                    Hospedado na VERCEL                      │
-   │               (Nuxt 3 SSR + Server Routes)                  │
-   └───────────────┬─────────────────────────────┬───────────────┘
-                   │                             │
-    1. Escuta Status Realtime     2. Disparo Webhook (POST /trigger)
-                   │                             │
-                   ▼                             ▼
-   ┌─────────────────────────────┐   ┌───────────────────────────┐
-   │    BANCO DE DADOS NUVEM     │   │   ENGINE DE SCRAPING & IA │
-   │          SUPABASE           │   │     GOOGLE CLOUD RUN      │
-   │  (PostgreSQL + Websockets)  │   │  (Playwright Docker + IA)  │
-   └───────────────▲─────────────┘   └───────────▲───────────────┘
-                   │                             │
-                   └────── 3. Salva Coletas ─────┘
-                                                 │
-                                 4. Ativação Cron Diária (03:00)
-                                                 │
-                                     ┌───────────┴───────────┐
-                                     │ GOOGLE CLOUD SCHEDULER│
-                                     └───────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                     DASHBOARD WEB MULTI-TENANT (Vercel)                │
+ │  Nuxt 3 SSR + Supabase Auth + i18n (PT/EN) + Visualização de Dados    │
+ └───────────────────────────────────┬────────────────────────────────────┘
+                                     │
+                    (Leitura isolada via Supabase RLS)
+                                     ▼
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                      BANCO DE DADOS NUVEM (Supabase)                   │
+ │  PostgreSQL: Tabelas isoladas por `user_id` (Produtos, Histórico, IA)  │
+ └───────────────────────────────────▲────────────────────────────────────┘
+                                     │
+                    (Gravação e Análise via Service Role)
+                                     │
+ ┌───────────────────────────────────┴────────────────────────────────────┐
+ │               ENGINE DE SCRAPING & IA (CLI Admin / Cloud)              │
+ │  Execução restrita ao Administrador via Terminal / Cron agendado       │
+ │  Comando com seleção de Tenant: `python src/main.py --user-id <UUID>`  │
+ └────────────────────────────────────────────────────────────────────────┘
 ```
 
----
-
-### Componente 1: Hospedagem Frontend — **Vercel**
-- **Provedor**: Vercel (Plano Hobby / Free Tier).
-- **Função**: Publicação da aplicação Web construída em **Nuxt 3** (`frontend/`).
-- **Recursos**:
-  - Compilação automática de rotas do Nitro (`/api/report`, `/api/ai-filter`, `/api/trigger-scrape`) como Serverless Functions.
-  - Suporte nativo a SSR (Server-Side Rendering) e SSL (HTTPS) automático.
-  - Deploy contínuo via integração com o repositório do GitHub (CI/CD).
-
-### Componente 2: Banco de Dados na Nuvem — **Supabase**
-- **Provedor**: Supabase (PostgreSQL Gerenciado / Free Tier de 500 MB).
-- **Função**: Armazenamento relacional de produtos, históricos de coletas e configurações do scraper.
-- **Recursos**:
-  - Realtime Subscriptions via Websockets: O dashboard atualiza a tela do usuário instantaneamente quando o robô envia atualizações de status.
-  - Compatibilidade 100% com o código Python (`supabase-py`) e Vue (`@supabase/supabase-js`).
-
-### Componente 3: Engine de Scraping & Automação — **Google Cloud Run + Cloud Scheduler**
-- **Provedor**: Google Cloud Run + Google Cloud Scheduler (Free Tier GCP: 2M chamadas/mês).
-- **Função**: Execução do Playwright Chromium Headless e geração do relatório de IA via container Docker.
-- **Recursos**:
-  - **Container Serverless (`src/cloud_server.py`)**: Publicado via Dockerfile expondo a porta `8080`.
-  - **Disparo Sob Demanda**: Ao clicar em *"Disparar Scraper Agora"* no site, a Vercel faz um POST para o Cloud Run, que executa a raspagem com resposta imediata.
-  - **Disparo Programado (Cron Job)**: O Cloud Scheduler executa uma chamada HTTP às 03:00 todos os dias para manter o histórico atualizado.
-  - **Scale to Zero**: O container escala para zero quando ocioso, garantindo consumo dentro da cota gratuita do GCP.
+### 1.1. Princípios da Nova Arquitetura:
+1. **Frontend Seguro & Read-Only para Clientes**: O cliente final acessa apenas a visualização de métricas, gráficos e insights da sua própria conta. Não há botões de disparo de scraping abertos na Web para clientes comuns.
+2. **Isolamento de Contas (Multi-Tenant RLS)**: Cada cliente possui seu login via Supabase Auth e acessa estritamente os produtos, termos e relatórios vinculados ao seu `user_id`.
+3. **Scraping Centralizado no Backend (CLI Seletivo)**: O administrador executa a extração via terminal selecionando o cliente desejado por ID/UUID (`python src/main.py --user-id <ID>`) ou via rotina agendada (Cron diário).
+4. **Internacionalização Nativa (i18n)**: Suporte bilíngue completo no Dashboard (**Português 🇧🇷 / Inglês 🇺🇸**) para expansão de mercado.
 
 ---
 
-## 📌 PARTE 3: CHECKLIST DE DEPLOY & EXECUÇÃO
+## 📌 PARTE 2: FUNCIONALIDADES E REFINAMENTOS DE IA & UX
+
+### 2.1. Relatório de Inteligência Executiva de Mercado (IA Gemini)
+- **Recomendações Estratégicas & Oportunidades de Nicho (Módulo Principal no Topo)**:
+  - Posicionamento da aba de recomendações no início do relatório.
+  - Fusão de diagnóstico tático com oportunidades de demanda reprimida.
+  - **Justificativa baseada em dados**: Cada recomendação deve conter dados empíricos concretos (ex: *"Criar kits entre R$ 45 e R$ 60 pois esta faixa concentra 64% do volume de vendas com apenas 18% da concorrência ativa"*).
+- **Comparativo de Plataformas com Métrica de Vendedores**:
+  - Além de volume de vendas acumulado e % market share, inclusão da **quantidade de lojas/vendedores únicos** ativos no Mercado Livre vs Shopee.
+- **Módulos Estratégicos Mantidos**: Top Vendedores em Ascensão, Produtos Virais, Estratégia de SEO/Palavras-Chave e Oceano Azul de Preços.
+
+### 2.2. Tabela Principal de Produtos (UX & Anti-CLS)
+- **Modo Ocultar/Silenciar em vez de Excluir**:
+  - O botão de ação permite ao cliente "ocultar/silenciar" um anúncio irrelevante da sua visão, sem deletar fisicamente o registro do banco de dados.
+  - Adição de filtro na barra superior: *"Mostrar itens ocultos (Sim/Não)"* para recuperação rápida.
+- **Scroll Vertical com Cabeçalho Sticky**:
+  - Limite de altura responsivo (`max-height: 580px; overflow-y: auto`) com cabeçalho fixo no topo (`position: sticky; top: 0`), mantendo a navegação fluida em grandes bases de produtos.
+
+---
+
+## 📌 PARTE 3: ESPECIFICAÇÃO TÉCNICA DAS ETAPAS DE IMPLEMENTAÇÃO
+
+### 📋 Etapa A: Refinamento de IA e Comparativo de Plataformas
+- [ ] Atualizar `src/ai/insights_generator.py` e `src/utils/ai_engine.py` para calcular a contagem de vendedores únicos por plataforma.
+- [ ] Reordenar os módulos do relatório executivo colocando **Recomendações & Oportunidades de Nicho** como primeiro item, com justificativas baseadas em números da coleta.
+- [ ] Atualizar `AiExecutiveReport.client.vue` para exibir a métrica de quantidade de vendedores no comparativo de plataformas.
+
+### 📋 Etapa B: UX da Tabela e Ocultação Inteligente
+- [ ] Modificar `DataTable.vue` para substituir a exclusão definitiva por um status `oculto: true/false`.
+- [ ] Adicionar filtro de alternância na barra de filtros globais para exibir/ocultar itens silenciados.
+
+### 📋 Etapa C: Internacionalização (i18n PT / EN)
+- [ ] Instalar e configurar `@nuxtjs/i18n` no `frontend/`.
+- [ ] Criar arquivos de tradução `locales/pt.json` e `locales/en.json`.
+- [ ] Adicionar seletor de idioma (🇧🇷 PT / 🇺🇸 EN) na `Navbar.vue`.
+
+### 📋 Etapa D: Multi-Tenant & CLI Administrativa de Scraping
+- [ ] Adicionar suporte a argumento CLI `--user-id` e `--listar-clientes` em `src/main.py`.
+- [ ] Atualizar tela de Login no Frontend para vincular a sessão do usuário ao seu respectivo `user_id` no Supabase.
+- [ ] Remover a aba aberta de disparo do frontend para clientes comuns, deixando a configuração apenas administrativa.
+
+---
+
+## 📌 PARTE 4: STATUS ATUAL DO CHECKLIST
 
 - [x] **Código & Containers**: `Dockerfile`, `src/cloud_server.py` e endpoints do Nuxt prontos.
-- [x] **IA Generativa**: Integração com Gemini API (`gemini-flash-latest`) validada.
+- [x] **IA Generativa**: Integração com Gemini API (`gemini-flash-latest`) com otimização de tokens (>80%).
 - [x] **Variáveis de Ambiente**: Arquivo [`.env.example`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.env.example) estruturado.
 - [x] **Passo 1 (Banco de Dados Cloud)**: Tabelas e Realtime configurados no Supabase Cloud.
-- [ ] **Passo 2 (Frontend Vercel)**: Conectar o repositório GitHub na Vercel e adicionar as variáveis do `.env` *(Em andamento)*.
-- [ ] **Passo 3 (Engine GCP)**: Publicar o container no Google Cloud Run e configurar o Cloud Scheduler.
+- [x] **Passo 2 (Frontend Vercel)**: Dashboard publicado e integrado ao Supabase via Vercel.
+- [ ] **Passo 3 (Evolução Multi-Tenant & i18n)**: Implementação dos refinamentos do novo plano.
