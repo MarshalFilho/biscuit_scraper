@@ -1,10 +1,10 @@
 # 🚀 Plano de Desenvolvimento & Arquitetura Oficial (Multi-Tenant & Backend Only)
 
-Este documento é a referência oficial da arquitetura do sistema, contemplando os **recursos implementados**, a **reestruturação de segurança multi-tenant** e os **próximos passos de evolução do produto**.
+Este documento é a referência oficial da arquitetura do sistema, contemplando a **reestruturação de segurança multi-tenant**, a **evolução visual e analítica do Dashboard** e os **planos de ação para os próximos sprints**.
 
 ---
 
-## 🏛️ PARTE 1: NOVA ARQUITETURA DE SEGURANÇA E MODELO DE OPERAÇÃO
+## 🏛️ PARTE 1: ARQUITETURA DE SEGURANÇA & OPERAÇÃO (MULTI-TENANT)
 
 Para garantir segurança máxima, **custo zero perpétuo** e evitar vulnerabilidades (como usuários mal-intencionados disparando requisições excessivas que onerem o servidor ou a invasão de scripts locais), o sistema adota um modelo **Multi-Tenant com Scraping Exclusivo no Backend**:
 
@@ -30,62 +30,75 @@ Para garantir segurança máxima, **custo zero perpétuo** e evitar vulnerabilid
  └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.1. Princípios da Nova Arquitetura:
-1. **Frontend Seguro & Read-Only para Clientes**: O cliente final acessa apenas a visualização de métricas, gráficos e insights da sua própria conta. Não há botões de disparo de scraping abertos na Web para clientes comuns.
-2. **Isolamento de Contas (Multi-Tenant RLS)**: Cada cliente possui seu login via Supabase Auth e acessa estritamente os produtos, termos e relatórios vinculados ao seu `user_id`.
-3. **Scraping Centralizado no Backend (CLI Seletivo)**: O administrador executa a extração via terminal selecionando o cliente desejado por ID/UUID (`python src/main.py --user-id <ID>`) ou via rotina agendada (Cron diário).
-4. **Internacionalização Nativa (i18n)**: Suporte bilíngue completo no Dashboard (**Português 🇧🇷 / Inglês 🇺🇸**) para expansão de mercado.
+---
+
+## 📌 PARTE 2: ROADMAP DE MELHORIAS & NOVO ESCOPO DE REQUISITOS
+
+### 🧠 2.1. Reestruturação dos Relatórios da IA (Consolidados & Equilibrados)
+- **Consolidação em 4 Macro-Módulos Integrados** (em vez de 7 abas fragmentadas):
+  1. 🎯 **Recomendações Estratégicas & Oportunidades de Nicho**: Diagnósticos acionáveis no topo, justificados com dados matemáticos concretos (ex: *"Recomendamos kits entre R$ 45 e R$ 60 pois concentram 64% do volume com apenas 18% de concorrência"*).
+  2. 🏆 **Top Vendedores & Produtos Virais**: Ranking combinado dos maiores faturamentos e dos itens com maior aceleração de vendas.
+  3. 🏷️ **Estratégia de SEO & Palavras-Chave de Alta Conversão**: Termos mais frequentes nos títulos líderes.
+  4. ⚔️ **Batalha de Marketplaces & Oceano Azul de Preços**: Comparativo direto ML vs Shopee (% share, volume e **número de vendedores únicos**) integrado com a distribuição de faixas de preço.
+- **Equilíbrio Multi-Plataforma**: Garantir que a extração e a síntese da IA analisem com peso proporcional anúncios do **Mercado Livre** e da **Shopee** (corrigindo viés de plataforma única).
 
 ---
 
-## 📌 PARTE 2: FUNCIONALIDADES E REFINAMENTOS DE IA & UX
-
-### 2.1. Relatório de Inteligência Executiva de Mercado (IA Gemini)
-- **Recomendações Estratégicas & Oportunidades de Nicho (Módulo Principal no Topo)**:
-  - Posicionamento da aba de recomendações no início do relatório.
-  - Fusão de diagnóstico tático com oportunidades de demanda reprimida.
-  - **Justificativa baseada em dados**: Cada recomendação deve conter dados empíricos concretos (ex: *"Criar kits entre R$ 45 e R$ 60 pois esta faixa concentra 64% do volume de vendas com apenas 18% da concorrência ativa"*).
-- **Comparativo de Plataformas com Métrica de Vendedores**:
-  - Além de volume de vendas acumulado e % market share, inclusão da **quantidade de lojas/vendedores únicos** ativos no Mercado Livre vs Shopee.
-- **Módulos Estratégicos Mantidos**: Top Vendedores em Ascensão, Produtos Virais, Estratégia de SEO/Palavras-Chave e Oceano Azul de Preços.
-
-### 2.2. Tabela Principal de Produtos (UX & Anti-CLS)
-- **Modo Ocultar/Silenciar em vez de Excluir**:
-  - O botão de ação permite ao cliente "ocultar/silenciar" um anúncio irrelevante da sua visão, sem deletar fisicamente o registro do banco de dados.
-  - Adição de filtro na barra superior: *"Mostrar itens ocultos (Sim/Não)"* para recuperação rápida.
-- **Scroll Vertical com Cabeçalho Sticky**:
-  - Limite de altura responsivo (`max-height: 580px; overflow-y: auto`) com cabeçalho fixo no topo (`position: sticky; top: 0`), mantendo a navegação fluida em grandes bases de produtos.
+### 📊 2.2. Reformulação dos Gráficos & Filtro Estilo Upwork
+- **Filtro de Faixa de Preço Estilo Upwork (Range Slider com Histograma)**:
+  - Substituição dos inputs numéricos tradicionais por um componente visual interativo: histograma de volume de anúncios por faixa de valor com controles de arrastar (*Dual Range Slider*).
+- **Redefinição dos Gráficos da Visão Geral**:
+  - 📈 **Gráfico de Análise de Vendedores (`TopSellersChart`)**: Expandido para largura dupla (tamanho de 2 cards / full width), pois é a visualização mais rica de faturamento e anúncios.
+  - 🗑️ **Remoção do Gráfico de Market Share (`MarketShareChart`)**: Retirado para limpar o layout e eliminar redundância com a Batalha de Plataformas.
+  - 📦 **Gráfico de Top Produtos (`TopProductsChart`)**: Redesenhado com paleta de cores sóbria e moderna, expandindo de 5 para o **Top 10 produtos líderes**.
 
 ---
 
-## 📌 PARTE 3: ESPECIFICAÇÃO TÉCNICA DAS ETAPAS DE IMPLEMENTAÇÃO
-
-### 📋 Etapa A: Refinamento de IA e Comparativo de Plataformas
-- [ ] Atualizar `src/ai/insights_generator.py` e `src/utils/ai_engine.py` para calcular a contagem de vendedores únicos por plataforma.
-- [ ] Reordenar os módulos do relatório executivo colocando **Recomendações & Oportunidades de Nicho** como primeiro item, com justificativas baseadas em números da coleta.
-- [ ] Atualizar `AiExecutiveReport.client.vue` para exibir a métrica de quantidade de vendedores no comparativo de plataformas.
-
-### 📋 Etapa B: UX da Tabela e Ocultação Inteligente
-- [ ] Modificar `DataTable.vue` para substituir a exclusão definitiva por um status `oculto: true/false`.
-- [ ] Adicionar filtro de alternância na barra de filtros globais para exibir/ocultar itens silenciados.
-
-### 📋 Etapa C: Internacionalização (i18n PT / EN)
-- [ ] Instalar e configurar `@nuxtjs/i18n` no `frontend/`.
-- [ ] Criar arquivos de tradução `locales/pt.json` e `locales/en.json`.
-- [ ] Adicionar seletor de idioma (🇧🇷 PT / 🇺🇸 EN) na `Navbar.vue`.
-
-### 📋 Etapa D: Multi-Tenant & CLI Administrativa de Scraping
-- [ ] Adicionar suporte a argumento CLI `--user-id` e `--listar-clientes` em `src/main.py`.
-- [ ] Atualizar tela de Login no Frontend para vincular a sessão do usuário ao seu respectivo `user_id` no Supabase.
-- [ ] Remover a aba aberta de disparo do frontend para clientes comuns, deixando a configuração apenas administrativa.
+### 📦 2.3. Tabela Principal de Produtos (UX & Anti-CLS)
+- **Infinite Scroll 100% Automático**:
+  - Ao rolar o scroll interno até o fim, a tabela carrega automaticamente o próximo lote de 50 produtos via *IntersectionObserver*, sem exigir clique em botão.
+- **Ocultar em vez de Excluir**:
+  - Substituição da ação destrutiva de exclusão por "Ocultar/Silenciar anúncio", acompanhada de um toggle de visualização na barra de filtros (*"Exibir ocultos"*).
+- **Cabeçalho Sticky e Scroll Vertical**: Mantido o cabeçalho fixo (`position: sticky; top: 0`) para rolagem confortável.
 
 ---
 
-## 📌 PARTE 4: STATUS ATUAL DO CHECKLIST
+### 🐛 2.4. Correção de Bugs e Ajustes de Layout
+- **Cards de KPI (Visão Geral)**:
+  - Correção de overflow de texto (palavras cortadas ou sobrepostas em resoluções menores).
+  - Remoção de caracteres quebrados no sufixo de vendas (ex: `"1000 e "` corrigido para `"1.000 un"`).
+- **Filtro da Linha do Tempo (`TimelineScrapeSelector.vue`)**:
+  - Correção da reatividade no `index.vue`: vincular `timelineSelectedDate` ao filtro `filteredProducts` para que a seleção de uma data passada filtre os dados imediatamente no modo único e alimente o comparativo no modo duplo.
 
-- [x] **Código & Containers**: `Dockerfile`, `src/cloud_server.py` e endpoints do Nuxt prontos.
-- [x] **IA Generativa**: Integração com Gemini API (`gemini-flash-latest`) com otimização de tokens (>80%).
-- [x] **Variáveis de Ambiente**: Arquivo [`.env.example`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.env.example) estruturado.
-- [x] **Passo 1 (Banco de Dados Cloud)**: Tabelas e Realtime configurados no Supabase Cloud.
-- [x] **Passo 2 (Frontend Vercel)**: Dashboard publicado e integrado ao Supabase via Vercel.
-- [ ] **Passo 3 (Evolução Multi-Tenant & i18n)**: Implementação dos refinamentos do novo plano.
+---
+
+### 🌐 2.5. Internacionalização (i18n PT / EN)
+- Configuração de `@nuxtjs/i18n` com suporte a Português 🇧🇷 e Inglês 🇺🇸.
+- Seletor de idioma na `Navbar.vue`.
+
+---
+
+## 📌 PARTE 3: CHECKLIST DE TAREFAS DE IMPLEMENTAÇÃO
+
+### 📋 Bloco 1: Correções de Bugs Imediatas
+- [ ] Vincular a data selecionada da Linha do Tempo (`TimelineScrapeSelector`) na computação de `filteredProducts` em `index.vue`.
+- [ ] Ajustar formatação de números e evitar quebra/corte de texto nos cards de KPI (`KpiCards.vue`).
+- [ ] Corrigir viés do Gemini em `src/utils/ai_engine.py` para balancear a amostragem de dados da Shopee e Mercado Livre.
+
+### 📋 Bloco 2: Reformulação de Gráficos e Filtro Upwork
+- [ ] Remover `MarketShareChart.client.vue` da tela inicial.
+- [ ] Expandir `TopSellersChart.client.vue` para largura dupla (`full-width`).
+- [ ] Redesenhar `TopProductsChart.client.vue` com Top 10 e cores elegantes.
+- [ ] Desenvolver componente `PriceRangeHistogramFilter.vue` (Range Slider com gráfico de barras de distribuição integrado).
+
+### 📋 Bloco 3: Relatório Executivo Consolidado (4 Módulos)
+- [ ] Atualizar `AiExecutiveReport.client.vue` para a nova estrutura de 4 macro-módulos integrados.
+- [ ] Adicionar contagem de vendedores únicos por plataforma.
+
+### 📋 Bloco 4: Tabela com Infinite Scroll Automático e Ocultação
+- [ ] Implementar `IntersectionObserver` em `DataTable.vue` para auto-carregamento no fim da rolagem.
+- [ ] Substituir exclusão por flag de ocultação com toggle no filtro global.
+
+### 📋 Bloco 5: Internacionalização & CLI Multi-Tenant
+- [ ] Configurar i18n (PT / EN).
+- [ ] Adicionar parâmetro `--user-id` na CLI do Python para raspagem seletiva por cliente.
