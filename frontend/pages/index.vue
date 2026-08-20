@@ -13,7 +13,10 @@
 
     <div v-else>
       <!-- Relatório de Inteligência Executiva por IA (Fase 4) -->
-      <AiExecutiveReport :reportData="aiReportData" />
+      <AiExecutiveReport 
+        :isLoading="isLoading || isFetchingNewData" 
+        :reportData="aiReportData"
+      />
 
       <!-- Banner da Data e Horário da Última Atualização -->
       <div class="last-update-banner animate-fade-in">
@@ -24,6 +27,12 @@
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
           <h4>🔍 Super Filtros Globais</h4>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <p class="subtitle" style="margin:0;">Dashboard Analítico e Gestão Estratégica</p>
+            <button @click="toggleLocale" class="btn-primary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; border-radius: 99px;">
+              {{ locale === 'pt' ? '🇺🇸 EN' : '🇧🇷 PT' }}
+            </button>
+          </div>
           <span class="filters-info">Altera em tempo real todos os KPIs, gráficos e tabelas do painel</span>
         </div>
         
@@ -194,6 +203,12 @@ import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
 import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
+
+const { locale, setLocale, t } = useI18n()
+
+function toggleLocale() {
+  setLocale(locale.value === 'pt' ? 'en' : 'pt')
+}
 
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)

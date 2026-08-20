@@ -32,5 +32,18 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   experimental: {
     appManifest: false
+  },
+  modules: [
+    '@nuxtjs/i18n'
+  ],
+  i18n: {
+    locales: [
+      { code: 'pt', name: 'Português', file: 'pt-BR.json' },
+      { code: 'en', name: 'English', file: 'en-US.json' }
+    ],
+    defaultLocale: 'pt',
+    lazy: true,
+    langDir: 'locales/',
+    strategy: 'no_prefix'
   }
 })

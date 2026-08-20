@@ -99,6 +99,7 @@ def main():
     parser.add_argument("--daemon", action="store_true", help="Modo Polling Contínuo escutando Supabase")
     parser.add_argument("--cloud", action="store_true", help="Modo One-Shot para rodar no GitHub Actions")
     parser.add_argument("--login", action="store_true", help="Abre o navegador visível para validar verificação/login inicial")
+    parser.add_argument("--user-id", type=str, help="Executa o scraper para um usuário específico do Supabase")
     
     args = parser.parse_args()
     
@@ -205,10 +206,16 @@ def main():
             print(f"Erro ao finalizar status no Supabase: {e}")
             
     else:
-        # Modo execução única e manual local
-        print("\n⚙️ Modo de Execução Única Manual Local.")
+        user_id = args.user_id or os.environ.get("SUPABASE_USER_ID")
+        if user_id:
+            os.environ["CURRENT_USER_ID"] = user_id
+            print(f"\n⚙️ Modo de Execução Única Manual Local (Usuário: {user_id}).")
+            sincronizar_sessao_nuvem(user_id)
+        else:
+            print("\n⚙️ Modo de Execução Única Manual Local.")
+            
         config.recarregar_config()
-        executar_scrapers(args.plataforma, None)
+        executar_scrapers(args.plataforma, user_id)
 
 if __name__ == "__main__":
     main()

@@ -26,17 +26,24 @@ def atualizar_status_scraper(user_id, status_mensagem):
         print(f"⚠️ Erro ao atualizar status na nuvem: {e}")
 
 
-def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str, vendedor: str = None) -> str:
+def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str, vendedor: str = None, user_id: str = None) -> str:
     """
-    Verifica se o produto existe. Se não, insere.
+    Verifica se o produto existe para aquele user_id. Se não, insere.
     Retorna o UUID do produto no banco.
     """
+    query = supabase.table("produtos").select("id").eq("plataforma", plataforma)
+    if user_id:
+        query = query.eq("user_id", user_id)
+        
     # 1. Verifica se já existe por id_externo
-    response = supabase.table("produtos").select("id").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
+    response = query.eq("id_externo", id_externo).execute()
     
     # 2. Fallback por título se for um link de clique patrocinado
     if (not response.data or len(response.data) == 0) and titulo:
-        response = supabase.table("produtos").select("id").eq("plataforma", plataforma).eq("titulo", titulo).execute()
+        query_title = supabase.table("produtos").select("id").eq("plataforma", plataforma)
+        if user_id:
+            query_title = query_title.eq("user_id", user_id)
+        response = query_title.eq("titulo", titulo).execute()
 
     if response.data and len(response.data) > 0:
         produto_id = response.data[0]["id"]
@@ -54,6 +61,9 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
         "vendedor": vendedor,
         "criado_em": datetime.utcnow().isoformat()
     }
+    
+    if user_id:
+        novo_produto["user_id"] = user_id
     
     # O Supabase retorna os dados inseridos
     res_insert = supabase.table("produtos").insert(novo_produto).execute()
