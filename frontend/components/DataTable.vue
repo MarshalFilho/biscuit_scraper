@@ -256,10 +256,29 @@ function exportToCSV() {
 .search-input { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); padding: 0.65rem 1rem; border-radius: 8px; width: 280px; outline: none; transition: border-color 0.3s ease; font-size: 0.9rem; }
 .search-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
 
-.table-scroll { overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; }
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 580px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
 .data-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; }
 .data-table th, .data-table td { padding: 0.9rem 1rem; border-bottom: 1px solid #e2e8f0; }
-.data-table th { background: #f8fafc; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.05em; white-space: nowrap; }
+.data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
 
 .sortable-header { cursor: pointer; user-select: none; transition: background 0.2s ease; }
 .sortable-header:hover { background: #f1f5f9; color: var(--neon-blue); }

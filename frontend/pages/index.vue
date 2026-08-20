@@ -363,23 +363,33 @@ onMounted(async () => {
     loading.value = true
     loadBlockedProducts()
     
-    // Tenta carregar relatorio de inteligencia executiva local ou nuvem
+    // Tenta carregar relatorio de inteligencia executiva do Supabase ou da API local
     try {
-      const localReport = await $fetch('/api/report')
-      if (localReport) {
-        aiReportData.value = localReport
+      const { data: cfg } = await supabase.from('configuracoes_scraper').select('blocked_products, relatorio_insights, nome_projeto').limit(1).single()
+      if (cfg) {
+        if (cfg.relatorio_insights) {
+          aiReportData.value = cfg.relatorio_insights
+        }
+        if (cfg.nome_projeto) {
+          nomeProjeto.value = cfg.nome_projeto
+        }
+        if (cfg.blocked_products && Array.isArray(cfg.blocked_products)) {
+          blockedProducts.value = cfg.blocked_products
+          localStorage.setItem('scraper_blocked_products', JSON.stringify(cfg.blocked_products))
+        }
       }
     } catch (e) {
-      console.warn("API Report local indisponivel:", e)
+      console.warn("Nao foi possivel carregar configuracoes do Supabase:", e)
     }
 
-    try {
-      const { data: cfg } = await supabase.from('configuracoes_scraper').select('blocked_products').limit(1).single()
-      if (cfg && cfg.blocked_products && Array.isArray(cfg.blocked_products)) {
-        blockedProducts.value = cfg.blocked_products
-        localStorage.setItem('scraper_blocked_products', JSON.stringify(cfg.blocked_products))
-      }
-    } catch (e) {}
+    if (!aiReportData.value) {
+      try {
+        const localReport = await $fetch('/api/report')
+        if (localReport) {
+          aiReportData.value = localReport
+        }
+      } catch (e) {}
+    }
 
     const { data: prodData, error: prodErr } = await supabase
       .from('produtos')

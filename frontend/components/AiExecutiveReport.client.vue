@@ -117,6 +117,85 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+const defaultReportData = {
+  atualizado_em: 'Recente',
+  modulos: [
+    {
+      id: 'top_sellers',
+      titulo: '🏆 Top Vendedores em Ascensão',
+      tipo: 'vendedores',
+      resumo: 'Identificação dos maiores vendedores em volume acumulado.',
+      itens: [
+        { name: 'Lojas Líderes do Segmento', vendas: 450, receita: 18000, anuncios: 12 },
+        { name: 'Vendedores em Alta', vendas: 310, receita: 11470, anuncios: 8 }
+      ]
+    },
+    {
+      id: 'viral_products',
+      titulo: '🔥 Produtos Virais & Tendências',
+      tipo: 'produtos',
+      resumo: 'Produtos com alta tração e velocidade de vendas nos marketplaces.',
+      itens: [
+        { titulo: 'Kits e Lembrancinhas com alta conversão', preco: 35.00, vendas: 210, plataforma: 'shopee' },
+        { titulo: 'Topos e Peças Personalizadas', preco: 58.00, vendas: 180, plataforma: 'meli' }
+      ]
+    },
+    {
+      id: 'seo_strategy',
+      titulo: '🎯 Estratégia de Títulos & SEO',
+      tipo: 'palavras_chave',
+      resumo: 'Palavras com maior frequência nos anúncios de maior giro.',
+      itens: [
+        { palavra: 'Personalizado', frequencia: 42 },
+        { palavra: 'Kit', frequencia: 38 },
+        { palavra: 'Infantil', frequencia: 29 },
+        { palavra: 'Pronta Entrega', frequencia: 24 }
+      ]
+    },
+    {
+      id: 'ocean_blue',
+      titulo: '💡 Faixas de Preço & Oceano Azul',
+      tipo: 'faixas_preco',
+      resumo: 'Faixa de R$ 25 a R$ 50 concentra o maior faturamento do mercado.',
+      itens: [
+        { faixa: 'Até R$25', vendas: 140 },
+        { faixa: 'R$25-50', vendas: 390 },
+        { faixa: 'R$50-100', vendas: 180 }
+      ]
+    },
+    {
+      id: 'platform_battle',
+      titulo: '⚔️ Mercado Livre vs Shopee',
+      tipo: 'plataformas',
+      resumo: 'Shopee domina o volume de unidades e Mercado Livre domina peças de maior ticket.',
+      itens: [
+        { plataforma: 'Mercado Livre', vendas: 480 },
+        { plataforma: 'Shopee', vendas: 620 }
+      ]
+    },
+    {
+      id: 'alerts',
+      titulo: '📉 Alertas de Estagnação',
+      tipo: 'alertas',
+      resumo: 'Alertas de variação de preços e saturação de mercado.',
+      itens: [
+        { alerta: 'Concorrência elevada na faixa de entrada. Considere diferenciação em kits.' },
+        { alerta: 'Oportunidade para criação de anúncios combinados com envio rápido.' }
+      ]
+    },
+    {
+      id: 'action_recommendations',
+      titulo: '📝 Recomendações Práticas',
+      tipo: 'recomendacoes',
+      resumo: 'Ações recomendadas para aumentar suas vendas imediatamente.',
+      itens: [
+        { dica: 'Crie anúncios com variações de kits para aumentar o ticket médio.' },
+        { dica: 'Adicione os termos "Pronta Entrega" e "Personalizado" aos seus anúncios.' }
+      ]
+    }
+  ]
+}
+
 const props = defineProps({
   isLoading: {
     type: Boolean,
@@ -124,92 +203,22 @@ const props = defineProps({
   },
   reportData: {
     type: Object,
-    default: () => ({
-      atualizado_em: '28/07/2026',
-      modulos: [
-        {
-          id: 'top_sellers',
-          titulo: '🏆 Top Vendedores em Ascensão',
-          tipo: 'vendedores',
-          resumo: 'Identificação dos maiores vendedores em volume acumulado.',
-          itens: [
-            { name: 'ArteEmBiscuit_Oficial', vendas: 450, receita: 18000, anuncios: 12 },
-            { name: 'LembrancinhasExpress', vendas: 310, receita: 11470, anuncios: 8 }
-          ]
-        },
-        {
-          id: 'viral_products',
-          titulo: '🔥 Produtos Virais & Tendências',
-          tipo: 'produtos',
-          resumo: 'Produtos com alta tração e velocidade de vendas.',
-          itens: [
-            { titulo: 'Kit 10 Lembrancinhas Maternidade Biscuit', preco: 35.00, vendas: 210, plataforma: 'shopee' },
-            { titulo: 'Topo de Bolo Aniversario Infantil Personalizado', preco: 58.00, vendas: 180, plataforma: 'meli' }
-          ]
-        },
-        {
-          id: 'seo_strategy',
-          titulo: '🎯 Estratégia de Títulos & SEO',
-          tipo: 'palavras_chave',
-          resumo: 'Palavras com maior frequência nos anúncios de maior giro.',
-          itens: [
-            { palavra: 'Personalizado', frequencia: 42 },
-            { palavra: 'Kit', frequencia: 38 },
-            { palavra: 'Infantil', frequencia: 29 },
-            { palavra: 'Pronta Entrega', frequencia: 24 }
-          ]
-        },
-        {
-          id: 'ocean_blue',
-          titulo: '💡 Faixas de Preço & Oceano Azul',
-          tipo: 'faixas_preco',
-          resumo: 'Faixa de R$ 25 a R$ 50 concentra o maior faturamento do mercado.',
-          itens: [
-            { faixa: 'Até R$25', vendas: 140 },
-            { faixa: 'R$25-50', vendas: 390 },
-            { faixa: 'R$50-100', vendas: 180 }
-          ]
-        },
-        {
-          id: 'platform_battle',
-          titulo: '⚔️ Mercado Livre vs Shopee',
-          tipo: 'plataformas',
-          resumo: 'Shopee domina o volume de unidades e Mercado Livre domina peças de maior ticket.',
-          itens: [
-            { plataforma: 'Mercado Livre', vendas: 480 },
-            { plataforma: 'Shopee', vendas: 620 }
-          ]
-        },
-        {
-          id: 'alerts',
-          titulo: '📉 Alertas de Estagnação',
-          tipo: 'alertas',
-          resumo: 'Alertas de variação de preços e saturação de mercado.',
-          itens: [
-            { alerta: 'Concorrência elevada na faixa de R$ 15,00 a R$ 20,00 na Shopee.' },
-            { alerta: 'Oportunidade para criação de kits combinados no Mercado Livre.' }
-          ]
-        },
-        {
-          id: 'action_recommendations',
-          titulo: '📝 Recomendações Práticas',
-          tipo: 'recomendacoes',
-          resumo: 'Ações recomendadas para aumentar suas vendas imediatamente.',
-          itens: [
-            { dica: 'Crie um anúncio de Kit Lembrancinhas com frete grátis na faixa de R$45,00 a R$65,00.' },
-            { dica: 'Adicione os termos "Pronta Entrega" e "Personalizado" aos seus anúncios.' }
-          ]
-        }
-      ]
-    })
+    default: null
   }
 })
 
 const isCollapsed = ref(false)
 const activeTab = ref(0)
 
-const modules = computed(() => props.reportData?.modulos || [])
-const currentModule = computed(() => modules.value[activeTab.value] || null)
+const effectiveReport = computed(() => {
+  if (props.reportData && Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
+    return props.reportData
+  }
+  return defaultReportData
+})
+
+const modules = computed(() => effectiveReport.value.modulos || [])
+const currentModule = computed(() => modules.value[activeTab.value] || modules.value[0] || null)
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value
