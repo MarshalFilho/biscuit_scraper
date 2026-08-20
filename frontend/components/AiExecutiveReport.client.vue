@@ -40,7 +40,7 @@
           <div v-else-if="currentModule">
             <div class="card-top">
               <h4>{{ currentModule.titulo }}</h4>
-              <span class="update-tag">📅 Atualizado em {{ reportData.atualizado_em || 'hoje' }}</span>
+              <span class="update-tag">📅 Atualizado em {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
             </div>
 
             <p class="module-summary">{{ currentModule.resumo }}</p>
