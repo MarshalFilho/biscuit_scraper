@@ -61,16 +61,16 @@ defineProps({
 
 function formatLargeNumber(num) {
   if (!num) return '0'
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
-  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + ' mi'
+  if (num >= 1000) return (num / 1000).toFixed(1) + ' mil'
   return num.toString()
 }
 
 function formatCurrency(num, shorten = false) {
   if (!num) return 'R$ 0,00'
   if (shorten) {
-    if (num >= 1000000) return 'R$ ' + (num / 1000000).toFixed(2).replace('.', ',') + 'M'
-    if (num >= 10000) return 'R$ ' + (num / 1000).toFixed(1).replace('.', ',') + 'k'
+    if (num >= 1000000) return 'R$ ' + (num / 1000000).toFixed(2).replace('.', ',') + ' mi'
+    if (num >= 10000) return 'R$ ' + (num / 1000).toFixed(1).replace('.', ',') + ' mil'
   }
   return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

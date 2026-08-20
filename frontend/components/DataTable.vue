@@ -89,7 +89,7 @@
             </td>
             
             <td class="sales-diff-cell">
-              <span class="sales-value">{{ item.vendas_totais || 0 }} un</span>
+              <span class="sales-value">{{ item.vendas_totais || 0 }}</span>
               <span v-if="item.salesDiff !== null && item.salesDiff > 0" class="badge-growth" title="Vendas novas registradas no período selecionado">
                 +{{ item.salesDiff }}
               </span>
@@ -101,11 +101,20 @@
             <td class="action-cell">
               <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
               <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
-              <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" title="Excluir / Bloquear este produto">🗑️</button>
+              <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? 'Restaurar produto' : 'Ocultar / Silenciar este anúncio'">
+                {{ item._isHidden ? '👁️' : '🚫' }}
+              </button>
             </td>
           </tr>
-          <tr v-if="filteredData.length === 0">
+          <tr v-if="filteredData.length === 0 && !isLoading">
             <td colspan="8" class="empty-state">Nenhum produto encontrado com os filtros aplicados.</td>
+          </tr>
+          <tr v-if="visibleLimit < filteredData.length">
+            <td colspan="8" class="loading-more-row">
+              <div ref="loadMoreTrigger" class="load-more-trigger">
+                Carregando mais produtos...
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -135,6 +144,28 @@ const emit = defineEmits(['delete-product'])
 const search = ref('')
 const visibleLimit = ref(50) // Começa com 50 itens
 const selectedProduct = ref(null)
+const loadMoreTrigger = ref(null)
+
+let observer = null
+
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && visibleLimit.value < filteredData.value.length) {
+      loadMore()
+    }
+  }, { rootMargin: '100px' })
+})
+
+watch(loadMoreTrigger, (el) => {
+  if (observer) {
+    observer.disconnect()
+    if (el) observer.observe(el)
+  }
+})
+
+onUnmounted(() => {
+  if (observer) observer.disconnect()
+})
 
 // Ordenação interativa por coluna
 const sortKey = ref('vendas_totais')
@@ -159,8 +190,13 @@ function openModal(item) {
 }
 
 function confirmDelete(item) {
-  if (confirm(`Deseja realmente excluir/bloquear o produto abaixo?\n\n"${item.titulo}"\n\nEle não aparecerá mais nos gráficos, tabelas e buscas.`)) {
-    emit('delete-product', item)
+  const isHidden = item._isHidden
+  if (isHidden) {
+    emit('delete-product', item) // A função pai deve cuidar do toggle
+  } else {
+    if (confirm(`Deseja silenciar/ocultar o anúncio:\n\n"${item.titulo}"\n\nVocê pode desfazer isso depois.`)) {
+      emit('delete-product', item)
+    }
   }
 }
 
@@ -248,6 +284,8 @@ function exportToCSV() {
 .table-title h3 { font-size: 1.25rem; color: var(--text-main); margin: 0 0 0.2rem 0; }
 .subtitle { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
 .table-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.loading-more-row { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 1.5rem 0 !important; }
+.load-more-trigger { width: 100%; display: flex; justify-content: center; align-items: center; height: 30px; }
 
 .btn { padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; font-size: 0.9rem; }
 .outline-btn { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); }

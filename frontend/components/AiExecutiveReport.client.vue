@@ -46,65 +46,51 @@
             <p class="module-summary">{{ currentModule.resumo }}</p>
 
           <!-- Renderização Específica por Tipo de Módulo -->
-          <!-- 1. Vendedores -->
-          <div v-if="currentModule.tipo === 'vendedores'" class="items-grid">
-            <div v-for="(v, index) in currentModule.itens" :key="index" class="item-card flex-between">
-              <div>
+          <!-- 1. Estratégia (lista_texto) -->
+          <div v-if="currentModule.tipo === 'lista_texto'" class="list-cards">
+            <div v-for="(item, index) in currentModule.itens" :key="index" class="action-card">
+              <span class="icon">💡</span>
+              <p v-html="typeof item === 'string' ? item : item.dica"></p>
+            </div>
+          </div>
+
+          <!-- 2. Vendedores & Produtos (vendedores) -->
+          <div v-else-if="currentModule.tipo === 'vendedores'" class="items-grid">
+            <div v-for="(v, index) in currentModule.itens" :key="index" class="item-card flex-between" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+              <div class="flex-between">
                 <strong>#{{ index + 1 }} {{ v.name }}</strong>
-                <span class="sub-text">{{ v.anuncios }} anúncios ativos</span>
-              </div>
-              <div class="text-right">
-                <span class="sales-tag">{{ v.vendas.toLocaleString('pt-BR') }} vendas</span>
                 <span class="revenue-tag">R$ {{ (v.receita || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
               </div>
-            </div>
-          </div>
-
-          <!-- 2. Produtos Virais -->
-          <div v-else-if="currentModule.tipo === 'produtos'" class="items-grid">
-            <div v-for="(p, index) in currentModule.itens" :key="index" class="item-card">
-              <div class="flex-between mb-1">
-                <strong class="title-truncate">{{ p.titulo }}</strong>
-                <span :class="['badge-sm', p.plataforma]">{{ p.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}</span>
-              </div>
-              <div class="flex-between text-sm">
-                <span>R$ {{ p.preco.toFixed(2) }}</span>
-                <span class="sales-tag">{{ p.vendas.toLocaleString('pt-BR') }} vendas acumuladas</span>
+              <div class="flex-between text-sm text-muted border-t pt-1" style="border-top: 1px solid #e2e8f0; padding-top: 0.5rem;">
+                <span>{{ v.vendas.toLocaleString('pt-BR') }} vendas ({{ v.anuncios }} un)</span>
+                <span class="title-truncate" :title="v.top_produto" style="max-width: 150px; text-align: right; font-size: 0.8rem;" v-if="v.top_produto">🏆 {{ v.top_produto }}</span>
               </div>
             </div>
           </div>
 
-          <!-- 3. Palavras-Chave -->
+          <!-- 3. SEO (palavras_chave) -->
           <div v-else-if="currentModule.tipo === 'palavras_chave'" class="tags-cloud">
             <span v-for="(kw, index) in currentModule.itens" :key="index" class="kw-tag">
-              🏷️ <strong>{{ kw.palavra }}</strong> ({{ kw.frequencia }}x nos anúncios top)
+              🏷️ <strong>{{ kw.palavra }}</strong> ({{ kw.frequencia }}x)
             </span>
           </div>
 
-          <!-- 4. Oceano Azul / Faixas -->
-          <div v-else-if="currentModule.tipo === 'faixas_preco'" class="items-grid">
-            <div v-for="(f, index) in currentModule.itens" :key="index" class="item-card flex-between">
-              <strong>{{ f.faixa }}</strong>
-              <span class="sales-tag">{{ f.vendas.toLocaleString('pt-BR') }} vendas nesta faixa</span>
-            </div>
-          </div>
-
-          <!-- 5. Plataformas -->
+          <!-- 4. Plataformas & Preços (plataformas) -->
           <div v-else-if="currentModule.tipo === 'plataformas'" class="items-grid">
-            <div v-for="(plat, index) in currentModule.itens" :key="index" class="item-card flex-between">
-              <strong>{{ plat.nome || plat.plataforma || (index === 0 ? 'Mercado Livre' : 'Shopee') }}</strong>
-              <span class="sales-tag">
-                {{ (plat.vendas || 0).toLocaleString('pt-BR') }} vendas
-                <small v-if="plat.share"> ({{ plat.share }}% share)</small>
-              </span>
-            </div>
-          </div>
-
-          <!-- 6. Alertas / 7. Recomendações / Oportunidades -->
-          <div v-else class="list-cards">
-            <div v-for="(item, index) in currentModule.itens" :key="index" class="action-card">
-              <span class="icon">💡</span>
-              <p>{{ typeof item === 'string' ? item : (item.dica || item.alerta || item.texto || item.resumo || JSON.stringify(item)) }}</p>
+            <div v-for="(plat, index) in currentModule.itens" :key="index" class="item-card">
+              <div class="flex-between mb-1">
+                <strong>{{ plat.nome || plat.plataforma }}</strong>
+                <span :class="['badge-sm', (plat.nome || plat.plataforma).toLowerCase().includes('shopee') ? 'shopee' : 'meli']">
+                  {{ plat.share }}% Share
+                </span>
+              </div>
+              <div class="flex-between text-sm">
+                <span>{{ (plat.vendas || 0).toLocaleString('pt-BR') }} Vendas</span>
+                <span class="revenue-tag">R$ {{ (plat.receita || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
+              </div>
+              <div class="text-sm mt-1" v-if="plat.vendedores_unicos">
+                🏪 {{ plat.vendedores_unicos }} Vendedores Únicos
+              </div>
             </div>
           </div>
           </div>
@@ -118,79 +104,48 @@
 import { ref, computed, onMounted } from 'vue'
 
 const defaultReportData = {
-  atualizado_em: 'Recente',
+  atualizado_em: 'Modelo Padrão',
   modulos: [
     {
-      id: 'top_sellers',
-      titulo: '🏆 Top Vendedores em Ascensão',
+      id: 'estrategia',
+      titulo: '🎯 Recomendações Estratégicas & Oportunidades de Nicho',
+      tipo: 'lista_texto',
+      resumo: 'Ações imediatas e oportunidades de alta demanda baseadas nos dados da extração atual.',
+      itens: [
+        '🎯 **Foco em Velas e Topos**: Estas categorias representam a maior parte do volume de buscas ativo.',
+        '💵 **Faixa Ideal de Preço**: Identifique na sua lista os produtos que estão no "sweet spot" entre R$ 25 e R$ 60.',
+        '✨ **Oportunidades de Nicho**: Explore temas como "Sonic" e "Safari" que costumam ter excelente margem.'
+      ]
+    },
+    {
+      id: 'vendedores_produtos',
+      titulo: '🏆 Top Vendedores & Produtos Virais',
       tipo: 'vendedores',
-      resumo: 'Identificação dos maiores vendedores em volume acumulado.',
+      resumo: 'Ranking de vendedores simulado. O relatório real puxará os concorrentes que mais vendem hoje.',
       itens: [
-        { name: 'Lojas Líderes do Segmento', vendas: 450, receita: 18000, anuncios: 12 },
-        { name: 'Vendedores em Alta', vendas: 310, receita: 11470, anuncios: 8 }
+        { name: 'Loja Exemplo Premium', anuncios: 15, vendas: 1200, receita: 35000.0, top_produto: 'Vela Personalizada Luxo' },
+        { name: 'Biscuit Arte Express', anuncios: 8, vendas: 850, receita: 21500.0, top_produto: 'Topo de Bolo Casamento' }
       ]
     },
     {
-      id: 'viral_products',
-      titulo: '🔥 Produtos Virais & Tendências',
-      tipo: 'produtos',
-      resumo: 'Produtos com alta tração e velocidade de vendas nos marketplaces.',
-      itens: [
-        { titulo: 'Kits e Lembrancinhas com alta conversão', preco: 35.00, vendas: 210, plataforma: 'shopee' },
-        { titulo: 'Topos e Peças Personalizadas', preco: 58.00, vendas: 180, plataforma: 'meli' }
-      ]
-    },
-    {
-      id: 'seo_strategy',
-      titulo: '🎯 Estratégia de Títulos & SEO',
+      id: 'seo',
+      titulo: '🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão',
       tipo: 'palavras_chave',
-      resumo: 'Palavras com maior frequência nos anúncios de maior giro.',
+      resumo: 'Palavras que mais atraem vendas no mercado de Biscuit.',
       itens: [
         { palavra: 'Personalizado', frequencia: 42 },
-        { palavra: 'Kit', frequencia: 38 },
-        { palavra: 'Infantil', frequencia: 29 },
+        { palavra: 'Kit Festa', frequencia: 38 },
         { palavra: 'Pronta Entrega', frequencia: 24 }
       ]
     },
     {
-      id: 'ocean_blue',
-      titulo: '💡 Faixas de Preço & Oceano Azul',
-      tipo: 'faixas_preco',
-      resumo: 'Faixa de R$ 25 a R$ 50 concentra o maior faturamento do mercado.',
-      itens: [
-        { faixa: 'Até R$25', vendas: 140 },
-        { faixa: 'R$25-50', vendas: 390 },
-        { faixa: 'R$50-100', vendas: 180 }
-      ]
-    },
-    {
-      id: 'platform_battle',
-      titulo: '⚔️ Mercado Livre vs Shopee',
+      id: 'plataformas_precos',
+      titulo: '⚔️ Batalha de Marketplaces & Faixas de Preço',
       tipo: 'plataformas',
-      resumo: 'Shopee domina o volume de unidades e Mercado Livre domina peças de maior ticket.',
+      resumo: 'A divisão de mercado será calculada automaticamente com base nas suas extrações.',
       itens: [
-        { plataforma: 'Mercado Livre', vendas: 480 },
-        { plataforma: 'Shopee', vendas: 620 }
-      ]
-    },
-    {
-      id: 'alerts',
-      titulo: '📉 Alertas de Estagnação',
-      tipo: 'alertas',
-      resumo: 'Alertas de variação de preços e saturação de mercado.',
-      itens: [
-        { alerta: 'Concorrência elevada na faixa de entrada. Considere diferenciação em kits.' },
-        { alerta: 'Oportunidade para criação de anúncios combinados com envio rápido.' }
-      ]
-    },
-    {
-      id: 'action_recommendations',
-      titulo: '📝 Recomendações Práticas',
-      tipo: 'recomendacoes',
-      resumo: 'Ações recomendadas para aumentar suas vendas imediatamente.',
-      itens: [
-        { dica: 'Crie anúncios com variações de kits para aumentar o ticket médio.' },
-        { dica: 'Adicione os termos "Pronta Entrega" e "Personalizado" aos seus anúncios.' }
+        { nome: 'Mercado Livre', share: 45.5, vendas: 480, receita: 15000, vendedores_unicos: 15 },
+        { nome: 'Shopee', share: 54.5, vendas: 620, receita: 12000, vendedores_unicos: 28 }
       ]
     }
   ]

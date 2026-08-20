@@ -1,7 +1,7 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.4s;">
     <div class="header">
-      <h3>Top 5 Produtos Mais Vendidos</h3>
+      <h3>Top 10 Produtos Mais Vendidos</h3>
       <select v-model="platformFilter" class="glass-select small">
         <option value="all">Geral</option>
         <option value="meli">Mercado Livre</option>
@@ -32,21 +32,21 @@ const filteredItems = computed(() => {
 })
 
 const series = computed(() => {
-  const top5 = [...filteredItems.value].sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0)).slice(0, 5)
+  const top10 = [...filteredItems.value].sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0)).slice(0, 10)
   return [{
     name: 'Vendas Totais',
-    data: top5.map(i => i.vendas_totais || 0)
+    data: top10.map(i => i.vendas_totais || 0)
   }]
 })
 
 const chartOptions = computed(() => {
-  const top5 = [...filteredItems.value].sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0)).slice(0, 5)
+  const top10 = [...filteredItems.value].sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0)).slice(0, 10)
   return {
     chart: { type: 'bar', toolbar: { show: false }, background: 'transparent' },
-    plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
-    colors: ['#38bdf8', '#c084fc', '#ffe600', '#ff6b35', '#2dd4bf'],
+    plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: false, columnWidth: '70%' } },
+    colors: ['#38bdf8'],
     dataLabels: { enabled: true, style: { colors: ['#fff'] } },
-    xaxis: { categories: top5.map(i => i.titulo.length > 25 ? i.titulo.substring(0, 25) + '...' : i.titulo), labels: { style: { colors: '#94a3b8' } } },
+    xaxis: { categories: top10.map(i => i.titulo.length > 25 ? i.titulo.substring(0, 25) + '...' : i.titulo), labels: { style: { colors: '#94a3b8' } } },
     yaxis: { labels: { style: { colors: '#94a3b8' }, maxWidth: 200 } },
     legend: { show: false },
     grid: { borderColor: 'rgba(255, 255, 255, 0.1)', strokeDashArray: 4 },

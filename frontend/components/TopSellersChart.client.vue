@@ -62,7 +62,7 @@
                 {{ seller.productCount }} {{ seller.productCount === 1 ? 'anúncio' : 'anúncios' }}
               </span>
             </td>
-            <td class="sales-td">{{ seller.totalSales.toLocaleString('pt-BR') }} un</td>
+            <td class="sales-td">{{ seller.totalSales.toLocaleString('pt-BR') }} vendas</td>
             <td class="revenue-td">R$ {{ seller.estimatedRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           </tr>
           <tr v-if="topSellersList.length === 0">

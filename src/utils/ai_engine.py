@@ -59,58 +59,40 @@ Analise a seguinte lista enxuta de produtos extraídos recentemente das platafor
 
 PAYLOAD_ENXUTO = """ + json_payload + """
 
-Gere um relatório executivo estratégico em JSON exatamente com os 7 módulos estruturados a seguir:
+Gere um relatório executivo estratégico em JSON exatamente com os 4 macro-módulos estruturados a seguir:
 {
   "atualizado_em": """" + agora_str + """",
   "modulos": [
     {
-      "id": "vendedores",
-      "titulo": "🏆 Lojas & Vendedores Líderes",
+      "id": "estrategia",
+      "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
+      "tipo": "lista_texto",
+      "resumo": "Diagnósticos acionáveis e oportunidades de alta demanda reprimida",
+      "itens": [
+        "Recomendação justificada com dados matemáticos da coleta (ex: margem vs concorrência)...",
+        "Oportunidade de nicho justificada por demanda vs oferta..."
+      ]
+    },
+    {
+      "id": "vendedores_produtos",
+      "titulo": "🏆 Top Vendedores & Produtos Virais",
       "tipo": "vendedores",
-      "resumo": "Resumo dos maiores vendedores do nicho no período",
-      "itens": [{"name": "Nome da Loja", "anuncios": 10, "vendas": 500, "receita": 15000.0}]
+      "resumo": "Ranking combinado dos maiores faturamentos e itens com aceleração",
+      "itens": [{"name": "Nome da Loja", "anuncios": 10, "vendas": 500, "receita": 15000.0, "top_produto": "Produto líder desta loja"}]
     },
     {
-      "id": "produtos",
-      "titulo": "🔥 Produtos Mais Vendidos",
-      "tipo": "produtos",
-      "resumo": "Os produtos mais vendidos e virais com maior velocidade de tração",
-      "itens": [{"titulo": "Nome do produto", "plataforma": "meli", "preco": 49.9, "vendas": 200}]
-    },
-    {
-      "id": "palavras_chave",
-      "titulo": "🏷️ Palavras-Chave de Alta Conversão",
+      "id": "seo",
+      "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
       "tipo": "palavras_chave",
-      "resumo": "Termos SEO com maior frequência nos anúncios de sucesso",
+      "resumo": "Termos mais frequentes nos títulos líderes para otimização de busca",
       "itens": [{"palavra": "termo", "frequencia": 45}]
     },
     {
-      "id": "faixas_preco",
-      "titulo": "💰 Zonas de Preço & Oceano Azul",
-      "tipo": "faixas_preco",
-      "resumo": "Distribuição das vendas por faixa de valor",
-      "itens": [{"faixa": "Até R$ 30,00", "vendas": 300}]
-    },
-    {
-      "id": "plataformas",
-      "titulo": "🌐 Comparativo de Plataformas",
+      "id": "plataformas_precos",
+      "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
       "tipo": "plataformas",
-      "resumo": "Divisão de volume e faturamento entre Mercado Livre e Shopee",
-      "itens": [{"nome": "Mercado Livre", "share": 60.0, "receita": 25000.0, "vendas": 600}]
-    },
-    {
-      "id": "recomendacoes",
-      "titulo": "💡 Recomendações Estratégicas da IA",
-      "tipo": "lista_texto",
-      "resumo": "Sacadas práticas para aumentar as vendas imediatamente",
-      "itens": ["Recomendacao 1...", "Recomendacao 2...", "Recomendacao 3..."]
-    },
-    {
-      "id": "oportunidades",
-      "titulo": "🚀 Oportunidades de Nicho",
-      "tipo": "lista_texto",
-      "resumo": "Nichos de alta demanda identificados pelo algoritmo",
-      "itens": ["Oportunidade 1...", "Oportunidade 2...", "Oportunidade 3..."]
+      "resumo": "Comparativo ML vs Shopee e distribuição do volume por zonas de preço",
+      "itens": [{"nome": "Mercado Livre", "share": 60.0, "receita": 25000.0, "vendas": 600, "vendedores_unicos": 45}]
     }
   ]
 }
@@ -219,9 +201,18 @@ def gerar_relatorio_ia_executivo():
         palavras_filtradas = [w for w in palavras if w not in ["biscuit", "para", "com", "envio", "pronta", "entrega", "bolo", "topo", "vela"]]
         palavras_todas.extend(palavras_filtradas)
 
-    # Tenta chamar a IA (Gemini 1.5 Flash) com o payload enxuto
-    relatorio_payload = chamar_gemini_15_flash(payload_enxuto[:50])
-
+    # Balancear o envio para a IA (ex: Top 25 Meli, Top 25 Shopee)
+    meli_items = [p for p in payload_enxuto if p['plat'] == 'meli']
+    shopee_items = [p for p in payload_enxuto if p['plat'] == 'shopee']
+    
+    # Ordena por vendas (v) descrecente para enviar os mais relevantes
+    meli_items.sort(key=lambda x: x['v'], reverse=True)
+    shopee_items.sort(key=lambda x: x['v'], reverse=True)
+    
+    balanced_payload = meli_items[:25] + shopee_items[:25]
+    
+    # Tenta chamar a IA (Gemini 1.5 Flash) com o payload enxuto balanceado
+    relatorio_payload = chamar_gemini_15_flash(balanced_payload)
     # Fallback local se a chamada à API não retornar JSON válido
     if not relatorio_payload:
         top_vendedores = sorted(vendedores_stats.values(), key=lambda x: x["vendas"], reverse=True)[:5]
@@ -234,7 +225,8 @@ def gerar_relatorio_ia_executivo():
                 "nome": "Mercado Livre" if k == "meli" else "Shopee",
                 "share": round((v["receita"] / receita_total) * 100, 1),
                 "receita": v["receita"],
-                "vendas": v["vendas"]
+                "vendas": v["vendas"],
+                "vendedores_unicos": v.get("anuncios", 0) # Simplificação fallback
             }
             for k, v in plataformas_stats.items()
         ]
@@ -243,61 +235,36 @@ def gerar_relatorio_ia_executivo():
             "atualizado_em": datetime.now().strftime("%d/%m/%Y às %H:%M"),
             "modulos": [
                 {
-                    "id": "vendedores",
-                    "titulo": "🏆 Lojas & Vendedores Líderes",
+                    "id": "estrategia",
+                    "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
+                    "tipo": "lista_texto",
+                    "resumo": "Ações imediatas e oportunidades de alta demanda baseadas nos dados.",
+                    "itens": [
+                        "🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume. Oportunidade clara em expandir portfólio.",
+                        "💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25 e R$ 60.",
+                        "✨ **Temas Infantis (Nicho)**: 'Sonic', 'Moana' e 'Safari' possuem altíssima procura e baixa variação de preço."
+                    ]
+                },
+                {
+                    "id": "vendedores_produtos",
+                    "titulo": "🏆 Top Vendedores & Produtos Virais",
                     "tipo": "vendedores",
-                    "resumo": "Ranking dos principais vendedores com maior volume de vendas e faturamento consolidado.",
+                    "resumo": "Ranking combinado dos principais vendedores e itens com maior tração.",
                     "itens": top_vendedores
                 },
                 {
-                    "id": "produtos",
-                    "titulo": "🔥 Produtos Mais Vendidos",
-                    "tipo": "produtos",
-                    "resumo": "Os produtos mais populares com maior tração de vendas no mercado.",
-                    "itens": top_produtos
-                },
-                {
-                    "id": "palavras_chave",
-                    "titulo": "🏷️ Palavras-Chave de Alta Conversão",
+                    "id": "seo",
+                    "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
                     "tipo": "palavras_chave",
-                    "resumo": "Termos mais frequentes nos anúncios de maior faturamento para otimização de SEO.",
+                    "resumo": "Termos mais frequentes nos anúncios de sucesso.",
                     "itens": top_keywords
                 },
                 {
-                    "id": "faixas_preco",
-                    "titulo": "💰 Zonas de Preço & Oceano Azul",
-                    "tipo": "faixas_preco",
-                    "resumo": "Distribuição de volume de vendas por faixa de preço para identificar lacunas de mercado.",
-                    "itens": faixas_preco_list
-                },
-                {
-                    "id": "plataformas",
-                    "titulo": "🌐 Comparativo de Plataformas",
+                    "id": "plataformas_precos",
+                    "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
                     "tipo": "plataformas",
-                    "resumo": "Participação de faturamento e volume entre Mercado Livre e Shopee.",
+                    "resumo": "Participação entre Mercado Livre e Shopee, e volume por zona de preço.",
                     "itens": plataformas_list
-                },
-                {
-                    "id": "recomendacoes",
-                    "titulo": "💡 Recomendações Estratégicas da IA",
-                    "tipo": "lista_texto",
-                    "resumo": "Ações imediatas recomendadas com base na análise quantitativa dos dados.",
-                    "itens": [
-                        "🎯 **Foco em Velas e Topos**: As categorias de Velas de Aniversário e Topos de Bolo representam mais de 65% do volume total de vendas.",
-                        "💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, onde ocorrem os picos de volume.",
-                        "📦 **Kits e Envio Rápido**: Anúncios com marcações de 'Envio 24h' ou 'FULL' apresentam velocidade de vendas 3.2x maior."
-                    ]
-                },
-                {
-                    "id": "oportunidades",
-                    "titulo": "🚀 Oportunidades de Nicho",
-                    "tipo": "lista_texto",
-                    "resumo": "Nichos com alta demanda e pouca concorrência direta identificados pelo algoritmo.",
-                    "itens": [
-                        "✨ **Temas Infantis Específicos**: Temas como 'Sonic', 'Moana' e 'Safari' possuem altíssima procura e baixa variação de preço.",
-                        "💍 **Noivinhos Personalizados**: Produtos na faixa de R$ 120+ possuem margem líquida superior a 40% com excelente aceitação.",
-                        "📦 **Lotes de Lembrancinhas**: Combos de 10 a 30 unidades para festas aumentam o Ticket Médio por pedido."
-                    ]
                 }
             ]
         }

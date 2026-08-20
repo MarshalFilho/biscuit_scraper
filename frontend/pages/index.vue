@@ -73,15 +73,7 @@
             </select>
           </div>
 
-          <!-- Faixa de Preço -->
-          <div class="filter-group">
-            <label>Faixa de Preço (R$):</label>
-            <div class="range-inputs">
-              <input type="number" v-model="minPrice" placeholder="Mín" class="glass-input tiny" />
-              <span class="range-sep">até</span>
-              <input type="number" v-model="maxPrice" placeholder="Máx" class="glass-input tiny" />
-            </div>
-          </div>
+          <!-- Vendas Mínimas e Ocultação movidos para ocupar o espaço do preço -->
 
           <!-- Vendas Mínimas -->
           <div class="filter-group">
@@ -89,13 +81,25 @@
             <input type="number" v-model="minSales" placeholder="Ex: 50" class="glass-input" />
           </div>
 
-          <!-- Ocultar Sem Vendas -->
-          <div class="filter-group checkbox-group">
+          <!-- Ocultar Sem Vendas e Ocultados -->
+          <div class="filter-group checkbox-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <label class="checkbox-label">
               <input type="checkbox" v-model="hideZeroSales" />
               Ocultar produtos com 0 vendas
             </label>
+            <label class="checkbox-label text-muted">
+              <input type="checkbox" v-model="showHiddenProducts" />
+              Mostrar anúncios silenciados
+            </label>
           </div>
+        </div>
+        
+        <!-- Filtro Estilo Upwork: Histograma Interativo de Preços -->
+        <div style="margin-top: 1.5rem;">
+          <PriceRangeHistogramFilter 
+            :items="processedProducts" 
+            @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
+          />
         </div>
       </div>
 
@@ -150,10 +154,9 @@
             <PriceVsSalesChart :items="filteredProducts" class="half-width" />
           </div>
           
-          <!-- Linha 2 de Gráficos: Vendedores em Destaque + Participação de Mercado -->
+          <!-- Linha 2 de Gráficos: Vendedores em Destaque (Expandido) -->
           <div class="charts-row">
-            <TopSellersChart :items="filteredProducts" class="half-width" />
-            <MarketShareChart :items="filteredProducts" class="half-width" />
+            <TopSellersChart :items="filteredProducts" class="full-width" />
           </div>
 
           <!-- Linha 3 de Gráficos: Distribuição de Preços -->
@@ -184,11 +187,11 @@ import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
 import PriceVsSalesChart from '~/components/PriceVsSalesChart.client.vue'
-import MarketShareChart from '~/components/MarketShareChart.client.vue'
 import PriceDistributionChart from '~/components/PriceDistributionChart.client.vue'
 import TopSellersChart from '~/components/TopSellersChart.client.vue'
 
 import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
+import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
 
@@ -231,9 +234,9 @@ function loadBlockedProducts() {
 
 async function onDeleteProduct(product) {
   const identifier = product.link || product.id || product.titulo
-  const exists = blockedProducts.value.some(p => (typeof p === 'string' ? p === identifier : (p.link === product.link || p.id === product.id)))
+  const existsIndex = blockedProducts.value.findIndex(p => (typeof p === 'string' ? p === identifier : (p.link === product.link || p.id === product.id)))
   
-  if (!exists) {
+  if (existsIndex === -1) {
     const itemToBlock = {
       id: product.id,
       titulo: product.titulo,
@@ -243,18 +246,21 @@ async function onDeleteProduct(product) {
       bloqueado_em: new Date().toISOString()
     }
     blockedProducts.value.push(itemToBlock)
-    localStorage.setItem('scraper_blocked_products', JSON.stringify(blockedProducts.value))
-    
-    // Tenta salvar na nuvem se autenticado
-    if (authUser.value) {
-      try {
-        await supabase.from('configuracoes_scraper').upsert({
-          user_id: authUser.value.id,
-          blocked_products: blockedProducts.value
-        }, { onConflict: 'user_id' })
-      } catch (e) {
-        console.warn("Erro ao salvar blocked_products no Supabase:", e)
-      }
+  } else {
+    blockedProducts.value.splice(existsIndex, 1) // Remove do bloqueio (Restaura)
+  }
+  
+  localStorage.setItem('scraper_blocked_products', JSON.stringify(blockedProducts.value))
+  
+  // Tenta salvar na nuvem se autenticado
+  if (authUser.value) {
+    try {
+      await supabase.from('configuracoes_scraper').upsert({
+        user_id: authUser.value.id,
+        blocked_products: blockedProducts.value
+      }, { onConflict: 'user_id' })
+    } catch (e) {
+      console.warn("Erro ao salvar blocked_products no Supabase:", e)
     }
   }
 }
@@ -270,6 +276,7 @@ const minPrice = ref(null)
 const maxPrice = ref(null)
 const minSales = ref(null)
 const hideZeroSales = ref(false)
+const showHiddenProducts = ref(false)
 
 const defaultCategoryRules = [
   { keyword: 'vela', category: 'Velas de Aniversário' },
@@ -453,18 +460,29 @@ const dateRangeText = computed(() => {
 const processedProducts = computed(() => {
   return productsRaw.value
     .map(p => {
-      const createdDate = p.criado_em ? new Date(p.criado_em) : new Date()
-      const isNew = (p.historico_coletas && p.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
+      let snapshot = p
+      if (timelineSelectedDate.value && timelineSelectedDate.value !== 'latest') {
+        const histEntry = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(timelineSelectedDate.value))
+        if (histEntry) {
+          snapshot = { ...p, preco: histEntry.preco, vendas_totais: histEntry.vendas_totais }
+        } else {
+          snapshot = { ...p, _hiddenByTimeline: true }
+        }
+      }
+      
+      const pData = snapshot
+      const createdDate = pData.criado_em ? new Date(pData.criado_em) : new Date()
+      const isNew = (pData.historico_coletas && pData.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
       
       let hist = null
       let varInfo = null
       let salesDiff = null
       
-      hist = getHistoricalData(p, selectedTimeframe.value)
+      hist = getHistoricalData(pData, selectedTimeframe.value)
       if (hist) {
-        salesDiff = Math.max(0, p.vendas_totais - hist.vendas_totais)
+        salesDiff = Math.max(0, pData.vendas_totais - hist.vendas_totais)
         if (hist.preco > 0) {
-          const diff = p.preco - hist.preco
+          const diff = pData.preco - hist.preco
           if (Math.abs(diff) > 0.05) {
             varInfo = { diff, perc: (diff / hist.preco) * 100, isPositive: diff > 0, isNegative: diff < 0 }
           }
@@ -472,25 +490,32 @@ const processedProducts = computed(() => {
       }
 
       return {
-        ...p,
-        categoria: getCategoryByRules(p.titulo),
+        ...pData,
+        categoria: getCategoryByRules(pData.titulo),
         isNew,
         hist,
         varInfo,
         salesDiff
       }
     })
-    .filter(p => {
-      const t = p.titulo.toLowerCase()
-      if (blacklist.value.some(word => t.includes(word))) return false
-      
+    .map(p => {
       const isBlocked = blockedProducts.value.some(b => {
         if (!b) return false
         if (typeof b === 'string') return b === p.link || b === p.id || b === p.titulo
         return (b.link && b.link === p.link) || (b.id && b.id === p.id) || (b.titulo && b.titulo === p.titulo)
       })
-      if (isBlocked) return false
-
+      if (isBlocked) {
+        p._isHidden = true
+      }
+      return p
+    })
+    .filter(p => {
+      if (p._hiddenByTimeline) return false
+      if (p._isHidden && !showHiddenProducts.value) return false
+      
+      const t = p.titulo.toLowerCase()
+      if (blacklist.value.some(word => t.includes(word))) return false
+      
       return true
     })
     .sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0))
