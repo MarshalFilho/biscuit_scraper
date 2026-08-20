@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
-    "apexcharts": "^3.45.1",
+    "apexcharts": "^6.10.0",
     "nuxt": "^3.9.3",
-    "vue3-apexcharts": "^1.4.4"
+    "vue3-apexcharts": "^1.11.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.9",
