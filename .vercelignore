@@ -1,0 +1,9 @@
+# Ignore backend Python engine and local test files on Vercel
+src/
+tests/
+data/
+reports/
+Dockerfile
+requirements.txt
+*.py
+*.pyc
