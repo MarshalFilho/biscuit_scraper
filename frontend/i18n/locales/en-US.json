@@ -1,36 +1,78 @@
 {
-  "dashboard": {
-    "title": "Dashboard",
-    "kpis": {
-      "total_items": "Monitored Items",
-      "revenue": "Estimated Revenue",
-      "sales": "Total Sales",
-      "avg_price": "Average Ticket",
-      "unique_sellers": "Unique Sellers"
-    },
-    "filters": {
-      "time_range": "Time Range (Days)",
-      "category": "NLP Category",
-      "all_categories": "All Categories",
-      "min_sales": "Min Sales",
-      "hide_zero_sales": "Hide products with 0 sales",
-      "show_hidden": "Show silenced ads"
-    },
-    "timeline": {
-      "title": "Scrape Timeline",
-      "latest": "Latest"
-    },
-    "tabs": {
-      "market_overview": "Market Overview",
-      "products_table": "Raw Products DB",
-      "growth_trends": "Viral Products (Top Trends)",
-      "price_monitor": "Price Strategy Monitor"
-    }
+  "navbar": {
+    "badge": "Active Intelligence",
+    "login": "Sign In",
+    "logout": "Sign Out"
   },
   "report": {
-    "title": "🧠 Executive Market Intelligence Report",
-    "subtitle": "Advanced analysis of strategic modules based on real data",
+    "title": "Executive Market Intelligence Report",
+    "badge": "AI Analytics",
+    "subtitle": "Advanced strategic diagnosis based on real-time quantitative market data",
     "expand": "▼ Expand Insights",
-    "collapse": "▲ Collapse"
+    "collapse": "▲ Minimize",
+    "updated_at": "Updated at",
+    "loading": "Generating report with Artificial Intelligence...",
+    "tab_strategy": "🎯 Strategy & Niches",
+    "tab_sellers": "🏆 Top Stores & Products",
+    "tab_seo": "🏷️ SEO Strategy",
+    "tab_platforms": "⚔️ Marketplace Battle",
+    "sub_recommendations": "💡 Actionable Strategic Recommendations",
+    "sub_niches": "🚀 High-Demand Hidden Niches",
+    "sub_keywords": "🏷️ Top Converting Keyword Frequency",
+    "sub_titles": "🎯 High-Converting Title Templates",
+    "sub_longtail": "🔗 Recommended Long-Tail Formulas",
+    "view_store": "View Store 🔎",
+    "sales_units": "sales",
+    "active_stores": "Active Stores:",
+    "sales_volume": "Sales Volume:",
+    "est_revenue": "Estimated Revenue:"
+  },
+  "filters": {
+    "title": "Global Super Filters",
+    "subtitle": "Updates all dashboard KPIs, charts, and tables in real-time",
+    "platform": "Platform:",
+    "both": "🌐 Both",
+    "category": "Category:",
+    "all_categories": "All Categories",
+    "min_sales": "Minimum Sales:",
+    "hide_zero": "Hide zero-sales items",
+    "show_hidden": "Show silenced ads",
+    "price_range": "Price Range:",
+    "timeline_title": "Scrape Timeline",
+    "latest_scrape": "Last updated:"
+  },
+  "tabs": {
+    "overview": "📊 Market Overview",
+    "trending": "🚀 Trending & Viral Products",
+    "pricing": "🏷️ Price Strategy & Sweet Spots"
+  },
+  "kpis": {
+    "total_items": "Monitored Items",
+    "revenue": "Estimated Revenue",
+    "sales": "Total Sales",
+    "avg_price": "Average Ticket"
+  },
+  "table": {
+    "title": "Raw Products Database",
+    "subtitle": "Individual item tracking with speed metrics and price variation history",
+    "search_placeholder": "Search title or store...",
+    "export_csv": "Export CSV ⬇",
+    "col_platform": "Platform",
+    "col_category": "Category",
+    "col_product": "Product Title",
+    "col_price": "Current Price",
+    "col_old_price": "Old Price",
+    "col_variation": "Variation",
+    "col_sales": "Total Sales",
+    "col_actions": "Actions",
+    "empty": "No products found matching the applied filters.",
+    "loading_more": "Loading more products...",
+    "btn_load_more": "Load more products ↓"
+  },
+  "charts": {
+    "top_sellers": "🏆 Top Selling Stores by Revenue",
+    "top_products": "🔥 Top 10 Best Selling Products in Niche",
+    "category_share": "🥧 Sales Volume Share by Category",
+    "price_vs_sales": "🎯 Sales Volume Distribution by Price Range"
   }
 }
