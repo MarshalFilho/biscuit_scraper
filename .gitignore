@@ -19,6 +19,7 @@ __pycache__/
 !frontend/package.json
 !frontend/package-lock.json
 !frontend/biome.json
+!frontend/i18n/locales/*.json
 !config_app.json
 *.xlsx
 *.csv

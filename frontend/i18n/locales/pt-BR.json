@@ -1,0 +1,36 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "kpis": {
+      "total_items": "Itens Monitorados",
+      "revenue": "Faturamento Estimado",
+      "sales": "Vendas Totais",
+      "avg_price": "Ticket Médio",
+      "unique_sellers": "Vendedores Únicos"
+    },
+    "filters": {
+      "time_range": "Período (Dias)",
+      "category": "Categoria NLP",
+      "all_categories": "Todas as Categorias",
+      "min_sales": "Vendas Mínimas",
+      "hide_zero_sales": "Ocultar produtos com 0 vendas",
+      "show_hidden": "Mostrar anúncios silenciados"
+    },
+    "timeline": {
+      "title": "Linha do Tempo de Coletas",
+      "latest": "Mais Recente"
+    },
+    "tabs": {
+      "market_overview": "Visão Geral",
+      "products_table": "Base de Produtos Bruta",
+      "growth_trends": "Produtos Virais (Top Tendências)",
+      "price_monitor": "Monitor de Estratégia de Preços"
+    }
+  },
+  "report": {
+    "title": "🧠 Relatório de Inteligência Executiva de Mercado",
+    "subtitle": "Análise avançada dos módulos estratégicos baseados em dados reais",
+    "expand": "▼ Expandir Insights",
+    "collapse": "▲ Minimizar"
+  }
+}

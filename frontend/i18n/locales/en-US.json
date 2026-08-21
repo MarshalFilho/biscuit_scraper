@@ -1,0 +1,36 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "kpis": {
+      "total_items": "Monitored Items",
+      "revenue": "Estimated Revenue",
+      "sales": "Total Sales",
+      "avg_price": "Average Ticket",
+      "unique_sellers": "Unique Sellers"
+    },
+    "filters": {
+      "time_range": "Time Range (Days)",
+      "category": "NLP Category",
+      "all_categories": "All Categories",
+      "min_sales": "Min Sales",
+      "hide_zero_sales": "Hide products with 0 sales",
+      "show_hidden": "Show silenced ads"
+    },
+    "timeline": {
+      "title": "Scrape Timeline",
+      "latest": "Latest"
+    },
+    "tabs": {
+      "market_overview": "Market Overview",
+      "products_table": "Raw Products DB",
+      "growth_trends": "Viral Products (Top Trends)",
+      "price_monitor": "Price Strategy Monitor"
+    }
+  },
+  "report": {
+    "title": "🧠 Executive Market Intelligence Report",
+    "subtitle": "Advanced analysis of strategic modules based on real data",
+    "expand": "▼ Expand Insights",
+    "collapse": "▲ Collapse"
+  }
+}
