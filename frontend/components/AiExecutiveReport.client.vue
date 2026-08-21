@@ -2,10 +2,10 @@
   <div class="glass-panel executive-panel animate-fade-in">
     <div class="panel-header" @click="toggleCollapse">
       <div class="title-group">
-        <h3>🧠 {{ $t('report.title') }} <span class="ai-badge">{{ $t('report.badge') }}</span></h3>
-        <p class="subtitle">{{ $t('report.subtitle') }}</p>
+        <h3>🧠 {{ tr('report.title', 'Relatório de Inteligência Executiva de Mercado') }} <span class="ai-badge">{{ tr('report.badge', 'IA Analytics') }}</span></h3>
+        <p class="subtitle">{{ tr('report.subtitle', 'Diagnóstico estratégico avançado baseado em análise quantitativa em tempo real') }}</p>
       </div>
-      <button class="btn-toggle">{{ isCollapsed ? $t('report.expand') : $t('report.collapse') }}</button>
+      <button class="btn-toggle">{{ isCollapsed ? tr('report.expand', '▼ Expandir Insights') : tr('report.collapse', '▲ Minimizar') }}</button>
     </div>
 
     <transition name="slide-fade">
@@ -18,7 +18,7 @@
             :class="['tab-btn', { active: activeTab === idx }]"
             @click="activeTab = idx"
           >
-            {{ mod.id === 'estrategia' ? $t('report.tab_strategy') : (mod.id === 'vendedores_produtos' ? $t('report.tab_sellers') : (mod.id === 'seo' ? $t('report.tab_seo') : $t('report.tab_platforms'))) }}
+            {{ mod.id === 'estrategia' ? tr('report.tab_strategy', '🎯 Estratégia & Nichos') : (mod.id === 'vendedores_produtos' ? tr('report.tab_sellers', '🏆 Top Lojas & Produtos') : (mod.id === 'seo' ? tr('report.tab_seo', '🏷️ Estratégia de SEO') : tr('report.tab_platforms', '⚔️ Batalha de Marketplaces'))) }}
           </button>
         </div>
 
@@ -258,6 +258,18 @@ const defaultReportData = {
 const isCollapsed = ref(false)
 const activeTab = ref(0)
 const selectedSeller = ref(null)
+
+const { t, te } = useI18n()
+
+function tr(key, fallback) {
+  try {
+    if (te(key)) {
+      const val = t(key)
+      if (val && val !== key) return val
+    }
+  } catch (e) {}
+  return fallback
+}
 
 const effectiveReport = computed(() => {
   if (props.reportData && Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
