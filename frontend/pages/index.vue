@@ -14,8 +14,9 @@
     <div v-else>
       <!-- Relatório de Inteligência Executiva por IA (Fase 4) -->
       <AiExecutiveReport 
-        :isLoading="isLoading || isFetchingNewData" 
+        :isLoading="loading || isFetchingNewData" 
         :reportData="aiReportData"
+        :products="processedProducts"
       />
 
       <!-- Banner da Data e Horário da Última Atualização -->
@@ -26,14 +27,10 @@
       <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
-          <h4>🔍 Super Filtros Globais</h4>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <p class="subtitle" style="margin:0;">Dashboard Analítico e Gestão Estratégica</p>
-            <button @click="toggleLocale" class="btn-primary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; border-radius: 99px;">
-              {{ locale === 'pt' ? '🇺🇸 EN' : '🇧🇷 PT' }}
-            </button>
+          <div>
+            <h4>🔍 Super Filtros Globais</h4>
+            <span class="filters-info">Altera em tempo real todos os KPIs, gráficos e tabelas do painel</span>
           </div>
-          <span class="filters-info">Altera em tempo real todos os KPIs, gráficos e tabelas do painel</span>
         </div>
         
         <div class="filters-grid">
@@ -168,9 +165,9 @@
             <TopSellersChart :items="filteredProducts" class="full-width" />
           </div>
 
-          <!-- Linha 3 de Gráficos: Distribuição de Preços -->
+          <!-- Linha 3 de Gráficos: Share de Volume por Categoria -->
           <div class="charts-row">
-            <PriceDistributionChart :items="filteredProducts" class="full-width" />
+            <CategoryVolumeChart :items="filteredProducts" class="full-width" />
           </div>
         </div>
       </div>
@@ -196,19 +193,13 @@ import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
 import PriceVsSalesChart from '~/components/PriceVsSalesChart.client.vue'
-import PriceDistributionChart from '~/components/PriceDistributionChart.client.vue'
+import CategoryVolumeChart from '~/components/CategoryVolumeChart.client.vue'
 import TopSellersChart from '~/components/TopSellersChart.client.vue'
 
 import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
 import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
-
-const { locale, setLocale, t } = useI18n()
-
-function toggleLocale() {
-  setLocale(locale.value === 'pt' ? 'en' : 'pt')
-}
 
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)

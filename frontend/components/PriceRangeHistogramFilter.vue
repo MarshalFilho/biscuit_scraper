@@ -1,50 +1,49 @@
 <template>
-  <div class="price-histogram-filter">
-    <div class="filter-header">
-      <h4>Faixa de Preço (R$)</h4>
-      <div class="price-display">
-        R$ {{ minVal }} - R$ {{ maxVal === absoluteMax ? maxVal + '+' : maxVal }}
-      </div>
+  <div class="mini-price-slider">
+    <div class="slider-top">
+      <span class="label">Faixa de Preço:</span>
+      <span class="price-val">R$ {{ minVal }} — R$ {{ maxVal === absoluteMax ? maxVal + '+' : maxVal }}</span>
     </div>
     
-    <div class="histogram-container">
-      <apexchart 
-        v-if="isMounted && series[0].data.length > 0" 
-        type="bar" 
-        height="80" 
-        :options="chartOptions" 
-        :series="series"
-      ></apexchart>
-      
-      <!-- Dual Range Slider Customizado -->
-      <div class="range-slider-wrapper">
-        <input 
-          type="range" 
-          :min="absoluteMin" 
-          :max="absoluteMax" 
-          v-model.number="minVal" 
-          @input="onMinInput" 
-          @change="onSliderChange"
-          class="range-input min-range"
-        />
-        <input 
-          type="range" 
-          :min="absoluteMin" 
-          :max="absoluteMax" 
-          v-model.number="maxVal" 
-          @input="onMaxInput" 
-          @change="onSliderChange"
-          class="range-input max-range"
-        />
-        <!-- Pista visual (Track) entre os thumbs -->
-        <div class="range-track-highlight" :style="trackStyle"></div>
-      </div>
+    <!-- Mini Histograma de Barras CSS (Clean & Instantâneo) -->
+    <div class="bars-container">
+      <div 
+        v-for="(bucket, idx) in bucketList" 
+        :key="idx" 
+        class="mini-bar"
+        :class="{ active: bucket.price >= minVal && bucket.price <= maxVal }"
+        :style="{ height: Math.max(bucket.heightPerc, 12) + '%' }"
+        :title="`R$ ${bucket.price}: ${bucket.volume} vendas`"
+      ></div>
+    </div>
+
+    <!-- Dual Range Inputs Sobrepostos -->
+    <div class="range-wrapper">
+      <input 
+        type="range" 
+        :min="absoluteMin" 
+        :max="absoluteMax" 
+        v-model.number="minVal" 
+        @input="onMinInput" 
+        @change="onSliderChange"
+        class="slider-thumb min-thumb"
+      />
+      <input 
+        type="range" 
+        :min="absoluteMin" 
+        :max="absoluteMax" 
+        v-model.number="maxVal" 
+        @input="onMaxInput" 
+        @change="onSliderChange"
+        class="slider-thumb max-thumb"
+      />
+      <div class="slider-track-highlight" :style="trackStyle"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -52,90 +51,56 @@ const props = defineProps({
 
 const emit = defineEmits(['filter'])
 
-const isMounted = ref(false)
-onMounted(() => { isMounted.value = true })
-
-// Configuração do Range
 const absoluteMin = ref(0)
 const absoluteMax = ref(300)
 const minVal = ref(0)
 const maxVal = ref(300)
 
-const BUCKET_SIZE = 10 // Agrupar a cada R$ 10
+const NUM_BUCKETS = 28 // 28 barras minimalistas e fluidas
 
-const histogramData = computed(() => {
+const bucketList = computed(() => {
   if (!props.items || props.items.length === 0) return []
-  
-  // Encontra o preço máximo arredondado para cima
+
   const maxPriceInItems = Math.max(...props.items.map(i => i.preco || 0))
-  absoluteMax.value = Math.min(Math.ceil(maxPriceInItems / 50) * 50, 1000) // Limite seguro
-  
-  if (maxVal.value > absoluteMax.value) maxVal.value = absoluteMax.value
-  
-  const buckets = {}
-  const totalBuckets = Math.ceil(absoluteMax.value / BUCKET_SIZE)
-  
-  for (let i = 0; i < totalBuckets; i++) {
-    buckets[i * BUCKET_SIZE] = 0
+  const calculatedMax = Math.min(Math.ceil(maxPriceInItems / 50) * 50, 800) || 300
+  absoluteMax.value = calculatedMax
+
+  if (maxVal.value > calculatedMax || maxVal.value === 300) {
+    maxVal.value = calculatedMax
   }
-  
+
+  const step = calculatedMax / NUM_BUCKETS
+  const buckets = Array.from({ length: NUM_BUCKETS }, (_, i) => ({
+    price: Math.round(i * step),
+    volume: 0,
+    heightPerc: 10
+  }))
+
+  let maxVol = 1
   for (const item of props.items) {
     if (item.preco > 0) {
-      const bucketIndex = Math.floor(item.preco / BUCKET_SIZE) * BUCKET_SIZE
-      if (buckets[bucketIndex] !== undefined) {
-        buckets[bucketIndex] += (item.vendas_totais || 1) // Soma volume de vendas
-      } else if (bucketIndex > absoluteMax.value) {
-        // Agrupa tudo que passar do máximo no último bucket
-        const lastBucket = (totalBuckets - 1) * BUCKET_SIZE
-        if (buckets[lastBucket] !== undefined) {
-          buckets[lastBucket] += (item.vendas_totais || 1)
-        }
+      const idx = Math.min(Math.floor(item.preco / step), NUM_BUCKETS - 1)
+      const sales = item.vendas_totais || 1
+      buckets[idx].volume += sales
+      if (buckets[idx].volume > maxVol) {
+        maxVol = buckets[idx].volume
       }
     }
   }
-  
-  return Object.keys(buckets).sort((a,b) => Number(a) - Number(b)).map(k => buckets[k])
+
+  return buckets.map(b => ({
+    ...b,
+    heightPerc: Math.round((b.volume / maxVol) * 100)
+  }))
 })
 
-const series = computed(() => [{
-  name: 'Volume de Vendas',
-  data: histogramData.value
-}])
-
-const chartOptions = computed(() => {
-  return {
-    chart: {
-      type: 'bar',
-      toolbar: { show: false },
-      sparkline: { enabled: true },
-      animations: { enabled: false }
-    },
-    plotOptions: {
-      bar: { columnWidth: '90%', borderRadius: 2 }
-    },
-    colors: [function({ value, dataPointIndex }) {
-      const bucketPrice = dataPointIndex * BUCKET_SIZE
-      if (bucketPrice >= minVal.value && bucketPrice <= maxVal.value) {
-        return '#38bdf8' // Cor ativa (Azul vibrante)
-      }
-      return '#334155' // Cor inativa (Cinza escuro)
-    }],
-    tooltip: {
-      fixed: { enabled: false },
-      x: { show: false },
-      y: { title: { formatter: function (seriesName) { return '' } } },
-      marker: { show: false }
-    }
-  }
-})
-
-// Estilo dinâmico para a "pista" entre os dois thumbs
 const trackStyle = computed(() => {
-  const minPercent = ((minVal.value - absoluteMin.value) / (absoluteMax.value - absoluteMin.value)) * 100
-  const maxPercent = ((maxVal.value - absoluteMin.value) / (absoluteMax.value - absoluteMin.value)) * 100
+  const range = absoluteMax.value - absoluteMin.value || 1
+  const minPercent = ((minVal.value - absoluteMin.value) / range) * 100
+  const maxPercent = ((maxVal.value - absoluteMin.value) / range) * 100
   return {
-    left: `${minPercent}%`,
-    width: `${maxPercent - minPercent}%`
+    left: `${Math.max(0, Math.min(minPercent, 100))}%`,
+    width: `${Math.max(0, Math.min(maxPercent - minPercent, 100))}%`
   }
 })
 
@@ -157,104 +122,112 @@ function onSliderChange() {
 </script>
 
 <style scoped>
-.price-histogram-filter {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid var(--border-glass);
-  border-radius: 12px;
-  padding: 1rem 1.2rem;
-  margin-bottom: 1.5rem;
+.mini-price-slider {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.filter-header {
+.slider-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: -15px; /* Puxa o gráfico pra cima */
-  z-index: 10;
-  position: relative;
+  font-size: 0.8rem;
 }
 
-.filter-header h4 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.price-display {
+.label {
   font-weight: 700;
-  color: #38bdf8;
-  font-size: 0.95rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
 }
 
-.histogram-container {
+.price-val {
+  font-weight: 800;
+  color: #2563eb;
+  font-size: 0.84rem;
+}
+
+.bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+  padding: 0 4px;
+}
+
+.mini-bar {
+  flex: 1;
+  background: #e2e8f0;
+  border-radius: 2px 2px 0 0;
+  transition: all 0.15s ease;
+  min-height: 3px;
+}
+
+.mini-bar.active {
+  background: #3b82f6;
+}
+
+.range-wrapper {
   position: relative;
-  height: 100px;
-  padding-top: 20px;
+  height: 14px;
+  display: flex;
+  align-items: center;
 }
 
-.range-slider-wrapper {
-  position: absolute;
-  bottom: 5px;
-  width: 100%;
-  height: 24px;
-}
-
-.range-input {
+.slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   position: absolute;
   pointer-events: none;
   background: transparent;
-  height: 4px;
-  top: 50%;
-  transform: translateY(-50%);
+  height: 3px;
   margin: 0;
   z-index: 20;
+  left: 0;
 }
 
-/* Base invisible track */
-.range-input::-webkit-slider-runnable-track {
+.slider-thumb::-webkit-slider-runnable-track {
   width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 99px;
 }
 
-/* Thumbs */
-.range-input::-webkit-slider-thumb {
+.slider-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
-  height: 18px;
-  width: 18px;
+  height: 14px;
+  width: 14px;
   border-radius: 50%;
-  background: #38bdf8;
+  background: #2563eb;
   cursor: grab;
-  margin-top: -7px;
-  border: 2px solid #0f172a;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  margin-top: -5.5px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.4);
   transition: transform 0.1s;
 }
 
-.range-input::-webkit-slider-thumb:hover {
+.slider-thumb::-webkit-slider-thumb:hover {
   transform: scale(1.2);
 }
 
-.range-input::-webkit-slider-thumb:active {
+.slider-thumb::-webkit-slider-thumb:active {
   cursor: grabbing;
 }
 
-/* Pista de destaque entre os thumbs */
-.range-track-highlight {
+.slider-track-highlight {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 4px;
-  background: #38bdf8;
-  border-radius: 4px;
+  height: 3px;
+  background: #2563eb;
+  border-radius: 99px;
   z-index: 15;
   pointer-events: none;
 }

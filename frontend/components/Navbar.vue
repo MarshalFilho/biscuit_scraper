@@ -6,17 +6,19 @@
         <span class="brand-badge">Inteligência Ativa</span>
       </div>
 
-      <nav class="app-nav">
-        <NuxtLink to="/" :class="['nav-link', { active: route.path === '/' }]">
-          📊 Painel Analítico
-        </NuxtLink>
-        <NuxtLink to="/config" :class="['nav-link', { active: route.path === '/config' }]">
-          ⚙️ Configurações & Robô
-        </NuxtLink>
-      </nav>
+      <div class="header-right">
+        <!-- Language Switcher -->
+        <button 
+          @click="toggleLanguage" 
+          class="lang-btn" 
+          :title="locale === 'pt' ? 'Mudar para Inglês' : 'Switch to Portuguese'"
+        >
+          <span class="lang-flag">{{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}</span>
+        </button>
 
-      <div class="user-box">
-        <LoginModal @auth-change="user => $emit('auth-change', user)" />
+        <div class="user-box">
+          <LoginModal @auth-change="user => $emit('auth-change', user)" />
+        </div>
       </div>
     </div>
   </header>
@@ -33,6 +35,11 @@ defineProps({
 defineEmits(['auth-change'])
 
 const route = useRoute()
+const { locale, setLocale } = useI18n()
+
+function toggleLanguage() {
+  setLocale(locale.value === 'pt' ? 'en' : 'pt')
+}
 </script>
 
 <style scoped>
@@ -79,36 +86,32 @@ const route = useRoute()
   text-transform: uppercase;
 }
 
-.app-nav {
+.header-right {
   display: flex;
-  gap: 0.5rem;
-  background: #f1f5f9;
-  padding: 4px;
-  border-radius: 10px;
-  border: 1px solid #cbd5e1;
+  align-items: center;
+  gap: 0.8rem;
 }
 
-.nav-link {
-  padding: 0.6rem 1.2rem;
-  font-size: 0.92rem;
+.lang-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.45rem 0.85rem;
+  border-radius: 99px;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #475569;
-  text-decoration: none;
-  border-radius: 8px;
+  cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
-.nav-link:hover {
-  color: #0f172a;
-}
-
-.nav-link.active {
-  background: #ffffff;
-  color: #2563eb;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+.lang-btn:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .user-box {

@@ -99,11 +99,13 @@
             </td>
             
             <td class="action-cell">
-              <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
-              <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
-              <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? 'Restaurar produto' : 'Ocultar / Silenciar este anúncio'">
-                {{ item._isHidden ? '👁️' : '🚫' }}
-              </button>
+              <div class="action-btns-wrap">
+                <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
+                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
+                <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? 'Restaurar produto' : 'Ocultar / Silenciar este anúncio'">
+                  {{ item._isHidden ? '👁️' : '🚫' }}
+                </button>
+              </div>
             </td>
           </tr>
           <tr v-if="filteredData.length === 0 && !isLoading">
@@ -303,7 +305,7 @@ function exportToCSV() {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 .data-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; }
-.data-table th, .data-table td { padding: 0.9rem 1rem; border-bottom: 1px solid #e2e8f0; }
+.data-table th, .data-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
 .data-table th {
   position: sticky;
   top: 0;
@@ -312,8 +314,8 @@ function exportToCSV() {
   color: #475569;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
@@ -326,48 +328,43 @@ function exportToCSV() {
 .data-table tbody tr { transition: background 0.2s ease; }
 .data-table tbody tr:hover { background: #f8fafc; }
 
-.title-cell { max-width: 260px; font-weight: 500; }
+.title-cell { max-width: 240px; font-weight: 500; }
 .clickable-title { cursor: pointer; transition: color 0.2s ease; }
 .clickable-title:hover .title-text { color: #2563eb; text-decoration: underline; }
-.title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.seller-subtext { display: block; font-size: 0.73rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.15rem; }
+.title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.88rem; }
+.seller-subtext { display: block; font-size: 0.72rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.1rem; }
 
-.price-cell, .old-price-cell, .variation-cell, .sales-diff-cell { white-space: nowrap; }
+.price-cell, .old-price-cell, .variation-cell, .sales-diff-cell { white-space: nowrap; font-size: 0.85rem; }
 .price-cell { font-weight: 700; color: #0f172a; }
 
 .text-muted { color: var(--text-muted); }
 .text-red { color: #dc2626; font-weight: bold; }
 .text-green { color: #16a34a; font-weight: bold; }
-.sales-value { font-weight: 700; color: #0f172a; margin-right: 0.4rem; }
+.sales-value { font-weight: 700; color: #0f172a; margin-right: 0.3rem; }
 
-.badge-growth { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 99px; font-size: 0.72rem; font-weight: 800; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-.badge-stable { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
-.badge-price-up { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
-.badge-price-down { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.badge-growth { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 99px; font-size: 0.7rem; font-weight: 800; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.badge-stable { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.badge-price-up { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.badge-price-down { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
 
-.badge { padding: 0.3rem 0.7rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; }
+.badge { padding: 0.25rem 0.55rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.3rem; }
 .badge.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .badge.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 .badge.category { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
 .badge-icon { vertical-align: middle; flex-shrink: 0; }
 
-.badge-new { font-size: 0.65rem; background: linear-gradient(90deg, #d97706, #dc2626); color: white; padding: 0.2rem 0.5rem; border-radius: 99px; margin-right: 0.4rem; font-weight: bold; text-transform: uppercase; display: inline-block; vertical-align: middle; }
+.badge-new { font-size: 0.62rem; background: linear-gradient(90deg, #d97706, #dc2626); color: white; padding: 0.15rem 0.4rem; border-radius: 99px; margin-right: 0.3rem; font-weight: bold; text-transform: uppercase; display: inline-block; vertical-align: middle; }
 
-.action-th { text-align: center; width: 90px; }
-.action-cell { display: flex; gap: 0.4rem; justify-content: center; align-items: center; }
-.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; border: 1px solid #cbd5e1; }
+.action-th { text-align: center; width: 110px; }
+.action-cell { text-align: center; width: 110px; }
+.action-btns-wrap { display: flex; gap: 0.35rem; justify-content: center; align-items: center; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; border: 1px solid #cbd5e1; }
 .action-btn-icon { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
 .action-btn-icon:hover { background: #dbeafe; border-color: #93c5fd; transform: translateY(-1px); }
 .link-btn-icon { background: #f8fafc; color: #475569; border-color: #cbd5e1; font-weight: bold; }
 .link-btn-icon:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px); }
-.delete-btn-icon { background: #fef2f2; color: #dc2626; border-color: #fca5a5; font-size: 0.85rem; }
+.delete-btn-icon { background: #fef2f2; color: #dc2626; border-color: #fca5a5; font-size: 0.82rem; }
 .delete-btn-icon:hover { background: #fee2e2; border-color: #f87171; transform: translateY(-1px); }
 .empty-state { text-align: center; padding: 3rem !important; color: var(--text-muted); font-style: italic; }
-
-.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-.page-btn { padding: 0.5rem 1rem; background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 0.88rem; }
-.page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: var(--neon-blue); color: var(--neon-blue); }
-.page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.page-info { font-size: 0.9rem; color: var(--text-muted); }
 </style>
 
