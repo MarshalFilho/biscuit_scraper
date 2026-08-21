@@ -26,67 +26,105 @@ OURO_DIR = PLATFORM_DIRS["ouro"]
 
 def limpar_preco(texto_preco):
     """
-    Extrai o primeiro valor monetário válido de uma string.
-    Evita contatenar parcelas (ex: 12x R$ 100) ou faixas de variação.
+    Extrai com precisão o valor monetário de uma string com símbolo monetário.
     """
     if not texto_preco: return 0.0
-    matches = re.findall(r"(?:R\$\s*)?(\d+(?:\.\d{3})*(?:,\d{1,2})?)", str(texto_preco), re.IGNORECASE)
-    if not matches: return 0.0
-    for m in matches:
+    match = re.search(r"(?:R\$\s*|\$\s*)(\d+(?:\.\d{3})*(?:,\d{1,2})?)", str(texto_preco), re.IGNORECASE)
+    if match:
         try:
-            val_clean = m.replace(".", "").replace(",", ".")
+            val_clean = match.group(1).replace(".", "").replace(",", ".")
             val = float(val_clean)
             if val > 0: return val
-        except ValueError: continue
+        except ValueError: pass
     return 0.0
 
 def extrair_preco_card_meli(produto):
     """
-    Extrai com precisão o preço promocional/vigente do card do Mercado Livre,
-    filtrando rigorosamente preços originais riscados, parcelamentos e anúncios relacionados.
+    Extrai com 100% de precisão o preço de venda real/vigente do card do Mercado Livre.
+    Ignora rigorosamente:
+    - Preços originais riscados (<s>, <del>, .andes-money-amount--previous, .poly-price__original)
+    - Parcelamentos (12x R$ 5,42, .poly-price__installments, .poly-component__installments, ui-search-installments)
+    - Avisos de frete (Frete grátis a partir de R$ 199)
+    - Quantidade de vendas (101 vendidos) e avaliações
     """
-    container_atual = produto.find(class_=re.compile(r"poly-price__current|ui-search-price__second-line|andes-money-amount--main-price"))
+    # 1. Estratégia Principal: Buscar explicitamente o container do preço atual vigente
+    price_current_containers = produto.find_all(class_=re.compile(
+        r"poly-price__current|ui-search-price__second-line|ui-search-price--size-medium|andes-money-amount--main-price"
+    ))
+    
+    for container in price_current_containers:
+        # Se for um preço riscado/antigo, pula
+        p_classes = " ".join(container.get("class", [])) if hasattr(container, "get") else ""
+        if "previous" in p_classes or "original" in p_classes or "installment" in p_classes or container.name in ["s", "del"]:
+            continue
+            
+        frac = container.find(class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
+        if frac and frac.text.strip():
+            frac_str = re.sub(r"[^\d]", "", frac.text.strip())
+            cents = container.find(class_=re.compile(r"andes-money-amount__cents|price-tag-cents"))
+            cents_str = re.sub(r"[^\d]", "", cents.text.strip()) if cents else "00"
+            if frac_str:
+                try:
+                    price = float(f"{frac_str}.{cents_str}")
+                    if price > 0:
+                        return price, f"poly-price__current: R$ {price:.2f}"
+                except ValueError:
+                    pass
 
-    if not container_atual:
-        cand_amounts = produto.find_all("span", class_=re.compile(r"andes-money-amount|price-tag-amount"))
-        for cand in cand_amounts:
-            is_previous = False
-            for p in [cand] + list(cand.parents):
-                p_classes = " ".join(p.get("class", [])) if hasattr(p, "get") and p.get("class") else ""
-                p_tag = getattr(p, "name", "")
-                if "previous" in p_classes or "original" in p_classes or "installment" in p_classes or "poly-price__original" in p_classes or p_tag in ["s", "del", "strike"]:
-                    is_previous = True
-                    break
-            if not is_previous:
-                container_atual = cand
+    # 2. Estratégia Secundária: Varrer todos os spans de andes-money-amount do card
+    # descartando qualquer um dentro de <s>, <del>, installments, ou shipping
+    money_spans = produto.find_all(["span", "div"], class_=re.compile(r"andes-money-amount|price-tag-amount"))
+    for span in money_spans:
+        is_invalid = False
+        for node in [span] + list(span.parents):
+            if not hasattr(node, "get"): continue
+            classes = " ".join(node.get("class", []))
+            tag_name = getattr(node, "name", "")
+            
+            # Filtra preço riscado
+            if "previous" in classes or "original" in classes or tag_name in ["s", "del", "strike"]:
+                is_invalid = True
+                break
+            # Filtra parcelamento
+            if "installment" in classes or "installments" in classes or "ui-search-item__group__element--installments" in classes:
+                is_invalid = True
+                break
+            # Filtra frete
+            if "shipping" in classes or "poly-component__shipping" in classes or "ui-search-item__shipping" in classes:
+                is_invalid = True
                 break
 
-    if not container_atual:
-        container_atual = produto
+        if is_invalid:
+            continue
 
-    frac_tags = container_atual.find_all("span", class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
-    for frac_tag in frac_tags:
-        is_bad = False
-        for p in [frac_tag] + list(frac_tag.parents):
-            if p == container_atual and container_atual != produto: break
-            p_classes = " ".join(p.get("class", [])) if hasattr(p, "get") and p.get("class") else ""
-            p_tag = getattr(p, "name", "")
-            if "previous" in p_classes or "original" in p_classes or "installment" in p_classes or "poly-price__original" in p_classes or p_tag in ["s", "del", "strike"]:
-                is_bad = True
-                break
-        if not is_bad:
-            frac_str = frac_tag.text.strip().replace(".", "")
-            parent_amount = frac_tag.find_parent("span", class_=re.compile(r"andes-money-amount|price-tag-amount"))
-            cents_tag = parent_amount.find("span", class_=re.compile(r"andes-money-amount__cents|price-tag-cents")) if parent_amount else None
-            cents_str = cents_tag.text.strip() if cents_tag else "00"
+        frac = span.find(class_=re.compile(r"andes-money-amount__fraction|price-tag-fraction"))
+        if frac and frac.text.strip():
+            frac_str = re.sub(r"[^\d]", "", frac.text.strip())
+            cents = span.find(class_=re.compile(r"andes-money-amount__cents|price-tag-cents"))
+            cents_str = re.sub(r"[^\d]", "", cents.text.strip()) if cents else "00"
+            if frac_str:
+                try:
+                    price = float(f"{frac_str}.{cents_str}")
+                    if price > 0:
+                        return price, f"andes-money-amount: R$ {price:.2f}"
+                except ValueError:
+                    pass
+
+    # 3. Estratégia Terciária: Regex estrito dentro do container de preço apenas
+    price_box = produto.find(class_=re.compile(r"poly-component__price|ui-search-price|ui-search-item__price"))
+    if price_box:
+        box_text = price_box.text
+        match = re.search(r"R\$\s*(\d+(?:\.\d{3})*(?:,\d{2})?)", box_text)
+        if match:
+            clean = match.group(1).replace(".", "").replace(",", ".")
             try:
-                price_val = float(f"{frac_str}.{cents_str}")
-                return price_val, f"Preço Vigente OK: R$ {price_val:.2f}"
-            except ValueError: pass
+                price = float(clean)
+                if price > 0:
+                    return price, f"price-box regex: R$ {price:.2f}"
+            except ValueError:
+                pass
 
-    raw_text = container_atual.text.strip()
-    price_val = limpar_preco(raw_text)
-    return price_val, f"Texto Bruto: '{raw_text}'"
+    return 0.0, "Preço Não Encontrado (0.00)"
 
 def limpar_vendas(texto_vendas):
     if not texto_vendas: return 0

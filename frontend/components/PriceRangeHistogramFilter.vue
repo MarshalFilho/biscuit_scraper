@@ -55,23 +55,35 @@ const absoluteMin = ref(0)
 const absoluteMax = ref(300)
 const minVal = ref(0)
 const maxVal = ref(300)
+const isInitialized = ref(false)
 
 const NUM_BUCKETS = 28 // 28 barras minimalistas e fluidas
+
+watch(() => props.items, (newItems) => {
+  if (!newItems || newItems.length === 0) return
+  
+  const validPrices = newItems.map(i => i.preco).filter(p => typeof p === 'number' && p > 0)
+  if (validPrices.length === 0) return
+  
+  const maxP = Math.max(...validPrices)
+  const calculatedMax = Math.ceil(maxP / 10) * 10 || 300
+  absoluteMax.value = calculatedMax
+  
+  if (!isInitialized.value) {
+    minVal.value = 0
+    maxVal.value = calculatedMax
+    isInitialized.value = true
+  } else if (maxVal.value > calculatedMax) {
+    maxVal.value = calculatedMax
+  }
+}, { immediate: true })
 
 const bucketList = computed(() => {
   if (!props.items || props.items.length === 0) return []
 
-  const maxPriceInItems = Math.max(...props.items.map(i => i.preco || 0))
-  const calculatedMax = Math.min(Math.ceil(maxPriceInItems / 50) * 50, 800) || 300
-  absoluteMax.value = calculatedMax
-
-  if (maxVal.value > calculatedMax || maxVal.value === 300) {
-    maxVal.value = calculatedMax
-  }
-
-  const step = calculatedMax / NUM_BUCKETS
+  const step = (absoluteMax.value - absoluteMin.value) / NUM_BUCKETS || 10
   const buckets = Array.from({ length: NUM_BUCKETS }, (_, i) => ({
-    price: Math.round(i * step),
+    price: Math.round(absoluteMin.value + (i * step)),
     volume: 0,
     heightPerc: 10
   }))
@@ -79,11 +91,13 @@ const bucketList = computed(() => {
   let maxVol = 1
   for (const item of props.items) {
     if (item.preco > 0) {
-      const idx = Math.min(Math.floor(item.preco / step), NUM_BUCKETS - 1)
-      const sales = item.vendas_totais || 1
-      buckets[idx].volume += sales
-      if (buckets[idx].volume > maxVol) {
-        maxVol = buckets[idx].volume
+      const idx = Math.min(Math.floor((item.preco - absoluteMin.value) / step), NUM_BUCKETS - 1)
+      if (idx >= 0 && buckets[idx]) {
+        const sales = item.vendas_totais || 1
+        buckets[idx].volume += sales
+        if (buckets[idx].volume > maxVol) {
+          maxVol = buckets[idx].volume
+        }
       }
     }
   }
