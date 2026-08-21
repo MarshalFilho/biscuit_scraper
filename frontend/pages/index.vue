@@ -21,29 +21,29 @@
 
       <!-- Banner da Data e Horário da Última Atualização -->
       <div class="last-update-banner animate-fade-in">
-        <span>🕒 <strong>Última atualização:</strong> {{ lastScrapeFormatted }}</span>
+        <span>🕒 <strong>{{ $t('filters.latest_scrape') }}</strong> {{ lastScrapeFormatted }}</span>
       </div>
 
       <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
           <div>
-            <h4>🔍 Super Filtros Globais</h4>
-            <span class="filters-info">Altera em tempo real todos os KPIs, gráficos e tabelas do painel</span>
+            <h4>🔍 {{ $t('filters.title') }}</h4>
+            <span class="filters-info">{{ $t('filters.subtitle') }}</span>
           </div>
         </div>
         
         <div class="filters-grid">
           <!-- Plataforma -->
           <div class="filter-group">
-            <label>Plataforma:</label>
+            <label>{{ $t('filters.platform') }}</label>
             <div class="toggle-group">
               <button 
                 type="button" 
                 :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
                 @click="selectedPlatform = 'Todas'"
               >
-                🌐 Ambas
+                {{ $t('filters.both') }}
               </button>
               <button 
                 type="button" 
@@ -72,18 +72,16 @@
 
           <!-- Categoria -->
           <div class="filter-group">
-            <label>Categoria:</label>
+            <label>{{ $t('filters.category') }}</label>
             <select v-model="selectedCategory" class="glass-input">
-              <option value="Todas">Todas as Categorias</option>
+              <option value="Todas">{{ $t('filters.all_categories') }}</option>
               <option v-for="cat in dynamicCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
 
-          <!-- Vendas Mínimas e Ocultação movidos para ocupar o espaço do preço -->
-
           <!-- Vendas Mínimas -->
           <div class="filter-group">
-            <label>Vendas Mínimas:</label>
+            <label>{{ $t('filters.min_sales') }}</label>
             <input type="number" v-model="minSales" placeholder="Ex: 50" class="glass-input" />
           </div>
 
@@ -91,11 +89,11 @@
           <div class="filter-group checkbox-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <label class="checkbox-label">
               <input type="checkbox" v-model="hideZeroSales" />
-              Ocultar produtos com 0 vendas
+              {{ $t('filters.hide_zero') }}
             </label>
             <label class="checkbox-label text-muted">
               <input type="checkbox" v-model="showHiddenProducts" />
-              Mostrar anúncios silenciados
+              {{ $t('filters.show_hidden') }}
             </label>
           </div>
         </div>
@@ -122,19 +120,19 @@
           :class="['tab-btn', { active: activeViewTab === 'overview' }]" 
           @click="activeViewTab = 'overview'"
         >
-          📊 Visão Geral de Mercado
+          {{ $t('tabs.overview') }}
         </button>
         <button 
           :class="['tab-btn', { active: activeViewTab === 'trending' }]" 
           @click="activeViewTab = 'trending'"
         >
-          🚀 Produtos em Alta & Aceleração
+          {{ $t('tabs.trending') }}
         </button>
         <button 
           :class="['tab-btn', { active: activeViewTab === 'pricing' }]" 
           @click="activeViewTab = 'pricing'"
         >
-          🏷️ Estratégias de Preço & Oportunidades
+          {{ $t('tabs.pricing') }}
         </button>
       </div>
 

@@ -3,7 +3,7 @@
     <div class="header-main">
       <div class="brand-box">
         <h1 class="brand-title">✨ {{ projectName || 'Scraper Pro' }}</h1>
-        <span class="brand-badge">Inteligência Ativa</span>
+        <span class="brand-badge">{{ $t('navbar.badge') }}</span>
       </div>
 
       <div class="header-right">

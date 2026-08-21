@@ -4,7 +4,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.1s;">
         <div class="kpi-icon blue">📦</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">Total de Produtos</h3>
+          <h3 class="kpi-title">{{ $t('kpis.total_items') }}</h3>
           <p class="kpi-value text-gradient">{{ formatLargeNumber(totalProducts) }}</p>
         </div>
       </div>
@@ -12,7 +12,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.2s;">
         <div class="kpi-icon purple">💰</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">Preço Médio</h3>
+          <h3 class="kpi-title">{{ $t('kpis.avg_price') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(averagePrice, false) }}</p>
         </div>
       </div>
@@ -41,7 +41,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.5s;">
         <div class="kpi-icon blue">💎</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">Faturamento Est.</h3>
+          <h3 class="kpi-title">{{ $t('kpis.revenue') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(estimatedRevenue, true) }}</p>
         </div>
       </div>

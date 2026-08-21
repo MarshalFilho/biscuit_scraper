@@ -2,12 +2,12 @@
   <div class="glass-panel table-container animate-fade-in" style="animation-delay: 0.3s;">
     <div class="table-header">
       <div class="table-title">
-        <h3>📦 Tabela de Produtos Monitorados</h3>
-        <p class="subtitle">Clique nas colunas para ordenar os dados (▲ / ▼)</p>
+        <h3>📦 {{ $t('table.title') }}</h3>
+        <p class="subtitle">{{ $t('table.subtitle') }}</p>
       </div>
       <div class="table-actions">
-        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Baixar dados filtrados em CSV">⬇️ Exportar CSV</button>
-        <input type="text" v-model="search" placeholder="Buscar por título..." class="search-input glass-panel ml-2" />
+        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Export CSV">{{ $t('table.export_csv') }}</button>
+        <input type="text" v-model="search" :placeholder="$t('table.search_placeholder')" class="search-input glass-panel ml-2" />
       </div>
     </div>
     
@@ -15,28 +15,28 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th @click="sortBy('plataforma')" class="sortable-header" title="Clique para ordenar por plataforma">
-              Plataforma <span class="sort-icon">{{ sortKey === 'plataforma' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('plataforma')" class="sortable-header">
+              {{ $t('table.col_platform') }} <span class="sort-icon">{{ sortKey === 'plataforma' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('categoria')" class="sortable-header" title="Clique para ordenar por categoria">
-              Categoria <span class="sort-icon">{{ sortKey === 'categoria' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('categoria')" class="sortable-header">
+              {{ $t('table.col_category') }} <span class="sort-icon">{{ sortKey === 'categoria' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('titulo')" class="sortable-header" title="Clique para ordenar por título">
-              Título Anúncio <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('titulo')" class="sortable-header">
+              {{ $t('table.col_product') }} <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('preco')" class="sortable-header" title="Clique para ordenar por preço">
-              Preço Atual <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('preco')" class="sortable-header">
+              {{ $t('table.col_price') }} <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('hist_preco')" class="sortable-header" title="Clique para ordenar por preço anterior">
-              Preço Ant. <span class="sort-icon">{{ sortKey === 'hist_preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('hist_preco')" class="sortable-header">
+              {{ $t('table.col_old_price') }} <span class="sort-icon">{{ sortKey === 'hist_preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('varInfo')" class="sortable-header" title="Clique para ordenar por variação R$">
-              Variação <span class="sort-icon">{{ sortKey === 'varInfo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('varInfo')" class="sortable-header">
+              {{ $t('table.col_variation') }} <span class="sort-icon">{{ sortKey === 'varInfo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th @click="sortBy('vendas_totais')" class="sortable-header" title="Clique para ordenar por vendas acumuladas">
-              Vendas Totais <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+            <th @click="sortBy('vendas_totais')" class="sortable-header">
+              {{ $t('table.col_sales') }} <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th class="action-th">Ações</th>
+            <th class="action-th">{{ $t('table.col_actions') }}</th>
           </tr>
         </thead>
         <tbody v-if="isLoading">

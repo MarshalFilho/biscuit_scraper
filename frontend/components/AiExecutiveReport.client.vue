@@ -2,10 +2,10 @@
   <div class="glass-panel executive-panel animate-fade-in">
     <div class="panel-header" @click="toggleCollapse">
       <div class="title-group">
-        <h3>🧠 Relatório de Inteligência Executiva de Mercado <span class="ai-badge">IA Analytics</span></h3>
-        <p class="subtitle">Diagnóstico estratégico avançado baseado em análise quantitativa em tempo real</p>
+        <h3>🧠 {{ $t('report.title') }} <span class="ai-badge">{{ $t('report.badge') }}</span></h3>
+        <p class="subtitle">{{ $t('report.subtitle') }}</p>
       </div>
-      <button class="btn-toggle">{{ isCollapsed ? '▼ Expandir Insights' : '▲ Minimizar' }}</button>
+      <button class="btn-toggle">{{ isCollapsed ? $t('report.expand') : $t('report.collapse') }}</button>
     </div>
 
     <transition name="slide-fade">
@@ -18,7 +18,7 @@
             :class="['tab-btn', { active: activeTab === idx }]"
             @click="activeTab = idx"
           >
-            {{ mod.titulo }}
+            {{ mod.id === 'estrategia' ? $t('report.tab_strategy') : (mod.id === 'vendedores_produtos' ? $t('report.tab_sellers') : (mod.id === 'seo' ? $t('report.tab_seo') : $t('report.tab_platforms'))) }}
           </button>
         </div>
 
@@ -40,7 +40,7 @@
           <div v-else-if="currentModule">
             <div class="card-top">
               <h4>{{ currentModule.titulo }}</h4>
-              <span class="update-tag">📅 Atualizado em {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
+              <span class="update-tag">📅 {{ $t('report.updated_at') }} {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
             </div>
 
             <p class="module-summary">{{ currentModule.resumo }}</p>
