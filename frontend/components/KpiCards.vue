@@ -4,7 +4,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.1s;">
         <div class="kpi-icon blue">📦</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">{{ tr('kpis.total_items', 'Total de Produtos') }}</h3>
+          <h3 class="kpi-title">{{ t('kpis.total_items', 'Total de Produtos') }}</h3>
           <p class="kpi-value text-gradient">{{ formatLargeNumber(totalProducts) }}</p>
         </div>
       </div>
@@ -12,7 +12,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.2s;">
         <div class="kpi-icon purple">💰</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">{{ tr('kpis.avg_price', 'Preço Médio') }}</h3>
+          <h3 class="kpi-title">{{ t('kpis.avg_price', 'Preço Médio') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(averagePrice, false) }}</p>
         </div>
       </div>
@@ -41,7 +41,7 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.5s;">
         <div class="kpi-icon blue">💎</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">{{ tr('kpis.revenue', 'Faturamento Est.') }}</h3>
+          <h3 class="kpi-title">{{ t('kpis.revenue', 'Faturamento Est.') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(estimatedRevenue, true) }}</p>
         </div>
       </div>
@@ -50,17 +50,9 @@
 </template>
 
 <script setup>
-const { t, te } = useI18n()
+import { useAppI18n } from '~/composables/useAppI18n'
 
-function tr(key, fallback) {
-  try {
-    if (te(key)) {
-      const val = t(key)
-      if (val && val !== key) return val
-    }
-  } catch (e) {}
-  return fallback
-}
+const { t } = useAppI18n()
 
 defineProps({
   totalProducts: { type: Number, default: 0 },

@@ -3,7 +3,7 @@
     <div class="header-main">
       <div class="brand-box">
         <h1 class="brand-title">✨ {{ projectName || 'Scraper Pro' }}</h1>
-        <span class="brand-badge">{{ $t('navbar.badge') }}</span>
+        <span class="brand-badge">{{ t('navbar.badge', 'Inteligência Ativa') }}</span>
       </div>
 
       <div class="header-right">
@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { useRoute } from 'vue-router'
+import { useAppI18n } from '~/composables/useAppI18n'
 import LoginModal from './LoginModal.vue'
 
 defineProps({
@@ -34,12 +34,7 @@ defineProps({
 
 defineEmits(['auth-change'])
 
-const route = useRoute()
-const { locale, setLocale } = useI18n()
-
-function toggleLanguage() {
-  setLocale(locale.value === 'pt' ? 'en' : 'pt')
-}
+const { locale, toggleLanguage, t } = useAppI18n()
 </script>
 
 <style scoped>

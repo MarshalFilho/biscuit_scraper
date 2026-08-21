@@ -2,12 +2,12 @@
   <div class="glass-panel table-container animate-fade-in" style="animation-delay: 0.3s;">
     <div class="table-header">
       <div class="table-title">
-        <h3>📦 {{ tr('table.title', 'Tabela de Produtos Monitorados') }}</h3>
-        <p class="subtitle">{{ tr('table.subtitle', 'Clique nas colunas para ordenar os dados (▲ / ▼)') }}</p>
+        <h3>📦 {{ t('table.title', 'Tabela de Produtos Monitorados') }}</h3>
+        <p class="subtitle">{{ t('table.subtitle', 'Clique nas colunas para ordenar os dados (▲ / ▼)') }}</p>
       </div>
       <div class="table-actions">
-        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Export CSV">{{ tr('table.export_csv', '⬇️ Exportar CSV') }}</button>
-        <input type="text" v-model="search" :placeholder="tr('table.search_placeholder', 'Buscar por título...')" class="search-input glass-panel ml-2" />
+        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Export CSV">{{ t('table.export_csv', '⬇️ Exportar CSV') }}</button>
+        <input type="text" v-model="search" :placeholder="t('table.search_placeholder', 'Buscar por título...')" class="search-input glass-panel ml-2" />
       </div>
     </div>
     
@@ -16,27 +16,27 @@
         <thead>
           <tr>
             <th @click="sortBy('plataforma')" class="sortable-header">
-              {{ tr('table.col_platform', 'Plataforma') }} <span class="sort-icon">{{ sortKey === 'plataforma' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_platform', 'Plataforma') }} <span class="sort-icon">{{ sortKey === 'plataforma' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('categoria')" class="sortable-header">
-              {{ tr('table.col_category', 'Categoria') }} <span class="sort-icon">{{ sortKey === 'categoria' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_category', 'Categoria') }} <span class="sort-icon">{{ sortKey === 'categoria' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('titulo')" class="sortable-header">
-              {{ tr('table.col_product', 'Título Anúncio') }} <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_product', 'Título Anúncio') }} <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('preco')" class="sortable-header">
-              {{ tr('table.col_price', 'Preço Atual') }} <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_price', 'Preço Atual') }} <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('hist_preco')" class="sortable-header">
-              {{ tr('table.col_old_price', 'Preço Ant.') }} <span class="sort-icon">{{ sortKey === 'hist_preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_old_price', 'Preço Ant.') }} <span class="sort-icon">{{ sortKey === 'hist_preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('varInfo')" class="sortable-header">
-              {{ tr('table.col_variation', 'Variação') }} <span class="sort-icon">{{ sortKey === 'varInfo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_variation', 'Variação') }} <span class="sort-icon">{{ sortKey === 'varInfo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('vendas_totais')" class="sortable-header">
-              {{ tr('table.col_sales', 'Vendas Totais') }} <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_sales', 'Vendas Totais') }} <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
-            <th class="action-th">{{ tr('table.col_actions', 'Ações') }}</th>
+            <th class="action-th">{{ t('table.col_actions', 'Ações') }}</th>
           </tr>
         </thead>
         <tbody v-if="isLoading">
@@ -134,19 +134,10 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
 import ProductModal from './ProductModal.vue'
 
-const { t, te } = useI18n()
-
-function tr(key, fallback) {
-  try {
-    if (te(key)) {
-      const val = t(key)
-      if (val && val !== key) return val
-    }
-  } catch (e) {}
-  return fallback
-}
+const { t } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] },

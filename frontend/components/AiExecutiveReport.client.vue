@@ -2,10 +2,10 @@
   <div class="glass-panel executive-panel animate-fade-in">
     <div class="panel-header" @click="toggleCollapse">
       <div class="title-group">
-        <h3>🧠 {{ tr('report.title', 'Relatório de Inteligência Executiva de Mercado') }} <span class="ai-badge">{{ tr('report.badge', 'IA Analytics') }}</span></h3>
-        <p class="subtitle">{{ tr('report.subtitle', 'Diagnóstico estratégico avançado baseado em análise quantitativa em tempo real') }}</p>
+        <h3>🧠 {{ t('report.title', 'Relatório de Inteligência Executiva de Mercado') }} <span class="ai-badge">{{ t('report.badge', 'IA Analytics') }}</span></h3>
+        <p class="subtitle">{{ t('report.subtitle', 'Diagnóstico estratégico avançado baseado em análise quantitativa em tempo real') }}</p>
       </div>
-      <button class="btn-toggle">{{ isCollapsed ? tr('report.expand', '▼ Expandir Insights') : tr('report.collapse', '▲ Minimizar') }}</button>
+      <button class="btn-toggle">{{ isCollapsed ? t('report.expand', '▼ Expandir Insights') : t('report.collapse', '▲ Minimizar') }}</button>
     </div>
 
     <transition name="slide-fade">
@@ -18,7 +18,7 @@
             :class="['tab-btn', { active: activeTab === idx }]"
             @click="activeTab = idx"
           >
-            {{ mod.id === 'estrategia' ? tr('report.tab_strategy', '🎯 Estratégia & Nichos') : (mod.id === 'vendedores_produtos' ? tr('report.tab_sellers', '🏆 Top Lojas & Produtos') : (mod.id === 'seo' ? tr('report.tab_seo', '🏷️ Estratégia de SEO') : tr('report.tab_platforms', '⚔️ Batalha de Marketplaces'))) }}
+            {{ mod.id === 'estrategia' ? t('report.tab_strategy', '🎯 Estratégia & Nichos') : (mod.id === 'vendedores_produtos' ? t('report.tab_sellers', '🏆 Top Lojas & Produtos') : (mod.id === 'seo' ? t('report.tab_seo', '🏷️ Estratégia de SEO') : t('report.tab_platforms', '⚔️ Batalha de Marketplaces'))) }}
           </button>
         </div>
 
@@ -40,7 +40,7 @@
           <div v-else-if="currentModule">
             <div class="card-top">
               <h4>{{ currentModule.titulo }}</h4>
-              <span class="update-tag">📅 {{ $t('report.updated_at') }} {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
+              <span class="update-tag">📅 {{ t('report.updated_at', 'Atualizado em') }} {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
             </div>
 
             <p class="module-summary">{{ currentModule.resumo }}</p>
@@ -259,17 +259,7 @@ const isCollapsed = ref(false)
 const activeTab = ref(0)
 const selectedSeller = ref(null)
 
-const { t, te } = useI18n()
-
-function tr(key, fallback) {
-  try {
-    if (te(key)) {
-      const val = t(key)
-      if (val && val !== key) return val
-    }
-  } catch (e) {}
-  return fallback
-}
+const { t } = useAppI18n()
 
 const effectiveReport = computed(() => {
   if (props.reportData && Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {

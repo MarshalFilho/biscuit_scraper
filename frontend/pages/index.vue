@@ -21,29 +21,29 @@
 
       <!-- Banner da Data e Horário da Última Atualização -->
       <div class="last-update-banner animate-fade-in">
-        <span>🕒 <strong>{{ tr('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
+        <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
       </div>
 
       <!-- Super Filtros Globais (Comanda a página) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
           <div>
-            <h4>🔍 {{ tr('filters.title', 'Super Filtros Globais') }}</h4>
-            <span class="filters-info">{{ tr('filters.subtitle', 'Altera em tempo real todos os KPIs, gráficos e tabelas do painel') }}</span>
+            <h4>🔍 {{ t('filters.title', 'Super Filtros Globais') }}</h4>
+            <span class="filters-info">{{ t('filters.subtitle', 'Altera em tempo real todos os KPIs, gráficos e tabelas do painel') }}</span>
           </div>
         </div>
         
         <div class="filters-grid">
           <!-- Plataforma -->
           <div class="filter-group">
-            <label>{{ tr('filters.platform', 'Plataforma:') }}</label>
+            <label>{{ t('filters.platform', 'Plataforma:') }}</label>
             <div class="toggle-group">
               <button 
                 type="button" 
                 :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
                 @click="selectedPlatform = 'Todas'"
               >
-                {{ tr('filters.both', '🌐 Ambas') }}
+                {{ t('filters.both', '🌐 Ambas') }}
               </button>
               <button 
                 type="button" 
@@ -72,16 +72,16 @@
 
           <!-- Categoria -->
           <div class="filter-group">
-            <label>{{ tr('filters.category', 'Categoria:') }}</label>
+            <label>{{ t('filters.category', 'Categoria:') }}</label>
             <select v-model="selectedCategory" class="glass-input">
-              <option value="Todas">{{ tr('filters.all_categories', 'Todas as Categorias') }}</option>
+              <option value="Todas">{{ t('filters.all_categories', 'Todas as Categorias') }}</option>
               <option v-for="cat in dynamicCategories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
           </div>
 
           <!-- Vendas Mínimas -->
           <div class="filter-group">
-            <label>{{ tr('filters.min_sales', 'Vendas Mínimas:') }}</label>
+            <label>{{ t('filters.min_sales', 'Vendas Mínimas:') }}</label>
             <input type="number" v-model="minSales" placeholder="Ex: 50" class="glass-input" />
           </div>
 
@@ -89,11 +89,11 @@
           <div class="filter-group checkbox-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <label class="checkbox-label">
               <input type="checkbox" v-model="hideZeroSales" />
-              {{ tr('filters.hide_zero', 'Ocultar produtos com 0 vendas') }}
+              {{ t('filters.hide_zero', 'Ocultar produtos com 0 vendas') }}
             </label>
             <label class="checkbox-label text-muted">
               <input type="checkbox" v-model="showHiddenProducts" />
-              {{ tr('filters.show_hidden', 'Mostrar anúncios silenciados') }}
+              {{ t('filters.show_hidden', 'Mostrar anúncios silenciados') }}
             </label>
           </div>
         </div>
@@ -120,19 +120,19 @@
           :class="['tab-btn', { active: activeViewTab === 'overview' }]" 
           @click="activeViewTab = 'overview'"
         >
-          {{ tr('tabs.overview', '📊 Visão Geral de Mercado') }}
+          {{ t('tabs.overview', '📊 Visão Geral de Mercado') }}
         </button>
         <button 
           :class="['tab-btn', { active: activeViewTab === 'trending' }]" 
           @click="activeViewTab = 'trending'"
         >
-          {{ tr('tabs.trending', '🚀 Produtos em Alta & Aceleração') }}
+          {{ t('tabs.trending', '🚀 Produtos em Alta & Aceleração') }}
         </button>
         <button 
           :class="['tab-btn', { active: activeViewTab === 'pricing' }]" 
           @click="activeViewTab = 'pricing'"
         >
-          {{ tr('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
+          {{ t('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
         </button>
       </div>
 
@@ -202,17 +202,7 @@ import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
 
-const { t, te } = useI18n()
-
-function tr(key, fallback) {
-  try {
-    if (te(key)) {
-      const val = t(key)
-      if (val && val !== key) return val
-    }
-  } catch (e) {}
-  return fallback
-}
+const { t } = useAppI18n()
 
 const productsRaw = ref([])
 const loading = ref(true)
