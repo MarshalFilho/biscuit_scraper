@@ -59,67 +59,131 @@ Analise a seguinte lista enxuta de produtos extraídos recentemente das platafor
 
 PAYLOAD_ENXUTO = """ + json_payload + """
 
-Gere um relatório executivo estratégico em JSON exatamente com os 4 macro-módulos estruturados a seguir:
+Gere um relatório executivo bilíngue (Português e Inglês) exatamente na seguinte estrutura JSON com os 4 macro-módulos para cada idioma:
 {
   "atualizado_em": """" + agora_str + """",
-  "modulos": [
-    {
-      "id": "estrategia",
-      "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
-      "tipo": "estrategia_completa",
-      "resumo": "Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida",
-      "recomendacoes": [
-        "💡 **Foco em Kits de Festa**: Anúncios combinados elevam o ticket médio em 35% com margem líquida superior.",
-        "📊 **Sweet Spot de Conversão**: Produtos entre R$ 30 e R$ 60 concentram 68% do volume de vendas nas duas plataformas.",
-        "⚡ **Agilidade no Envio**: Anúncios com selo FULL ou envio em 24h convertem 2.8x mais rápido."
-      ],
-      "oportunidades_nicho": [
-        "🚀 **Temas Infantis de Alta Margem**: 'Safari Baby', 'Moana' e 'Sonic' apresentam demanda crescente e baixa guerra de preços.",
-        "💎 **Noivinhos & Topos Personalizados Luxo**: Ticket médio acima de R$ 140 com excelente taxa de conversão e fidelização.",
-        "📦 **Lembrancinhas em Lotes (10 a 30 un)**: Alta procura para aniversários corporativos e infantis com baixa concorrência em kits."
-      ]
-    },
-    {
-      "id": "vendedores_produtos",
-      "titulo": "🏆 Top Vendedores & Produtos Virais",
-      "tipo": "vendedores",
-      "resumo": "Ranking combinado dos maiores faturamentos e itens com aceleração",
-      "itens": [
-        {"name": "Nome da Loja", "anuncios": 10, "vendas": 500, "receita": 15000.0, "top_produto": "Vela Personalizada Luxo", "plataforma": "meli"}
-      ]
-    },
-    {
-      "id": "seo",
-      "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
-      "tipo": "seo_completo",
-      "resumo": "Termos líderes, combinações long-tail e modelos de títulos com alta conversão orgânica",
-      "palavras_chave": [
-        {"palavra": "Personalizado", "frequencia": 45},
-        {"palavra": "Kit Festa", "frequencia": 38},
-        {"palavra": "Topo Bolo", "frequencia": 32}
-      ],
-      "titulos_recomendados": [
-        "Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h",
-        "Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo",
-        "Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega"
-      ],
-      "combinacoes_longtail": [
-        "Vela personalizada + [Nome da Criança] + [Idade]",
-        "Topo de bolo biscuit + [Tema] + [Envio Rápido]",
-        "Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]"
-      ]
-    },
-    {
-      "id": "plataformas_precos",
-      "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
-      "tipo": "plataformas",
-      "resumo": "Comparativo ML vs Shopee e distribuição do volume por zonas de preço",
-      "itens": [
-        {"nome": "Mercado Livre", "share": 52.0, "receita": 25000.0, "vendas": 600, "vendedores_unicos": 45},
-        {"nome": "Shopee", "share": 48.0, "receita": 18000.0, "vendas": 720, "vendedores_unicos": 62}
-      ]
-    }
-  ]
+  "pt": {
+    "atualizado_em": """" + agora_str + """",
+    "modulos": [
+      {
+        "id": "estrategia",
+        "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
+        "tipo": "estrategia_completa",
+        "resumo": "Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida",
+        "recomendacoes": [
+          "💡 **Foco em Kits de Festa**: Anúncios combinados elevam o ticket médio em 35% com margem líquida superior.",
+          "📊 **Sweet Spot de Conversão**: Produtos entre R$ 30 e R$ 60 concentram 68% do volume de vendas nas duas plataformas.",
+          "⚡ **Agilidade no Envio**: Anúncios com selo FULL ou envio em 24h convertem 2.8x mais rápido."
+        ],
+        "oportunidades_nicho": [
+          "🚀 **Temas Infantis de Alta Margem**: 'Safari Baby', 'Moana' e 'Sonic' apresentam demanda crescente e baixa guerra de preços.",
+          "💎 **Noivinhos & Topos Personalizados Luxo**: Ticket médio acima de R$ 140 com excelente taxa de conversão e fidelização.",
+          "📦 **Lembrancinhas em Lotes (10 a 30 un)**: Alta procura para aniversários corporativos e infantis com baixa concorrência em kits."
+        ]
+      },
+      {
+        "id": "vendedores_produtos",
+        "titulo": "🏆 Top Vendedores & Produtos Virais",
+        "tipo": "vendedores",
+        "resumo": "Ranking combinado dos maiores faturamentos e itens com aceleração",
+        "itens": [
+          {"name": "Nome da Loja", "anuncios": 10, "vendas": 500, "receita": 15000.0, "top_produto": "Vela Personalizada Luxo", "plataforma": "meli"}
+        ]
+      },
+      {
+        "id": "seo",
+        "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
+        "tipo": "seo_completo",
+        "resumo": "Termos líderes, combinações long-tail e modelos de títulos com alta conversão orgânica",
+        "palavras_chave": [
+          {"palavra": "Personalizado", "frequencia": 45},
+          {"palavra": "Kit Festa", "frequencia": 38},
+          {"palavra": "Topo Bolo", "frequencia": 32}
+        ],
+        "titulos_recomendados": [
+          "Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h",
+          "Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo",
+          "Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega"
+        ],
+        "combinacoes_longtail": [
+          "Vela personalizada + [Nome da Criança] + [Idade]",
+          "Topo de bolo biscuit + [Tema] + [Envio Rápido]",
+          "Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]"
+        ]
+      },
+      {
+        "id": "plataformas_precos",
+        "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
+        "tipo": "plataformas",
+        "resumo": "Comparativo ML vs Shopee e distribuição do volume por zonas de preço",
+        "itens": [
+          {"nome": "Mercado Livre", "share": 52.0, "receita": 25000.0, "vendas": 600, "vendedores_unicos": 45},
+          {"nome": "Shopee", "share": 48.0, "receita": 18000.0, "vendas": 720, "vendedores_unicos": 62}
+        ]
+      }
+    ]
+  },
+  "en": {
+    "atualizado_em": """" + datetime.now().strftime('%m/%d/%Y at %H:%M') + """",
+    "modulos": [
+      {
+        "id": "estrategia",
+        "titulo": "🎯 Strategic Recommendations & Niche Opportunities",
+        "tipo": "estrategia_completa",
+        "resumo": "Actionable data-driven diagnostics and high-demand untapped market opportunities.",
+        "recomendacoes": [
+          "💡 **Focus on Party Kits**: Bundled listings increase Average Order Value by 35% with superior profit margins.",
+          "📊 **Conversion Sweet Spot**: Items priced between R$ 30 and R$ 60 account for 68% of sales across both platforms.",
+          "⚡ **Fast Shipping**: Listings offering FULL fulfillment or 24h dispatch convert 2.8x faster."
+        ],
+        "oportunidades_nicho": [
+          "🚀 **High-Margin Kids Themes**: 'Safari Baby', 'Moana' and 'Sonic' show rising demand and minimal price wars.",
+          "💎 **Luxury Wedding & Cake Toppers**: Average ticket above R$ 140 with outstanding conversion and repeat rates.",
+          "📦 **Bulk Souvenirs (10 to 30 units)**: High search volume for corporate and birthday events with low kit competition."
+        ]
+      },
+      {
+        "id": "vendedores_produtos",
+        "titulo": "🏆 Top Stores & Viral Products",
+        "tipo": "vendedores",
+        "resumo": "Combined revenue ranking of dominant sellers and accelerated listings.",
+        "itens": [
+          {"name": "Store Name", "anuncios": 10, "vendas": 500, "receita": 15000.0, "top_produto": "Luxury Custom Candle", "plataforma": "meli"}
+        ]
+      },
+      {
+        "id": "seo",
+        "titulo": "🏷️ High-Converting SEO & Keyword Strategy",
+        "tipo": "seo_completo",
+        "resumo": "Leading terms, long-tail keyword formulas and top-converting title templates.",
+        "palavras_chave": [
+          {"palavra": "Personalized", "frequencia": 45},
+          {"palavra": "Party Kit", "frequencia": 38},
+          {"palavra": "Cake Topper", "frequencia": 32}
+        ],
+        "titulos_recomendados": [
+          "Custom Handmade Cold Porcelain Birthday Candle Theme + 24h Dispatch",
+          "Luxury Custom Cold Porcelain Wedding Bride Groom Cake Topper",
+          "Set of 10 Safari Theme Cold Porcelain Party Favors Fast Shipping"
+        ],
+        "combinacoes_longtail": [
+          "Custom candle + [Child Name] + [Age]",
+          "Cold porcelain cake topper + [Theme] + [Fast Shipping]",
+          "Party favor kit + [Quantity] units + [Theme]"
+        ]
+      },
+      {
+        "id": "plataformas_precos",
+        "titulo": "⚔️ Marketplace Battle & Price Tiers",
+        "tipo": "plataformas",
+        "resumo": "Market share breakdown between Mercado Livre and Shopee across price brackets.",
+        "itens": [
+          {"nome": "Mercado Livre", "share": 52.0, "receita": 25000.0, "vendas": 600, "vendedores_unicos": 45},
+          {"nome": "Shopee", "share": 48.0, "receita": 18000.0, "vendas": 720, "vendedores_unicos": 62}
+        ]
+      }
+    ]
+  }
 }
 Retorne EXCLUSIVAMENTE o JSON valido.
 """
@@ -256,59 +320,121 @@ def gerar_relatorio_ia_executivo():
             for k, v in plataformas_stats.items()
         ]
 
+        pt_modulos = [
+            {
+                "id": "estrategia",
+                "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
+                "tipo": "estrategia_completa",
+                "resumo": "Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.",
+                "recomendacoes": [
+                    "🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.",
+                    "💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.",
+                    "⚡ **Kits com Envio Rápido**: Anúncios com marcação de 'Envio 24h' ou 'FULL' apresentam velocidade de tração 2.8x superior."
+                ],
+                "oportunidades_nicho": [
+                    "✨ **Temas Infantis Específicos**: Temas como 'Safari Baby', 'Moana' e 'Sonic' possuem altíssima procura e baixa variação de preço.",
+                    "💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.",
+                    "📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%."
+                ]
+            },
+            {
+                "id": "vendedores_produtos",
+                "titulo": "🏆 Top Vendedores & Produtos Virais",
+                "tipo": "vendedores",
+                "resumo": "Ranking combinado dos principais vendedores e itens com maior tração no mercado.",
+                "itens": [
+                    {**v, "top_produto": f"Anúncio Destaque ({v.get('anuncios', 1)} anúncios)"} for v in top_vendedores
+                ]
+            },
+            {
+                "id": "seo",
+                "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
+                "tipo": "seo_completo",
+                "resumo": "Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.",
+                "palavras_chave": top_keywords,
+                "titulos_recomendados": [
+                    "Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h",
+                    "Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo",
+                    "Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega"
+                ],
+                "combinacoes_longtail": [
+                    "Vela personalizada + [Nome da Criança] + [Idade]",
+                    "Topo de bolo biscuit + [Tema] + [Envio Rápido]",
+                    "Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]"
+                ]
+            },
+            {
+                "id": "plataformas_precos",
+                "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
+                "tipo": "plataformas",
+                "resumo": "Participação entre Mercado Livre e Shopee, e volume por zona de preço.",
+                "itens": plataformas_list
+            }
+        ]
+
+        en_modulos = [
+            {
+                "id": "estrategia",
+                "titulo": "🎯 Strategic Recommendations & Niche Opportunities",
+                "tipo": "estrategia_completa",
+                "resumo": "Actionable data-driven diagnostics and high-demand untapped market opportunities.",
+                "recomendacoes": [
+                    "🎯 **Focus on Candles and Toppers**: These categories account for over 65% of consolidated volume. Clear opportunity to create kit bundles.",
+                    "💵 **Ideal Price Sweet Spot**: Conversion sweet spot sits between R$ 25.00 and R$ 60.00, concentrating the strongest sales momentum.",
+                    "⚡ **Fast Shipping Bundles**: Listings flagged with '24h Delivery' or 'FULL' show 2.8x faster sales velocity."
+                ],
+                "oportunidades_nicho": [
+                    "✨ **Trending Kids Themes**: Themes like 'Safari Baby', 'Moana' and 'Sonic' exhibit very high search intent and low price volatility.",
+                    "💍 **Luxury Wedding Cake Toppers**: Items over R$ 120.00 boast net margins above 45% with strong market traction.",
+                    "📦 **Bulk Souvenir Packs (10 to 30 units)**: Birthday favor combos elevate Average Order Value by 40%."
+                ]
+            },
+            {
+                "id": "vendedores_produtos",
+                "titulo": "🏆 Top Stores & Viral Products",
+                "tipo": "vendedores",
+                "resumo": "Combined revenue ranking of dominant sellers and accelerated listings.",
+                "itens": [
+                    {**v, "top_produto": f"Featured Ad ({v.get('anuncios', 1)} listings)"} for v in top_vendedores
+                ]
+            },
+            {
+                "id": "seo",
+                "titulo": "🏷️ High-Converting SEO & Keyword Strategy",
+                "tipo": "seo_completo",
+                "resumo": "Leading keywords, long-tail structures and top-converting title formulas.",
+                "palavras_chave": top_keywords,
+                "titulos_recomendados": [
+                    "Custom Handmade Cold Porcelain Birthday Candle Theme + 24h Dispatch",
+                    "Luxury Custom Cold Porcelain Wedding Bride Groom Cake Topper",
+                    "Set of 10 Safari Theme Cold Porcelain Party Favors Fast Shipping"
+                ],
+                "combinacoes_longtail": [
+                    "Custom candle + [Child Name] + [Age]",
+                    "Cold porcelain cake topper + [Theme] + [Fast Shipping]",
+                    "Party favor kit + [Quantity] units + [Theme]"
+                ]
+            },
+            {
+                "id": "plataformas_precos",
+                "titulo": "⚔️ Marketplace Battle & Price Tiers",
+                "tipo": "plataformas",
+                "resumo": "Market share breakdown between Mercado Livre and Shopee across price brackets.",
+                "itens": plataformas_list
+            }
+        ]
+
         relatorio_payload = {
             "atualizado_em": datetime.now().strftime("%d/%m/%Y às %H:%M"),
-            "modulos": [
-                {
-                    "id": "estrategia",
-                    "titulo": "🎯 Recomendações Estratégicas & Oportunidades de Nicho",
-                    "tipo": "estrategia_completa",
-                    "resumo": "Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.",
-                    "recomendacoes": [
-                        "🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.",
-                        "💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.",
-                        "⚡ **Kits com Envio Rápido**: Anúncios com marcação de 'Envio 24h' ou 'FULL' apresentam velocidade de tração 2.8x superior."
-                    ],
-                    "oportunidades_nicho": [
-                        "✨ **Temas Infantis Específicos**: Temas como 'Safari Baby', 'Moana' e 'Sonic' possuem altíssima procura e baixa variação de preço.",
-                        "💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.",
-                        "📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%."
-                    ]
-                },
-                {
-                    "id": "vendedores_produtos",
-                    "titulo": "🏆 Top Vendedores & Produtos Virais",
-                    "tipo": "vendedores",
-                    "resumo": "Ranking combinado dos principais vendedores e itens com maior tração no mercado.",
-                    "itens": [
-                        {**v, "top_produto": f"Anúncio Destaque ({v.get('anuncios', 1)} anúncios)"} for v in top_vendedores
-                    ]
-                },
-                {
-                    "id": "seo",
-                    "titulo": "🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão",
-                    "tipo": "seo_completo",
-                    "resumo": "Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.",
-                    "palavras_chave": top_keywords,
-                    "titulos_recomendados": [
-                        "Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h",
-                        "Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo",
-                        "Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega"
-                    ],
-                    "combinacoes_longtail": [
-                        "Vela personalizada + [Nome da Criança] + [Idade]",
-                        "Topo de bolo biscuit + [Tema] + [Envio Rápido]",
-                        "Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]"
-                    ]
-                },
-                {
-                    "id": "plataformas_precos",
-                    "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
-                    "tipo": "plataformas",
-                    "resumo": "Participação entre Mercado Livre e Shopee, e volume por zona de preço.",
-                    "itens": plataformas_list
-                }
-            ]
+            "pt": {
+                "atualizado_em": datetime.now().strftime("%d/%m/%Y às %H:%M"),
+                "modulos": pt_modulos
+            },
+            "en": {
+                "atualizado_em": datetime.now().strftime("%m/%d/%Y at %H:%M"),
+                "modulos": en_modulos
+            },
+            "modulos": pt_modulos
         }
 
     # Salva o relatório localmente em reports/relatorio_executivo.json

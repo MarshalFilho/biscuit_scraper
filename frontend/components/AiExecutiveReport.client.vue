@@ -14,11 +14,11 @@
         <div class="tabs-scroll">
           <button 
             v-for="(mod, idx) in modules" 
-            :key="mod.id"
+            :key="mod.id || idx"
             :class="['tab-btn', { active: activeTab === idx }]"
             @click="activeTab = idx"
           >
-            {{ mod.id === 'estrategia' ? t('report.tab_strategy', '🎯 Estratégia & Nichos') : (mod.id === 'vendedores_produtos' ? t('report.tab_sellers', '🏆 Top Lojas & Produtos') : (mod.id === 'seo' ? t('report.tab_seo', '🏷️ Estratégia de SEO') : t('report.tab_platforms', '⚔️ Batalha de Marketplaces'))) }}
+            {{ getModuleTabName(mod) }}
           </button>
         </div>
 
@@ -40,7 +40,7 @@
           <div v-else-if="currentModule">
             <div class="card-top">
               <h4>{{ getModuleTitle(currentModule.id, currentModule.titulo, currentModule) }}</h4>
-              <span class="update-tag">📅 {{ t('report.updated_at', 'Atualizado em') }} {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
+              <span class="update-tag">📅 {{ t('report.updated_at', 'Atualizado em') }} {{ formatReportDate(effectiveReport?.atualizado_em) }}</span>
             </div>
 
             <p class="module-summary">{{ getModuleSummary(currentModule.id, currentModule.resumo, currentModule) }}</p>
@@ -262,8 +262,13 @@ const selectedSeller = ref(null)
 const { t, locale } = useAppI18n()
 
 const effectiveReport = computed(() => {
-  if (props.reportData && Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
-    return props.reportData
+  if (props.reportData) {
+    if (props.reportData[locale.value] && Array.isArray(props.reportData[locale.value].modulos)) {
+      return props.reportData[locale.value]
+    }
+    if (Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
+      return props.reportData
+    }
   }
   return defaultReportData.value
 })
@@ -271,20 +276,53 @@ const effectiveReport = computed(() => {
 const modules = computed(() => effectiveReport.value.modulos || [])
 const currentModule = computed(() => modules.value[activeTab.value] || modules.value[0] || null)
 
+function getModuleTabName(mod) {
+  if (!mod) return ''
+  const id = mod.id || ''
+  const tipo = mod.tipo || ''
+  if (id === 'estrategia' || tipo === 'estrategia_completa' || id === 'action_recommendations' || tipo === 'recomendacoes' || id === 'alerts' || tipo === 'alertas') {
+    return t('report.tab_strategy', '🎯 Estratégia & Nichos')
+  }
+  if (id === 'vendedores_produtos' || id === 'top_sellers' || id === 'viral_products' || tipo === 'vendedores' || tipo === 'produtos') {
+    return t('report.tab_sellers', '🏆 Top Lojas & Produtos')
+  }
+  if (id === 'seo' || id === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') {
+    return t('report.tab_seo', '🏷️ Estratégia de SEO')
+  }
+  if (id === 'plataformas_precos' || id === 'ocean_blue' || id === 'platform_battle' || tipo === 'plataformas' || tipo === 'faixas_preco') {
+    return t('report.tab_platforms', '⚔️ Batalha de Marketplaces')
+  }
+  return mod.titulo || t('report.tab_strategy', '🎯 Insights')
+}
+
 function getModuleTitle(id, original, mod) {
-  if (id === 'estrategia' || (mod && mod.tipo === 'estrategia_completa')) return t('report.tab_strategy', original)
-  if (id === 'vendedores_produtos' || (mod && mod.tipo === 'vendedores')) return t('report.tab_sellers', original)
-  if (id === 'seo' || (mod && (mod.tipo === 'seo_completo' || mod.tipo === 'palavras_chave'))) return t('report.tab_seo', original)
-  if (id === 'plataformas_precos' || (mod && mod.tipo === 'plataformas')) return t('report.tab_platforms', original)
+  const mId = id || (mod && mod.id) || ''
+  const tipo = (mod && mod.tipo) || ''
+  if (mId === 'estrategia' || tipo === 'estrategia_completa' || mId === 'action_recommendations' || tipo === 'recomendacoes') return t('report.tab_strategy', original)
+  if (mId === 'vendedores_produtos' || mId === 'top_sellers' || tipo === 'vendedores') return t('report.tab_sellers', original)
+  if (mId === 'seo' || mId === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') return t('report.tab_seo', original)
+  if (mId === 'plataformas_precos' || mId === 'platform_battle' || mId === 'ocean_blue' || tipo === 'plataformas' || tipo === 'faixas_preco') return t('report.tab_platforms', original)
   return original
 }
 
 function getModuleSummary(id, original, mod) {
-  if (id === 'estrategia' || (mod && mod.tipo === 'estrategia_completa')) return t('report.mod1_desc', original)
-  if (id === 'vendedores_produtos' || (mod && mod.tipo === 'vendedores')) return t('report.mod2_desc', original)
-  if (id === 'seo' || (mod && (mod.tipo === 'seo_completo' || mod.tipo === 'palavras_chave'))) return t('report.mod3_desc', original)
-  if (id === 'plataformas_precos' || (mod && mod.tipo === 'plataformas')) return t('report.mod4_desc', original)
+  const mId = id || (mod && mod.id) || ''
+  const tipo = (mod && mod.tipo) || ''
+  if (mId === 'estrategia' || tipo === 'estrategia_completa') return t('report.mod1_desc', original)
+  if (mId === 'vendedores_produtos' || mId === 'top_sellers' || tipo === 'vendedores') return t('report.mod2_desc', original)
+  if (mId === 'seo' || mId === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') return t('report.mod3_desc', original)
+  if (mId === 'plataformas_precos' || mId === 'platform_battle' || tipo === 'plataformas') return t('report.mod4_desc', original)
   return original
+}
+
+function formatReportDate(dateVal) {
+  if (!dateVal || dateVal === 'Modelo Padrão' || dateVal === 'Default Model') {
+    return t('report.default_model', 'Modelo Padrão')
+  }
+  if (typeof dateVal === 'string' && dateVal.includes(' às ') && locale.value === 'en') {
+    return dateVal.replace(' às ', ' at ')
+  }
+  return dateVal
 }
 
 function toggleCollapse() {
