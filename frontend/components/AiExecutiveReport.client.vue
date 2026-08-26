@@ -39,17 +39,17 @@
           
           <div v-else-if="currentModule">
             <div class="card-top">
-              <h4>{{ currentModule.titulo }}</h4>
+              <h4>{{ getModuleTitle(currentModule.id, currentModule.titulo, currentModule) }}</h4>
               <span class="update-tag">📅 {{ t('report.updated_at', 'Atualizado em') }} {{ effectiveReport?.atualizado_em || 'Recente' }}</span>
             </div>
 
-            <p class="module-summary">{{ currentModule.resumo }}</p>
+            <p class="module-summary">{{ getModuleSummary(currentModule.id, currentModule.resumo, currentModule) }}</p>
 
             <!-- MÓDULO 1: Estratégia Completa (Recomendações + Nichos) -->
             <div v-if="currentModule.id === 'estrategia'" class="estrategia-container">
               <!-- Subseção A: Recomendações Estratégicas -->
               <div class="sub-section mb-4">
-                <h5 class="sub-title text-green">💡 Recomendações Estratégicas Acionáveis</h5>
+                <h5 class="sub-title text-green">{{ t('report.sub_recommendations', '💡 Recomendações Estratégicas Acionáveis') }}</h5>
                 <div class="list-cards">
                   <div 
                     v-for="(rec, index) in (currentModule.recomendacoes || currentModule.itens || [])" 
@@ -64,7 +64,7 @@
 
               <!-- Subseção B: Oportunidades de Nicho & Demanda Oculta -->
               <div class="sub-section">
-                <h5 class="sub-title text-purple">🚀 Oportunidades de Nicho & Demanda Oculta</h5>
+                <h5 class="sub-title text-purple">{{ t('report.sub_niches', '🚀 Oportunidades de Nicho & Demanda Oculta') }}</h5>
                 <div class="list-cards">
                   <div 
                     v-for="(nicho, index) in (currentModule.oportunidades_nicho || [])" 
@@ -85,17 +85,17 @@
                 :key="index" 
                 class="item-card seller-item-card"
                 @click="openSellerDetails(v)"
-                title="Clique para ver todos os anúncios desta loja"
+                :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os anúncios desta loja')"
               >
                 <div class="flex-between">
                   <div class="seller-name-row">
                     <strong>#{{ index + 1 }} {{ v.name }}</strong>
-                    <span class="view-seller-badge">Ver Loja 🔎</span>
+                    <span class="view-seller-badge">{{ t('report.view_store', 'Ver Loja 🔎') }}</span>
                   </div>
-                  <span class="revenue-tag">R$ {{ (v.receita || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
+                  <span class="revenue-tag">R$ {{ (v.receita || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 }) }}</span>
                 </div>
                 <div class="flex-between text-sm text-muted border-t pt-1 mt-2">
-                  <span>{{ (v.vendas || 0).toLocaleString('pt-BR') }} vendas ({{ v.anuncios || 1 }} un)</span>
+                  <span>{{ (v.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }} ({{ v.anuncios || 1 }} {{ t('charts.units_short', 'un') }})</span>
                   <span class="top-prod-tag" v-if="v.top_produto">🏆 {{ v.top_produto }}</span>
                 </div>
               </div>
@@ -105,7 +105,7 @@
             <div v-else-if="currentModule.id === 'seo' || currentModule.tipo === 'seo_completo' || currentModule.tipo === 'palavras_chave'" class="seo-container">
               <!-- Palavras Chave -->
               <div class="sub-section mb-3">
-                <h5 class="sub-title">🏷️ Termos de Maior Frequência nos Anúncios Top</h5>
+                <h5 class="sub-title">{{ t('report.sub_keywords', '🏷️ Termos de Maior Frequência nos Anúncios Top') }}</h5>
                 <div class="tags-cloud">
                   <span 
                     v-for="(kw, index) in (currentModule.palavras_chave || currentModule.itens || [])" 
@@ -119,7 +119,7 @@
 
               <!-- Modelos de Títulos -->
               <div v-if="currentModule.titulos_recomendados && currentModule.titulos_recomendados.length > 0" class="sub-section mb-3">
-                <h5 class="sub-title">🎯 Modelos de Título de Alta Conversão</h5>
+                <h5 class="sub-title">{{ t('report.sub_titles', '🎯 Modelos de Título de Alta Conversão') }}</h5>
                 <div class="titles-list">
                   <div v-for="(tit, idx) in currentModule.titulos_recomendados" :key="idx" class="title-template-card">
                     <code>{{ tit }}</code>
@@ -129,7 +129,7 @@
 
               <!-- Combinações Long-Tail -->
               <div v-if="currentModule.combinacoes_longtail && currentModule.combinacoes_longtail.length > 0" class="sub-section">
-                <h5 class="sub-title">🔗 Estruturas Long-Tail Recomendadas</h5>
+                <h5 class="sub-title">{{ t('report.sub_longtail', '🔗 Estruturas Long-Tail Recomendadas') }}</h5>
                 <div class="longtail-cloud">
                   <span v-for="(lt, idx) in currentModule.combinacoes_longtail" :key="idx" class="longtail-badge">
                     ⚡ {{ lt }}
@@ -148,16 +148,16 @@
                   </span>
                 </div>
                 <div class="flex-between text-sm mb-1">
-                  <span>Volume de Vendas:</span>
-                  <strong>{{ (plat.vendas || 0).toLocaleString('pt-BR') }} un</strong>
+                  <span>{{ t('report.sales_volume', 'Volume de Vendas:') }}</span>
+                  <strong>{{ (plat.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('charts.units_short', 'un') }}</strong>
                 </div>
                 <div class="flex-between text-sm mb-1">
-                  <span>Faturamento Estimado:</span>
-                  <span class="revenue-tag">R$ {{ (plat.receita || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</span>
+                  <span>{{ t('report.est_revenue', 'Faturamento Estimado:') }}</span>
+                  <span class="revenue-tag">R$ {{ (plat.receita || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 }) }}</span>
                 </div>
                 <div class="flex-between text-sm text-muted mt-2 border-t pt-1" v-if="plat.vendedores_unicos">
-                  <span>Lojas Ativas:</span>
-                  <span>🏪 <strong>{{ plat.vendedores_unicos }}</strong> vendedores</span>
+                  <span>{{ t('report.active_stores', 'Lojas Ativas:') }}</span>
+                  <span>🏪 <strong>{{ plat.vendedores_unicos }}</strong> {{ t('charts.col_seller', 'vendedores') }}</span>
                 </div>
               </div>
             </div>
@@ -191,85 +191,101 @@ const props = defineProps({
   }
 })
 
-const defaultReportData = {
-  atualizado_em: 'Modelo Padrão',
+const defaultReportData = computed(() => ({
+  atualizado_em: t('report.default_model', 'Modelo Padrão'),
   modulos: [
     {
       id: 'estrategia',
-      titulo: '🎯 Recomendações Estratégicas & Oportunidades de Nicho',
+      titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
       tipo: 'estrategia_completa',
-      resumo: 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.',
+      resumo: t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
       recomendacoes: [
-        '🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.',
-        '💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.',
-        '⚡ **Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.'
+        t('report.rec1', '🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
+        t('report.rec2', '💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
+        t('report.rec3', '⚡ **Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
       ],
       oportunidades_nicho: [
-        '✨ **Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.',
-        '💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.',
-        '📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.'
+        t('report.niche1', '✨ **Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
+        t('report.niche2', '💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.'),
+        t('report.niche3', '📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.')
       ]
     },
     {
       id: 'vendedores_produtos',
-      titulo: '🏆 Top Vendedores & Produtos Virais',
+      titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
       tipo: 'vendedores',
-      resumo: 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.',
+      resumo: t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
       itens: [
-        { name: 'Loja Exemplo Premium', anuncios: 15, vendas: 1200, receita: 35000.0, top_produto: 'Vela Personalizada Luxo', plataforma: 'meli' },
-        { name: 'Biscuit Arte Express', anuncios: 8, vendas: 850, receita: 21500.0, top_produto: 'Topo de Bolo Casamento', plataforma: 'shopee' }
+        { name: 'Loja Exemplo Premium', anuncios: 15, vendas: 1200, receita: 35000.0, top_produto: t('report.fake_prod1', 'Vela Personalizada Luxo'), plataforma: 'meli' },
+        { name: 'Biscuit Arte Express', anuncios: 8, vendas: 850, receita: 21500.0, top_produto: t('report.fake_prod2', 'Topo de Bolo Casamento'), plataforma: 'shopee' }
       ]
     },
     {
       id: 'seo',
-      titulo: '🏷️ Estratégia de SEO & Palavras-Chave de Alta Conversão',
+      titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
       tipo: 'seo_completo',
-      resumo: 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.',
+      resumo: t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
       palavras_chave: [
-        { palavra: 'Personalizado', frequencia: 42 },
-        { palavra: 'Kit Festa', frequencia: 38 },
-        { palavra: 'Topo Bolo', frequencia: 32 },
-        { palavra: 'Pronta Entrega', frequencia: 24 }
+        { palavra: t('report.kw1', 'Personalizado'), frequencia: 42 },
+        { palavra: t('report.kw2', 'Kit Festa'), frequencia: 38 },
+        { palavra: t('report.kw3', 'Topo Bolo'), frequencia: 32 },
+        { palavra: t('report.kw4', 'Pronta Entrega'), frequencia: 24 }
       ],
       titulos_recomendados: [
-        'Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h',
-        'Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo',
-        'Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega'
+        t('report.title1', 'Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h'),
+        t('report.title2', 'Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo'),
+        t('report.title3', 'Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega')
       ],
       combinacoes_longtail: [
-        'Vela personalizada + [Nome da Criança] + [Idade]',
-        'Topo de bolo biscuit + [Tema] + [Envio Rápido]',
-        'Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]'
+        t('report.lt1', 'Vela personalizada + [Nome da Criança] + [Idade]'),
+        t('report.lt2', 'Topo de bolo biscuit + [Tema] + [Envio Rápido]'),
+        t('report.lt3', 'Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]')
       ]
     },
     {
       id: 'plataformas_precos',
-      titulo: '⚔️ Batalha de Marketplaces & Faixas de Preço',
+      titulo: t('report.tab_platforms', '⚔️ Batalha de Marketplaces'),
       tipo: 'plataformas',
-      resumo: 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.',
+      resumo: t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
       itens: [
         { nome: 'Mercado Livre', share: 52.0, vendas: 480, receita: 15000, vendedores_unicos: 15 },
         { nome: 'Shopee', share: 48.0, vendas: 620, receita: 12000, vendedores_unicos: 28 }
       ]
     }
   ]
-}
+}))
 
 const isCollapsed = ref(false)
 const activeTab = ref(0)
 const selectedSeller = ref(null)
 
-const { t } = useAppI18n()
+const { t, locale } = useAppI18n()
 
 const effectiveReport = computed(() => {
   if (props.reportData && Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
     return props.reportData
   }
-  return defaultReportData
+  return defaultReportData.value
 })
 
 const modules = computed(() => effectiveReport.value.modulos || [])
 const currentModule = computed(() => modules.value[activeTab.value] || modules.value[0] || null)
+
+function getModuleTitle(id, original, mod) {
+  if (id === 'estrategia' || (mod && mod.tipo === 'estrategia_completa')) return t('report.tab_strategy', original)
+  if (id === 'vendedores_produtos' || (mod && mod.tipo === 'vendedores')) return t('report.tab_sellers', original)
+  if (id === 'seo' || (mod && (mod.tipo === 'seo_completo' || mod.tipo === 'palavras_chave'))) return t('report.tab_seo', original)
+  if (id === 'plataformas_precos' || (mod && mod.tipo === 'plataformas')) return t('report.tab_platforms', original)
+  return original
+}
+
+function getModuleSummary(id, original, mod) {
+  if (id === 'estrategia' || (mod && mod.tipo === 'estrategia_completa')) return t('report.mod1_desc', original)
+  if (id === 'vendedores_produtos' || (mod && mod.tipo === 'vendedores')) return t('report.mod2_desc', original)
+  if (id === 'seo' || (mod && (mod.tipo === 'seo_completo' || mod.tipo === 'palavras_chave'))) return t('report.mod3_desc', original)
+  if (id === 'plataformas_precos' || (mod && mod.tipo === 'plataformas')) return t('report.mod4_desc', original)
+  return original
+}
 
 function toggleCollapse() {
   isCollapsed.value = !isCollapsed.value

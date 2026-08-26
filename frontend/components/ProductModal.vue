@@ -3,73 +3,73 @@
     <div class="modal-content glass-panel animate-scale">
       <div class="modal-header">
         <div class="modal-title-box">
-          <span class="badge-category">{{ product.categoria || 'Geral' }}</span>
-          <h3>🔎 Análise Detalhada: <span class="product-title-text">{{ product.titulo }}</span></h3>
+          <span class="badge-category">{{ product.categoria || t('product_modal.general', 'Geral') }}</span>
+          <h3>{{ t('product_modal.title', '🔎 Análise Detalhada:') }} <span class="product-title-text">{{ product.titulo }}</span></h3>
         </div>
-        <button class="close-btn" @click="close" title="Fechar janela">×</button>
+        <button class="close-btn" @click="close" :title="t('product_modal.close_window', 'Fechar janela')">×</button>
       </div>
       
       <div class="modal-body">
         <!-- Cards de Visão Geral do Produto -->
         <div class="product-summary-grid">
           <div class="summary-card">
-            <span class="card-label">Plataforma</span>
+            <span class="card-label">{{ t('product_modal.platform', 'Plataforma') }}</span>
             <span :class="['badge-platform', product.plataforma]">
               {{ product.plataforma === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
             </span>
           </div>
 
           <div class="summary-card">
-            <span class="card-label">Preço Atual</span>
+            <span class="card-label">{{ t('product_modal.current_price', 'Preço Atual') }}</span>
             <span class="card-value price">R$ {{ product.preco ? product.preco.toFixed(2).replace('.', ',') : '0,00' }}</span>
           </div>
 
           <div class="summary-card">
-            <span class="card-label">Vendas Acumuladas</span>
-            <span class="card-value sales">{{ product.vendas_totais || 0 }} unidades</span>
+            <span class="card-label">{{ t('product_modal.total_sales', 'Vendas Acumuladas') }}</span>
+            <span class="card-value sales">{{ product.vendas_totais || 0 }} {{ t('product_modal.units_label', 'unidades') }}</span>
           </div>
 
           <div class="summary-card" v-if="product.vendedor">
-            <span class="card-label">Vendedor / Origem</span>
+            <span class="card-label">{{ t('product_modal.seller_origin', 'Vendedor / Origem') }}</span>
             <span class="card-value seller">
               {{ product.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ product.vendedor }}
             </span>
           </div>
 
           <div class="summary-card">
-            <span class="card-label">Anúncio Original</span>
-            <a :href="product.link" target="_blank" class="store-link-btn">Acessar na Loja ↗</a>
+            <span class="card-label">{{ t('product_modal.original_ad', 'Anúncio Original') }}</span>
+            <a :href="product.link" target="_blank" class="store-link-btn">{{ t('product_modal.view_in_store', 'Acessar na Loja ↗') }}</a>
           </div>
         </div>
 
         <!-- Gráfico do Histórico -->
         <div class="chart-section">
-          <h4>📈 Histórico de Evolução (Preço x Vendas)</h4>
+          <h4>{{ t('product_modal.history_chart_title', '📈 Histórico de Evolução (Preço x Vendas)') }}</h4>
           <ClientOnly>
             <apexchart type="line" height="300" :options="chartOptions" :series="chartSeries"></apexchart>
             <template #fallback>
-              <div class="loading-chart">Carregando dados históricos do anúncio...</div>
+              <div class="loading-chart">{{ t('product_modal.loading_chart', 'Carregando dados históricos do anúncio...') }}</div>
             </template>
           </ClientOnly>
         </div>
 
         <!-- Tabela de Histórico Bruto -->
         <div class="history-table-section" v-if="product.historico_coletas && product.historico_coletas.length > 0">
-          <h4>📅 Registro de Coletas</h4>
+          <h4>{{ t('product_modal.scrape_records', '📅 Registro de Coletas') }}</h4>
           <div class="history-table-wrapper">
             <table class="history-table">
               <thead>
                 <tr>
-                  <th>Data da Coleta</th>
-                  <th>Preço (R$)</th>
-                  <th>Vendas Totais</th>
+                  <th>{{ t('product_modal.col_date', 'Data da Coleta') }}</th>
+                  <th>{{ t('table.col_price', 'Preço') }} (R$)</th>
+                  <th>{{ t('table.col_sales', 'Vendas Totais') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(entry, index) in product.historico_coletas" :key="index">
                   <td>{{ formatDate(entry.data_coleta) }}</td>
                   <td class="fw-bold">R$ {{ entry.preco ? entry.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-                  <td>{{ entry.vendas_totais || 0 }} un</td>
+                  <td>{{ entry.vendas_totais || 0 }} {{ t('product_modal.unit_short', 'un') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -82,6 +82,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   product: { type: Object, default: null }
@@ -95,7 +98,7 @@ function close() {
 function formatDate(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('pt-BR')
+  return d.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US')
 }
 
 const chartSeries = computed(() => {
@@ -105,12 +108,12 @@ const chartSeries = computed(() => {
   
   return [
     {
-      name: 'Vendas Totais',
+      name: t('kpis.sales', 'Vendas Totais'),
       type: 'area',
       data: history.map(h => h.vendas_totais || 0)
     },
     {
-      name: 'Preço (R$)',
+      name: t('table.col_price', 'Preço') + ' (R$)',
       type: 'line',
       data: history.map(h => h.preco || 0)
     }
@@ -148,12 +151,12 @@ const chartOptions = computed(() => {
     },
     yaxis: [
       {
-        title: { text: 'Vendas (unidades)', style: { color: '#059669', fontWeight: 600 } },
+        title: { text: t('kpis.sales', 'Vendas') + ' (' + t('product_modal.units_label', 'unidades') + ')', style: { color: '#059669', fontWeight: 600 } },
         labels: { style: { colors: '#059669' } }
       },
       {
         opposite: true,
-        title: { text: 'Preço (R$)', style: { color: '#2563eb', fontWeight: 600 } },
+        title: { text: t('table.col_price', 'Preço') + ' (R$)', style: { color: '#2563eb', fontWeight: 600 } },
         labels: {
           style: { colors: '#2563eb' },
           formatter: (value) => `R$ ${value.toFixed(2)}`

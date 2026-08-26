@@ -1,9 +1,9 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.4s;">
     <div class="header">
-      <h3>Top 10 Produtos Mais Vendidos</h3>
+      <h3>{{ t('charts.top_products', 'Top 10 Produtos Mais Vendidos') }}</h3>
       <select v-model="platformFilter" class="glass-select small">
-        <option value="all">Geral</option>
+        <option value="all">{{ t('filters.both', 'Geral') }}</option>
         <option value="meli">Mercado Livre</option>
         <option value="shopee">Shopee</option>
       </select>
@@ -16,7 +16,9 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
 
+const { t, locale } = useAppI18n()
 const platformFilter = ref('all')
 
 const props = defineProps({
@@ -34,7 +36,7 @@ const filteredItems = computed(() => {
 const series = computed(() => {
   const top10 = [...filteredItems.value].sort((a, b) => (b.vendas_totais || 0) - (a.vendas_totais || 0)).slice(0, 10)
   return [{
-    name: 'Vendas Totais',
+    name: t('kpis.sales', 'Vendas Totais'),
     data: top10.map(i => i.vendas_totais || 0)
   }]
 })
@@ -50,8 +52,8 @@ const chartOptions = computed(() => {
     yaxis: { labels: { style: { colors: '#94a3b8' }, maxWidth: 200 } },
     legend: { show: false },
     grid: { borderColor: 'rgba(255, 255, 255, 0.1)', strokeDashArray: 4 },
-    theme: { mode: 'dark' },
-    tooltip: { y: { formatter: (val) => val.toLocaleString() + " vendas" } }
+    theme: { mode: 'light' },
+    tooltip: { y: { formatter: (val) => val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + " " + t('report.sales_units', 'vendas') } }
   }
 })
 </script>

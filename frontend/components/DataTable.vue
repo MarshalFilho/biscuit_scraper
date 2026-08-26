@@ -63,7 +63,7 @@
               <span class="badge category">{{ item.categoria }}</span>
             </td>
             <td class="title-cell clickable-title" :title="item.titulo" @click="openModal(item)">
-              <span v-if="item.isNew" class="badge-new" title="Identificado recentemente">✨ Novo</span>
+              <span v-if="item.isNew" class="badge-new" :title="t('table.new_badge_title', 'Identificado recentemente')">{{ t('table.new_badge', '✨ Novo') }}</span>
               <div class="title-text">{{ item.titulo }}</div>
               <small v-if="item.vendedor" class="seller-subtext" :title="'Vendedor / Loja: ' + item.vendedor">
                 {{ item.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ item.vendedor }}
@@ -90,31 +90,31 @@
             
             <td class="sales-diff-cell">
               <span class="sales-value">{{ item.vendas_totais || 0 }}</span>
-              <span v-if="item.salesDiff !== null && item.salesDiff > 0" class="badge-growth" title="Vendas novas registradas no período selecionado">
+              <span v-if="item.salesDiff !== null && item.salesDiff > 0" class="badge-growth" :title="t('table.sales_growth_title', 'Vendas novas registradas no período selecionado')">
                 +{{ item.salesDiff }}
               </span>
-              <span v-else-if="item.salesDiff === 0" class="badge-stable" title="Sem novas vendas no período">
+              <span v-else-if="item.salesDiff === 0" class="badge-stable" :title="t('table.sales_stable_title', 'Sem novas vendas no período')">
                 0
               </span>
             </td>
             
             <td class="action-cell">
               <div class="action-btns-wrap">
-                <button @click="openModal(item)" class="icon-btn action-btn-icon" title="Ver detalhes completos do anúncio">🔎</button>
-                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" title="Abrir anúncio original na loja">↗</a>
-                <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? 'Restaurar produto' : 'Ocultar / Silenciar este anúncio'">
+                <button @click="openModal(item)" class="icon-btn action-btn-icon" :title="t('table.view_details_title', 'Ver detalhes completos do anúncio')">🔎</button>
+                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir anúncio original na loja')">↗</a>
+                <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? t('table.restore_ad_title', 'Restaurar produto') : t('table.silence_ad_title', 'Ocultar / Silenciar este anúncio')">
                   {{ item._isHidden ? '👁️' : '🚫' }}
                 </button>
               </div>
             </td>
           </tr>
           <tr v-if="filteredData.length === 0 && !isLoading">
-            <td colspan="8" class="empty-state">Nenhum produto encontrado com os filtros aplicados.</td>
+            <td colspan="8" class="empty-state">{{ t('table.empty', 'Nenhum produto encontrado com os filtros aplicados.') }}</td>
           </tr>
           <tr v-if="visibleLimit < filteredData.length">
             <td colspan="8" class="loading-more-row">
               <div ref="loadMoreTrigger" class="load-more-trigger">
-                Carregando mais produtos...
+                {{ t('table.loading_more', 'Carregando mais produtos...') }}
               </div>
             </td>
           </tr>
@@ -124,7 +124,7 @@
 
     <!-- Paginação removida em favor de Infinite Scrolling -->
     <div v-if="!isLoading && visibleLimit < filteredData.length" class="text-center mt-3 mb-2">
-      <button @click="loadMore" class="btn outline-btn">Carregar mais produtos ↓</button>
+      <button @click="loadMore" class="btn outline-btn">{{ t('table.btn_load_more', 'Carregar mais produtos ↓') }}</button>
     </div>
 
     <!-- Modal Analítico -->
@@ -133,11 +133,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAppI18n } from '~/composables/useAppI18n'
 import ProductModal from './ProductModal.vue'
 
-const { t } = useAppI18n()
+const { t, getRaw, locale } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -199,7 +199,8 @@ function confirmDelete(item) {
   if (isHidden) {
     emit('delete-product', item) // A função pai deve cuidar do toggle
   } else {
-    if (confirm(`Deseja silenciar/ocultar o anúncio:\n\n"${item.titulo}"\n\nVocê pode desfazer isso depois.`)) {
+    const msg = t('table.confirm_hide', 'Deseja silenciar/ocultar o anúncio:\n\n"{title}"\n\nVocê pode desfazer isso depois.').replace('{title}', item.titulo)
+    if (confirm(msg)) {
       emit('delete-product', item)
     }
   }
@@ -248,13 +249,13 @@ function loadMore() {
 function exportToCSV() {
   if (filteredData.value.length === 0) return
   
-  const headers = ['Plataforma', 'Categoria', 'Título', 'Preço Atual (R$)', 'Vendas Totais', 'Crescimento de Vendas', 'Variação Preço (R$)', 'Data Criação', 'Link']
+  const headers = getRaw('table.csv_headers') || ['Plataforma', 'Categoria', 'Título', 'Preço Atual (R$)', 'Vendas Totais', 'Crescimento de Vendas', 'Variação Preço (R$)', 'Data Criação', 'Link']
   
   const rows = filteredData.value.map(item => {
     const varPreco = item.varInfo ? (item.varInfo.isPositive ? '+' : '-') + Math.abs(item.varInfo.diff).toFixed(2).replace('.', ',') : '0,00'
     const crescimento = item.salesDiff !== null ? `+${item.salesDiff}` : '0'
     const precoAtual = item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00'
-    const criado = item.criado_em ? new Date(item.criado_em).toLocaleDateString('pt-BR') : ''
+    const criado = item.criado_em ? new Date(item.criado_em).toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US') : ''
     
     return [
       item.plataforma,

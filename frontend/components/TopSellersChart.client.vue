@@ -2,30 +2,30 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.6s;">
     <div class="chart-header-box">
       <div class="header-titles">
-        <h3>🏪 Análise de Vendedores & Lojas em Destaque</h3>
-        <p class="chart-subtitle">Lojas e vendedores com maior volume de vendas no mercado</p>
+        <h3>🏪 {{ t('charts.top_sellers', 'Análise de Vendedores & Lojas em Destaque') }}</h3>
+        <p class="chart-subtitle">{{ t('charts.top_sellers_desc', 'Lojas e vendedores com maior volume de vendas no mercado') }}</p>
       </div>
       <div class="view-toggle">
         <button 
           :class="['toggle-sm', { active: activeMode === 'chart' }]" 
           @click="activeMode = 'chart'"
-          title="Ver como gráfico de barras"
+          :title="t('charts.view_chart_title', 'Ver como gráfico de barras')"
         >
-          📊 Gráfico
+          📊 {{ t('global.chart', 'Gráfico') }}
         </button>
         <button 
           :class="['toggle-sm', { active: activeMode === 'table' }]" 
           @click="activeMode = 'table'"
-          title="Ver como tabela detalhada"
+          :title="t('charts.view_table_title', 'Ver como tabela detalhada')"
         >
-          📋 Tabela
+          📋 {{ t('global.table', 'Tabela') }}
         </button>
       </div>
     </div>
 
     <!-- Banner informativo se a maioria for sem vendedor -->
     <div class="seller-notice-banner" v-if="hasUnregisteredSellers">
-      <span>💡 <strong>Nota sobre Vendedores:</strong> Os nomes oficiais dos vendedores serão sincronizados e preenchidos automaticamente na próxima execução do robô de raspagem.</span>
+      <span>💡 <strong>{{ t('charts.seller_note', 'Nota sobre Vendedores:') }}</strong> {{ t('charts.seller_note_desc', 'Os nomes oficiais dos vendedores serão sincronizados e preenchidos automaticamente na próxima execução do robô de raspagem.') }}</span>
     </div>
 
     <!-- Visão Gráfico -->
@@ -39,11 +39,11 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Vendedor / Loja</th>
-            <th>Plataforma</th>
-            <th>Anúncios Ativos</th>
-            <th>Vendas Totais</th>
-            <th>Fat. Estimado</th>
+            <th>{{ t('charts.col_seller', 'Vendedor / Loja') }}</th>
+            <th>{{ t('table.col_platform', 'Plataforma') }}</th>
+            <th>{{ t('charts.col_ads', 'Anúncios Ativos') }}</th>
+            <th>{{ t('kpis.sales', 'Vendas Totais') }}</th>
+            <th>{{ t('kpis.revenue', 'Fat. Estimado') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -58,15 +58,15 @@
               </span>
             </td>
             <td class="ads-count-td">
-              <span class="ads-count-link" title="Clique para ver todos os anúncios deste vendedor">
-                {{ seller.productCount }} {{ seller.productCount === 1 ? 'anúncio' : 'anúncios' }}
+              <span class="ads-count-link" :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os anúncios deste vendedor')">
+                {{ seller.productCount }} {{ seller.productCount === 1 ? t('charts.ad', 'anúncio') : t('charts.ads', 'anúncios') }}
               </span>
             </td>
-            <td class="sales-td">{{ seller.totalSales.toLocaleString('pt-BR') }} vendas</td>
-            <td class="revenue-td">R$ {{ seller.estimatedRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+            <td class="sales-td">{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }}</td>
+            <td class="revenue-td">R$ {{ seller.estimatedRevenue.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           </tr>
           <tr v-if="topSellersList.length === 0">
-            <td colspan="6" class="empty-state">Sem dados de vendedores para exibir no momento.</td>
+            <td colspan="6" class="empty-state">{{ t('charts.empty_sellers', 'Sem dados de vendedores para exibir no momento.') }}</td>
           </tr>
         </tbody>
       </table>
@@ -80,6 +80,9 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import SellerProductsModal from './SellerProductsModal.vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -143,7 +146,7 @@ const topSellersList = computed(() => {
 const series = computed(() => {
   return [
     {
-      name: 'Vendas Totais',
+      name: t('kpis.sales', 'Vendas Totais'),
       data: topSellersList.value.map(s => s.totalSales)
     }
   ]
@@ -166,7 +169,7 @@ const chartOptions = computed(() => ({
   },
   dataLabels: {
     enabled: true,
-    formatter: (val) => val.toLocaleString('pt-BR') + ' un',
+    formatter: (val) => val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + ' ' + t('charts.units_short', 'un'),
     style: { fontSize: '11px', fontWeight: 'bold', colors: ['#ffffff'] }
   },
   xaxis: {
@@ -180,7 +183,7 @@ const chartOptions = computed(() => ({
   theme: { mode: 'light' },
   tooltip: {
     theme: 'light',
-    y: { formatter: (val) => val.toLocaleString('pt-BR') + ' vendas acumuladas' }
+    y: { formatter: (val) => val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + ' ' + t('report.sales_units', 'vendas') }
   }
 }))
 </script>

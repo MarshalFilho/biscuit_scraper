@@ -89,8 +89,8 @@ def extrair_preco_card_meli(produto):
             if "installment" in classes or "installments" in classes or "ui-search-item__group__element--installments" in classes:
                 is_invalid = True
                 break
-            # Filtra frete
-            if "shipping" in classes or "poly-component__shipping" in classes or "ui-search-item__shipping" in classes:
+            # Filtra frete e mensagens
+            if "shipping" in classes or "poly-component__shipping" in classes or "ui-search-item__shipping" in classes or "message" in classes or "poly-component__message" in classes or "shipping-info" in classes:
                 is_invalid = True
                 break
 

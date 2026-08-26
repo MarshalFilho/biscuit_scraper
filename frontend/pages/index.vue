@@ -4,11 +4,11 @@
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Conectando à base de dados segura do Supabase...</p>
+      <p>{{ t('global.connecting_db', 'Conectando à base de dados segura do Supabase...') }}</p>
     </div>
 
     <div v-else-if="error" class="error-state">
-      <p>⚠️ Ocorreu um erro ao carregar os dados: {{ error }}</p>
+      <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
     </div>
 
     <div v-else>
@@ -82,7 +82,7 @@
           <!-- Vendas Mínimas -->
           <div class="filter-group">
             <label>{{ t('filters.min_sales', 'Vendas Mínimas:') }}</label>
-            <input type="number" v-model="minSales" placeholder="Ex: 50" class="glass-input" />
+            <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input" />
           </div>
 
           <!-- Ocultar Sem Vendas e Ocultados -->
@@ -202,7 +202,7 @@ import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
 
-const { t } = useAppI18n()
+const { t, locale } = useAppI18n()
 
 const productsRaw = ref([])
 const loading = ref(true)
@@ -346,7 +346,7 @@ function getHistoricalData(item, daysAgo) {
 const aiReportData = ref(null)
 
 const lastScrapeFormatted = computed(() => {
-  if (!productsRaw.value || productsRaw.value.length === 0) return 'Sem registros de raspagem'
+  if (!productsRaw.value || productsRaw.value.length === 0) return t('global.no_scrapes', 'Sem registros de raspagem')
   let maxDate = null
   for (const p of productsRaw.value) {
     if (p.criado_em) {
@@ -362,13 +362,13 @@ const lastScrapeFormatted = computed(() => {
       }
     }
   }
-  if (!maxDate) return 'Sem registros de raspagem'
-  const day = String(maxDate.getDate()).padStart(2, '0')
-  const month = String(maxDate.getMonth() + 1).padStart(2, '0')
-  const year = maxDate.getFullYear()
+  if (!maxDate) return t('global.no_scrapes', 'Sem registros de raspagem')
+  const dateLocale = locale.value === 'pt' ? 'pt-BR' : 'en-US'
+  const dateFormatted = maxDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' })
   const hours = String(maxDate.getHours()).padStart(2, '0')
   const minutes = String(maxDate.getMinutes()).padStart(2, '0')
-  return `${day}/${month}/${year} às ${hours}:${minutes}`
+  const atWord = t('global.at', 'às')
+  return `${dateFormatted} ${atWord} ${hours}:${minutes}`
 })
 
 onMounted(async () => {
@@ -440,7 +440,7 @@ onMounted(async () => {
 
 // Texto explicativo do período para os KPIs
 const dateRangeText = computed(() => {
-  if (productsRaw.value.length === 0) return 'Carregando datas...'
+  if (productsRaw.value.length === 0) return t('global.loading_dates', 'Carregando datas...')
   
   const dates = []
   for (const p of productsRaw.value) {
@@ -451,15 +451,16 @@ const dateRangeText = computed(() => {
     }
   }
 
-  if (dates.length === 0) return 'Dados atualizados em tempo real'
+  if (dates.length === 0) return t('global.real_time_updates', 'Dados atualizados em tempo real')
   
   const minDate = new Date(Math.min(...dates))
   const maxDate = new Date(Math.max(...dates))
   
-  const formatStr = (d) => d.toLocaleDateString('pt-BR')
-  const periodName = selectedTimeframe.value === 'all' ? 'Todo o Histórico' : `Últimos ${selectedTimeframe.value} Dias`
+  const dateLocale = locale.value === 'pt' ? 'pt-BR' : 'en-US'
+  const formatStr = (d) => d.toLocaleDateString(dateLocale)
+  const periodName = selectedTimeframe.value === 'all' ? t('global.all_history', 'Todo o Histórico') : t('global.last_days', 'Últimos {days} Dias').replace('{days}', selectedTimeframe.value)
 
-  return `${formatStr(minDate)} até ${formatStr(maxDate)} (${periodName})`
+  return `${formatStr(minDate)} ${t('global.until', 'até')} ${formatStr(maxDate)} (${periodName})`
 })
 
 // Processa métricas e variações com base no período selecionado

@@ -2,11 +2,11 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.4s;">
     <div class="chart-header">
       <div>
-        <h3>🥧 Share de Volume de Vendas por Categoria</h3>
-        <p class="chart-subtitle">Fatia de mercado e total de unidades vendidas em cada segmento</p>
+        <h3>🥧 {{ t('charts.category_share', 'Share de Volume de Vendas por Categoria') }}</h3>
+        <p class="chart-subtitle">{{ t('charts.category_share_desc', 'Fatia de mercado e total de unidades vendidas em cada segmento') }}</p>
       </div>
       <div class="total-badge" v-if="totalSalesCount > 0">
-        {{ totalSalesCount.toLocaleString('pt-BR') }} vendas analisadas
+        {{ totalSalesCount.toLocaleString('pt-BR') }} {{ t('charts.sales_analyzed', 'vendas analisadas') }}
       </div>
     </div>
     
@@ -19,7 +19,7 @@
         :series="series"
       ></apexchart>
       <div v-else class="empty-chart">
-        <p>Aguardando dados para calcular a distribuição...</p>
+        <p>{{ t('charts.waiting_data', 'Aguardando dados para calcular a distribuição...') }}</p>
       </div>
     </div>
   </div>
@@ -27,6 +27,9 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -74,17 +77,17 @@ const chartOptions = computed(() => ({
           show: true,
           total: {
             show: true,
-            label: 'Total de Vendas',
+            label: t('kpis.sales', 'Total de Vendas'),
             fontSize: '13px',
             fontWeight: 600,
             color: '#64748b',
-            formatter: () => totalSalesCount.value.toLocaleString('pt-BR') + ' un'
+            formatter: () => totalSalesCount.value.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + ' ' + t('charts.units_short', 'un')
           },
           value: {
             fontSize: '20px',
             fontWeight: 800,
             color: '#0f172a',
-            formatter: (val) => Number(val).toLocaleString('pt-BR') + ' un'
+            formatter: (val) => Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + ' ' + t('charts.units_short', 'un')
           }
         }
       }
@@ -110,7 +113,7 @@ const chartOptions = computed(() => ({
   tooltip: {
     theme: 'light',
     y: {
-      formatter: (val) => `${Number(val).toLocaleString('pt-BR')} unidades vendidas`
+      formatter: (val) => `${Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US')} ` + t('charts.units_sold', 'unidades vendidas')
     }
   }
 }))

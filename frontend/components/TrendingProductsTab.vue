@@ -3,20 +3,20 @@
     <!-- Header descritivo da aba -->
     <div class="glass-panel trending-header animate-fade-in">
       <div class="header-content">
-        <h2>🔥 Ranking de Aceleração & Tendências de Vendas</h2>
-        <p>Produtos que registraram o maior volume de <strong>novas vendas</strong> entre a coleta mais recente e o histórico selecionado.</p>
+        <h2>{{ t('trending.title', '🔥 Ranking de Aceleração & Tendências de Vendas') }}</h2>
+        <p v-html="t('trending.subtitle', 'Produtos que registraram o maior volume de <strong>novas vendas</strong> entre a coleta mais recente e o histórico selecionado.')"></p>
       </div>
 
       <!-- Métricas Resumidas -->
       <div class="trending-stats">
         <div class="stat-pill highlight">
-          <span class="label">Top Acelerador:</span>
-          <strong>{{ topTrendingProduct ? topTrendingProduct.titulo.substring(0, 25) + '...' : 'N/A' }}</strong>
-          <span class="value" v-if="topTrendingProduct">+{{ topTrendingProduct.deltaVendas }} un.</span>
+          <span class="label">{{ t('trending.top_accelerator', 'Top Acelerador:') }}</span>
+          <strong>{{ topTrendingProduct ? topTrendingProduct.titulo.substring(0, 25) + '...' : t('trending.na', 'N/A') }}</strong>
+          <span class="value" v-if="topTrendingProduct">+{{ topTrendingProduct.deltaVendas }} {{ t('trending.units', 'un.') }}</span>
         </div>
         <div class="stat-pill">
-          <span class="label">Total Novas Vendas:</span>
-          <strong class="text-green">+{{ totalNewSales }} un.</strong>
+          <span class="label">{{ t('trending.total_new_sales', 'Total Novas Vendas:') }}</span>
+          <strong class="text-green">+{{ totalNewSales }} {{ t('trending.units', 'un.') }}</strong>
         </div>
       </div>
     </div>
@@ -31,13 +31,13 @@
         <table class="trending-table">
           <thead>
             <tr>
-              <th>Posição</th>
-              <th>Plataforma / Loja</th>
-              <th>Anúncio</th>
-              <th class="text-right">Preço Atual</th>
-              <th class="text-right">Vendas Totais</th>
-              <th class="text-center">Velocidade & Novas Vendas</th>
-              <th class="text-right">Ação</th>
+              <th>{{ t('trending.col_position', 'Posição') }}</th>
+              <th>{{ t('trending.col_platform_store', 'Plataforma / Loja') }}</th>
+              <th>{{ t('trending.col_ad', 'Anúncio') }}</th>
+              <th class="text-right">{{ t('trending.col_current_price', 'Preço Atual') }}</th>
+              <th class="text-right">{{ t('trending.col_total_sales', 'Vendas Totais') }}</th>
+              <th class="text-center">{{ t('trending.col_velocity', 'Velocidade & Novas Vendas') }}</th>
+              <th class="text-right">{{ t('trending.col_action', 'Ação') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -55,13 +55,13 @@
                   <span :class="['platform-badge', item.plataforma]">
                     {{ item.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}
                   </span>
-                  <small class="store-name">{{ item.vendedor || 'Vendedor Desconhecido' }}</small>
+                  <small class="store-name">{{ item.vendedor || t('trending.unknown_seller', 'Vendedor Desconhecido') }}</small>
                 </div>
               </td>
 
               <!-- Título do Anúncio -->
               <td>
-                <a :href="item.link" target="_blank" class="product-title-link" title="Abrir anúncio no marketplace">
+                <a :href="item.link" target="_blank" class="product-title-link" :title="t('trending.open_ad_title', 'Abrir anúncio no marketplace')">
                   {{ item.titulo }}
                 </a>
               </td>
@@ -73,30 +73,30 @@
 
               <!-- Vendas Totais -->
               <td class="text-right font-medium">
-                {{ item.vendas_totais }} un.
+                {{ item.vendas_totais }} {{ t('trending.units', 'un.') }}
               </td>
 
               <!-- Velocidade & Novas Vendas (Delta) -->
               <td class="text-center">
                 <div class="velocity-pill">
-                  <span class="delta-badge">+{{ item.deltaVendas }} un.</span>
-                  <span class="speed-tag" v-if="item.deltaVendas > 20">⚡ Alta Aceleração</span>
-                  <span class="speed-tag medium" v-else-if="item.deltaVendas > 5">📈 Em Crescimento</span>
-                  <span class="speed-tag low" v-else>🌱 Estável</span>
+                  <span class="delta-badge">+{{ item.deltaVendas }} {{ t('trending.units', 'un.') }}</span>
+                  <span class="speed-tag" v-if="item.deltaVendas > 20">{{ t('trending.high_acceleration', '⚡ Alta Aceleração') }}</span>
+                  <span class="speed-tag medium" v-else-if="item.deltaVendas > 5">{{ t('trending.growing', '📈 Em Crescimento') }}</span>
+                  <span class="speed-tag low" v-else>{{ t('trending.stable', '🌱 Estável') }}</span>
                 </div>
               </td>
 
               <!-- Ação -->
               <td class="text-right">
                 <a :href="item.link" target="_blank" class="btn-visit">
-                  Ver Anúncio ↗
+                  {{ t('trending.view_ad', 'Ver Anúncio ↗') }}
                 </a>
               </td>
             </tr>
 
             <tr v-if="trendingList.length === 0">
               <td colspan="7" class="empty-state">
-                <span>🔍 Nenhum produto apresentou novas vendas no período selecionado.</span>
+                <span>{{ t('trending.empty_state', '🔍 Nenhum produto apresentou novas vendas no período selecionado.') }}</span>
               </td>
             </tr>
           </tbody>
@@ -109,6 +109,8 @@
 
 <script setup>
 import { computed } from 'vue'
+
+const { t } = useAppI18n()
 
 const props = defineProps({
   products: {

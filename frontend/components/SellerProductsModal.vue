@@ -8,43 +8,43 @@
           </span>
           <h3>
             {{ seller.name.startsWith('Loja em') ? '📍' : '🏪' }} 
-            Anúncios da Loja: <span class="seller-title-text">{{ seller.name }}</span>
+            {{ t('seller_modal.store_ads', 'Anúncios da Loja:') }} <span class="seller-title-text">{{ seller.name }}</span>
           </h3>
         </div>
-        <button class="close-btn" @click="close" title="Fechar janela">×</button>
+        <button class="close-btn" @click="close" :title="t('seller_modal.close_window', 'Fechar janela')">×</button>
       </div>
 
       <div class="modal-body">
         <!-- Resumo da Loja -->
         <div class="seller-summary-grid">
           <div class="summary-card">
-            <span class="card-label">Anúncios Mapeados</span>
-            <span class="card-value">{{ seller.products.length }} produtos</span>
+            <span class="card-label">{{ t('seller_modal.mapped_ads', 'Anúncios Mapeados') }}</span>
+            <span class="card-value">{{ seller.products.length }} {{ t('seller_modal.products_count', 'produtos') }}</span>
           </div>
 
           <div class="summary-card">
-            <span class="card-label">Vendas Totais</span>
-            <span class="card-value sales">{{ seller.totalSales.toLocaleString('pt-BR') }} un</span>
+            <span class="card-label">{{ t('seller_modal.total_sales', 'Vendas Totais') }}</span>
+            <span class="card-value sales">{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('charts.units_short', 'un') }}</span>
           </div>
 
           <div class="summary-card">
-            <span class="card-label">Faturamento Estimado</span>
-            <span class="card-value revenue">R$ {{ seller.estimatedRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+            <span class="card-label">{{ t('seller_modal.estimated_revenue', 'Faturamento Estimado') }}</span>
+            <span class="card-value revenue">R$ {{ seller.estimatedRevenue.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
           </div>
         </div>
 
         <!-- Lista de Produtos/Anúncios da Loja -->
         <div class="products-table-section">
-          <h4>📦 Lista de Anúncios deste Vendedor</h4>
+          <h4>{{ t('seller_modal.ads_list', '📦 Lista de Anúncios deste Vendedor') }}</h4>
           <div class="products-table-wrapper">
             <table class="products-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Título do Anúncio</th>
-                  <th>Preço Atual</th>
-                  <th>Vendas Totais</th>
-                  <th class="text-center">Ações</th>
+                  <th>{{ t('seller_modal.col_title', 'Título do Anúncio') }}</th>
+                  <th>{{ t('seller_modal.col_price', 'Preço Atual') }}</th>
+                  <th>{{ t('seller_modal.col_sales', 'Vendas Totais') }}</th>
+                  <th class="text-center">{{ t('seller_modal.col_actions', 'Ações') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -54,14 +54,14 @@
                     <span class="product-title">{{ item.titulo }}</span>
                   </td>
                   <td class="price-td">R$ {{ item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-                  <td class="sales-td"><strong>{{ item.vendas_totais || 0 }}</strong> un</td>
+                  <td class="sales-td"><strong>{{ item.vendas_totais || 0 }}</strong> {{ t('charts.units_short', 'un') }}</td>
                   <td class="action-td">
-                    <button @click="inspectProduct(item)" class="icon-btn action-btn" title="Ver gráfico e histórico do anúncio">🔎</button>
-                    <a :href="item.link" target="_blank" class="icon-btn link-btn" title="Abrir anúncio na loja original">↗</a>
+                    <button @click="inspectProduct(item)" class="icon-btn action-btn" :title="t('seller_modal.inspect_tooltip', 'Ver gráfico e histórico do anúncio')">🔎</button>
+                    <a :href="item.link" target="_blank" class="icon-btn link-btn" :title="t('seller_modal.store_tooltip', 'Abrir anúncio na loja original')">↗</a>
                   </td>
                 </tr>
                 <tr v-if="!seller.products || seller.products.length === 0">
-                  <td colspan="5" class="empty-state">Nenhum anúncio encontrado para este vendedor.</td>
+                  <td colspan="5" class="empty-state">{{ t('seller_modal.empty', 'Nenhum anúncio encontrado para este vendedor.') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -78,6 +78,9 @@
 <script setup>
 import { ref } from 'vue'
 import ProductModal from './ProductModal.vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   seller: { type: Object, default: null }

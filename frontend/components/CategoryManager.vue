@@ -1,27 +1,27 @@
 <template>
   <div class="glass-panel config-panel animate-fade-in" :class="{ 'is-collapsed': isCollapsed }" style="animation-delay: 0.1s;">
     <div class="panel-header" @click="toggleCollapse">
-      <h3>🏷️ Gerenciador Dinâmico de Categorias <span class="badge">Simulação Local</span></h3>
-      <button class="btn-toggle">{{ isCollapsed ? '▼ Expandir' : '▲ Minimizar' }}</button>
+      <h3>{{ t('category_manager.title', '🏷️ Gerenciador Dinâmico de Categorias') }} <span class="badge">{{ t('category_manager.local_sim', 'Simulação Local') }}</span></h3>
+      <button class="btn-toggle">{{ isCollapsed ? t('category_manager.expand', '▼ Expandir') : t('category_manager.collapse', '▲ Minimizar') }}</button>
     </div>
     
     <transition name="slide-fade">
       <div v-show="!isCollapsed" class="panel-content mt-3">
-        <p class="subtitle">Associe palavras-chave aos nomes das categorias para organizar os produtos.</p>
+        <p class="subtitle">{{ t('category_manager.subtitle', 'Associe palavras-chave aos nomes das categorias para organizar os produtos.') }}</p>
         
         <div class="rules-list">
           <div v-for="(rule, index) in rules" :key="index" class="rule-item">
-            <span class="text-muted">Se o título contiver:</span>
-            <input type="text" v-model="rule.keyword" placeholder="ex: noivos" class="glass-input small" />
-            <span class="text-muted">➔ Categoria:</span>
-            <input type="text" v-model="rule.category" placeholder="ex: Casamento" class="glass-input small" />
+            <span class="text-muted">{{ t('category_manager.if_title_contains', 'Se o título contiver:') }}</span>
+            <input type="text" v-model="rule.keyword" :placeholder="t('category_manager.keyword_placeholder', 'ex: noivos')" class="glass-input small" />
+            <span class="text-muted">{{ t('category_manager.category_label', '➔ Categoria:') }}</span>
+            <input type="text" v-model="rule.category" :placeholder="t('category_manager.category_placeholder', 'ex: Casamento')" class="glass-input small" />
             <button @click="removeRule(index)" class="btn-icon">✖</button>
           </div>
         </div>
         
         <div class="actions">
-          <button @click="addRule" class="btn secondary">+ Adicionar Regra</button>
-          <button @click="saveConfigs" class="btn primary">💾 Aplicar e Salvar Regras</button>
+          <button @click="addRule" class="btn secondary">{{ t('category_manager.add_rule', '+ Adicionar Regra') }}</button>
+          <button @click="saveConfigs" class="btn primary">{{ t('category_manager.save_rules', '💾 Aplicar e Salvar Regras') }}</button>
           <span v-if="statusMessage" class="status-msg">{{ statusMessage }}</span>
         </div>
       </div>
@@ -32,6 +32,9 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { createClient } from '@supabase/supabase-js'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t } = useAppI18n()
 
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
@@ -104,13 +107,13 @@ async function saveConfigs() {
       { onConflict: 'user_id' }
     )
     if (error) {
-      showStatus('Erro ao salvar categorias na nuvem!')
+      showStatus(t('category_manager.error_cloud', 'Erro ao salvar categorias na nuvem!'))
       console.error(error)
       return
     }
-    showStatus('Categorias salvas na nuvem!')
+    showStatus(t('category_manager.success_cloud', 'Categorias salvas na nuvem!'))
   } else {
-    showStatus('Regras salvas localmente (Logue para persistir na nuvem)')
+    showStatus(t('category_manager.saved_local', 'Regras salvas localmente (Logue para persistir na nuvem)'))
   }
   emit('update-categories', validRules)
 }

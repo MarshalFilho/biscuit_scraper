@@ -1,23 +1,23 @@
 <template>
   <div class="ai-assistant-card">
     <div class="card-header">
-      <h4>🤖 Gerador de Filtros Assistido por IA</h4>
-      <span class="badge-ai">Linguagem Natural</span>
+      <h4>{{ t('ai_filter.title', '🤖 Gerador de Filtros Assistido por IA') }}</h4>
+      <span class="badge-ai">{{ t('ai_filter.natural_lang', 'Linguagem Natural') }}</span>
     </div>
-    <p class="description">Descreva em uma frase o que você deseja monitorar no mercado e a IA preencherá as palavras-chave e a blacklist automaticamente.</p>
+    <p class="description">{{ t('ai_filter.description', 'Descreva em uma frase o que você deseja monitorar no mercado e a IA preencherá as palavras-chave e a blacklist automaticamente.') }}</p>
 
     <div class="input-row">
       <input 
         type="text" 
         v-model="promptText" 
         @keydown.enter.prevent="processNaturalLanguage"
-        placeholder="Ex: Quero monitorar topos de bolo infantis de biscuit, mas sem ver moldes de silicone nem estecas" 
+        :placeholder="t('ai_filter.input_placeholder', 'Ex: Quero monitorar topos de bolo infantis de biscuit, mas sem ver moldes de silicone nem estecas')" 
         class="natural-input"
         :disabled="isProcessing"
       />
       <button @click="processNaturalLanguage" class="btn-generate" :disabled="isProcessing || !promptText.trim()">
-        <span v-if="isProcessing">⏳ Processando...</span>
-        <span v-else>✨ Gerar Filtros</span>
+        <span v-if="isProcessing">{{ t('ai_filter.btn_processing', '⏳ Processando...') }}</span>
+        <span v-else>{{ t('ai_filter.btn_generate', '✨ Gerar Filtros') }}</span>
       </button>
     </div>
 
@@ -25,25 +25,25 @@
     <transition name="fade">
       <div v-if="aiResult" class="ai-result-box mt-3">
         <div class="result-header">
-          <strong>✅ Filtros Gerados pela IA:</strong>
+          <strong>{{ t('ai_filter.generated_title', '✅ Filtros Gerados pela IA:') }}</strong>
         </div>
 
         <div class="tags-group">
-          <label>🔍 Termos de Busca sugeridos:</label>
+          <label>{{ t('ai_filter.suggested_terms', '🔍 Termos de Busca sugeridos:') }}</label>
           <div class="tags-list">
             <span v-for="tag in aiResult.termos" :key="tag" class="tag-blue">{{ tag }}</span>
           </div>
         </div>
 
         <div class="tags-group mt-2">
-          <label>🚫 Blacklist (Palavras a ignorar):</label>
+          <label>{{ t('ai_filter.blacklist_label', '🚫 Blacklist (Palavras a ignorar):') }}</label>
           <div class="tags-list">
             <span v-for="tag in aiResult.blacklist" :key="tag" class="tag-red">{{ tag }}</span>
           </div>
         </div>
 
         <button @click="applyAiFilters" class="btn-apply mt-3">
-          🚀 Aplicar aos Meus Filtros do Robô
+          {{ t('ai_filter.btn_apply', '🚀 Aplicar aos Meus Filtros do Robô') }}
         </button>
       </div>
     </transition>
@@ -52,6 +52,9 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t } = useAppI18n()
 
 const emit = defineEmits(['apply-filters'])
 

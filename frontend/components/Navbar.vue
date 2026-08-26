@@ -7,15 +7,13 @@
       </div>
 
       <div class="header-right">
-        <!-- Language Switcher -->
         <button 
           @click="toggleLanguage" 
           class="lang-btn" 
-          :title="locale === 'pt' ? 'Mudar para Inglês' : 'Switch to Portuguese'"
+          :title="t('navbar.toggle_tooltip')"
         >
           <span class="lang-flag">{{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}</span>
         </button>
-
         <div class="user-box">
           <LoginModal @auth-change="user => $emit('auth-change', user)" />
         </div>
@@ -88,25 +86,27 @@ const { locale, toggleLanguage, t } = useAppI18n()
 }
 
 .lang-btn {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #cbd5e1;
-  color: #334155;
-  padding: 0.45rem 0.85rem;
+  color: #0f172a;
+  padding: 0.4rem 0.8rem;
   border-radius: 99px;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.85rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .lang-btn:hover {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .user-box {

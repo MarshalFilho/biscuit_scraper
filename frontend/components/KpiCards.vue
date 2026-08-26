@@ -20,9 +20,9 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.3s;">
         <div class="kpi-icon blue">🔥</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">Top Plataforma</h3>
+          <h3 class="kpi-title">{{ t('kpis.top_platform', 'Top Plataforma') }}</h3>
           <p class="kpi-value text-gradient" style="text-transform: capitalize;">
-            {{ topPlatform === 'meli' ? 'Mercado Livre' : (topPlatform === 'shopee' ? 'Shopee' : 'Ambas') }}
+            {{ topPlatform === 'meli' ? 'Mercado Livre' : (topPlatform === 'shopee' ? 'Shopee' : t('global.both', 'Ambas')) }}
           </p>
         </div>
       </div>
@@ -30,11 +30,11 @@
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.4s;">
         <div class="kpi-icon purple">🏆</div>
         <div class="kpi-content">
-          <h3 class="kpi-title">Produto Campeão</h3>
+          <h3 class="kpi-title">{{ t('kpis.champion_product', 'Produto Campeão') }}</h3>
           <p class="kpi-value-small text-gradient" :title="topProduct?.titulo">
             {{ topProduct ? (topProduct.titulo.length > 20 ? topProduct.titulo.substring(0, 20) + '...' : topProduct.titulo) : 'N/A' }}
           </p>
-          <small class="kpi-subtext" v-if="topProduct">{{ formatLargeNumber(topProduct.vendas_totais) }} vendas</small>
+          <small class="kpi-subtext" v-if="topProduct">{{ formatLargeNumber(topProduct.vendas_totais) }} {{ t('kpis.sales_suffix', 'vendas') }}</small>
         </div>
       </div>
 
@@ -52,7 +52,7 @@
 <script setup>
 import { useAppI18n } from '~/composables/useAppI18n'
 
-const { t } = useAppI18n()
+const { t, locale } = useAppI18n()
 
 defineProps({
   totalProducts: { type: Number, default: 0 },
@@ -65,18 +65,23 @@ defineProps({
 
 function formatLargeNumber(num) {
   if (!num) return '0'
-  if (num >= 1000000) return (num / 1000000).toFixed(1) + ' mi'
-  if (num >= 1000) return (num / 1000).toFixed(1) + ' mil'
+  const unitMillion = t('kpis.unit_million', 'mi')
+  const unitThousand = t('kpis.unit_thousand', 'mil')
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + ' ' + unitMillion
+  if (num >= 1000) return (num / 1000).toFixed(1) + ' ' + unitThousand
   return num.toString()
 }
 
 function formatCurrency(num, shorten = false) {
   if (!num) return 'R$ 0,00'
+  const unitMillion = t('kpis.unit_million', 'mi')
+  const unitThousand = t('kpis.unit_thousand', 'mil')
+  const isPt = locale.value === 'pt'
   if (shorten) {
-    if (num >= 1000000) return 'R$ ' + (num / 1000000).toFixed(2).replace('.', ',') + ' mi'
-    if (num >= 10000) return 'R$ ' + (num / 1000).toFixed(1).replace('.', ',') + ' mil'
+    if (num >= 1000000) return 'R$ ' + (isPt ? (num / 1000000).toFixed(2).replace('.', ',') : (num / 1000000).toFixed(2)) + ' ' + unitMillion
+    if (num >= 10000) return 'R$ ' + (isPt ? (num / 1000).toFixed(1).replace('.', ',') : (num / 1000).toFixed(1)) + ' ' + unitThousand
   }
-  return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return 'R$ ' + num.toLocaleString(isPt ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 </script>
 

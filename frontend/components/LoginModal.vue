@@ -1,14 +1,14 @@
 <template>
   <div class="login-wrapper">
     <div v-if="user" class="user-info">
-      <span class="user-badge">🟢 Conectado</span>
+      <span class="user-badge">{{ t('login_modal.connected', '🟢 Conectado') }}</span>
       <span class="user-email">{{ user.email }}</span>
-      <button @click="logout" class="btn-text">Sair</button>
+      <button @click="logout" class="btn-text">{{ t('login_modal.logout', 'Sair') }}</button>
     </div>
     <div v-else class="login-form">
-      <input type="email" v-model="email" placeholder="E-mail admin" class="glass-input tiny" @keyup.enter="login" />
-      <input type="password" v-model="password" placeholder="Senha" class="glass-input tiny" @keyup.enter="login" />
-      <button @click="login" :disabled="loading" class="btn small primary">{{ loading ? '⏳' : 'Entrar' }}</button>
+      <input type="email" v-model="email" :placeholder="t('login_modal.email_placeholder', 'E-mail admin')" class="glass-input tiny" @keyup.enter="login" />
+      <input type="password" v-model="password" :placeholder="t('login_modal.password_placeholder', 'Senha')" class="glass-input tiny" @keyup.enter="login" />
+      <button @click="login" :disabled="loading" class="btn small primary">{{ loading ? '⏳' : t('login_modal.login', 'Entrar') }}</button>
       <span v-if="errorMsg" class="error-text">{{ errorMsg }}</span>
     </div>
   </div>
@@ -17,6 +17,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t } = useAppI18n()
 
 const config = useRuntimeConfig()
 const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
@@ -51,7 +54,7 @@ async function login() {
   })
 
   if (error) {
-    errorMsg.value = 'Falha no login'
+    errorMsg.value = t('login_modal.login_failed', 'Falha no login')
     console.error(error)
   }
   loading.value = false

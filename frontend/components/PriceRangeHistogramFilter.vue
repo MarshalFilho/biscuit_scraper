@@ -1,7 +1,7 @@
 <template>
   <div class="mini-price-slider">
     <div class="slider-top">
-      <span class="label">Faixa de Preço:</span>
+      <span class="label">{{ t('filters.price_range', 'Faixa de Preço:') }}</span>
       <span class="price-val">R$ {{ minVal }} — R$ {{ maxVal === absoluteMax ? maxVal + '+' : maxVal }}</span>
     </div>
     
@@ -13,7 +13,7 @@
         class="mini-bar"
         :class="{ active: bucket.price >= minVal && bucket.price <= maxVal }"
         :style="{ height: Math.max(bucket.heightPerc, 12) + '%' }"
-        :title="`R$ ${bucket.price}: ${bucket.volume} vendas`"
+        :title="`R$ ${bucket.price}: ${bucket.volume} ${t('kpis.sales_suffix', 'vendas')}`"
       ></div>
     </div>
 
@@ -44,6 +44,9 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] }

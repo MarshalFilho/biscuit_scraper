@@ -2,18 +2,18 @@
   <div class="strategy-container">
     <div class="glass-panel strategy-header animate-fade-in">
       <div class="header-content">
-        <h2>🏷️ Monitor de Estratégias de Preço & Precificação</h2>
-        <p>Análise comportamental dos concorrentes: identifique produtos com <strong>aumento de margem</strong> vs produtos em <strong>guerra de preço/desconto</strong>.</p>
+        <h2>{{ t('strategy.title', '🏷️ Monitor de Estratégias de Preço & Precificação') }}</h2>
+        <p v-html="t('strategy.subtitle', 'Análise comportamental dos concorrentes: identifique produtos com <strong>aumento de margem</strong> vs produtos em <strong>guerra de preço/desconto</strong>.')"></p>
       </div>
 
       <div class="strategy-summary-pills">
         <div class="pill green">
           <span class="count">{{ priceIncreases.length }}</span>
-          <span class="label">Aumentaram Preço</span>
+          <span class="label">{{ t('strategy.price_increased', 'Aumentaram Preço') }}</span>
         </div>
         <div class="pill red">
           <span class="count">{{ priceDrops.length }}</span>
-          <span class="label">Reduziram Preço</span>
+          <span class="label">{{ t('strategy.price_dropped', 'Reduziram Preço') }}</span>
         </div>
       </div>
     </div>
@@ -23,8 +23,8 @@
       <div class="glass-panel strategy-card animate-fade-in" style="animation-delay: 0.1s;">
         <div class="card-title-bar green">
           <span class="icon">📈</span>
-          <h3>Aumento de Preço & Margem</h3>
-          <small>Produtos que subiram o valor sem estagnar vendas</small>
+          <h3>{{ t('strategy.card1_title', 'Aumento de Preço & Margem') }}</h3>
+          <small>{{ t('strategy.card1_desc', 'Produtos que subiram o valor sem estagnar vendas') }}</small>
         </div>
 
         <transition name="slide-up" mode="out-in">
@@ -35,17 +35,17 @@
             <table class="mini-table">
             <thead>
               <tr>
-                <th>Produto / Vendedor</th>
-                <th class="text-right">Antes</th>
-                <th class="text-right">Agora</th>
-                <th class="text-right">Variação</th>
+                <th>{{ t('strategy.col_product', 'Produto / Vendedor') }}</th>
+                <th class="text-right">{{ t('strategy.col_before', 'Antes') }}</th>
+                <th class="text-right">{{ t('strategy.col_now', 'Agora') }}</th>
+                <th class="text-right">{{ t('strategy.col_variation', 'Variação') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in priceIncreases" :key="item.id">
                 <td>
                   <a :href="item.link" target="_blank" class="prod-link">{{ item.titulo }}</a>
-                  <small class="seller-name">{{ item.vendedor || 'Vendedor' }}</small>
+                  <small class="seller-name">{{ item.vendedor || t('strategy.seller', 'Vendedor') }}</small>
                 </td>
                 <td class="text-right">R$ {{ item.precoAnterior.toFixed(2) }}</td>
                 <td class="text-right font-bold text-green">R$ {{ item.preco.toFixed(2) }}</td>
@@ -54,7 +54,7 @@
                 </td>
               </tr>
               <tr v-if="priceIncreases.length === 0">
-                <td colspan="4" class="empty">Nenhum aumento de preço registrado no período.</td>
+                <td colspan="4" class="empty">{{ t('strategy.no_increases', 'Nenhum aumento de preço registrado no período.') }}</td>
               </tr>
             </tbody>
             </table>
@@ -66,8 +66,8 @@
       <div class="glass-panel strategy-card animate-fade-in" style="animation-delay: 0.2s;">
         <div class="card-title-bar red">
           <span class="icon">📉</span>
-          <h3>Guerra de Preço & Descontos</h3>
-          <small>Produtos que baixaram o valor para ganhar volume</small>
+          <h3>{{ t('strategy.card2_title', 'Guerra de Preço & Descontos') }}</h3>
+          <small>{{ t('strategy.card2_desc', 'Produtos que baixaram o valor para ganhar volume') }}</small>
         </div>
 
         <transition name="slide-up" mode="out-in">
@@ -78,17 +78,17 @@
             <table class="mini-table">
             <thead>
               <tr>
-                <th>Produto / Vendedor</th>
-                <th class="text-right">Antes</th>
-                <th class="text-right">Agora</th>
-                <th class="text-right">Variação</th>
+                <th>{{ t('strategy.col_product', 'Produto / Vendedor') }}</th>
+                <th class="text-right">{{ t('strategy.col_before', 'Antes') }}</th>
+                <th class="text-right">{{ t('strategy.col_now', 'Agora') }}</th>
+                <th class="text-right">{{ t('strategy.col_variation', 'Variação') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in priceDrops" :key="item.id">
                 <td>
                   <a :href="item.link" target="_blank" class="prod-link">{{ item.titulo }}</a>
-                  <small class="seller-name">{{ item.vendedor || 'Vendedor' }}</small>
+                  <small class="seller-name">{{ item.vendedor || t('strategy.seller', 'Vendedor') }}</small>
                 </td>
                 <td class="text-right">R$ {{ item.precoAnterior.toFixed(2) }}</td>
                 <td class="text-right font-bold text-red">R$ {{ item.preco.toFixed(2) }}</td>
@@ -97,7 +97,7 @@
                 </td>
               </tr>
               <tr v-if="priceDrops.length === 0">
-                <td colspan="4" class="empty">Nenhuma redução de preço registrada no período.</td>
+                <td colspan="4" class="empty">{{ t('strategy.no_drops', 'Nenhuma redução de preço registrada no período.') }}</td>
               </tr>
             </tbody>
             </table>
@@ -110,6 +110,8 @@
 
 <script setup>
 import { computed } from 'vue'
+
+const { t } = useAppI18n()
 
 const props = defineProps({
   products: { type: Array, default: () => [] },

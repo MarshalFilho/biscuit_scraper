@@ -2,18 +2,18 @@
   <div class="glass-panel timeline-container animate-fade-in">
     <div class="timeline-header">
       <div class="header-info">
-        <span class="timeline-badge">📅 LINHA DO TEMPO DE COLETAS</span>
-        <h3>Explore a Evolução Histórica do Mercado</h3>
-        <p class="timeline-sub">Selecione uma data específica para ver o Retrato do Mercado daquele dia ou ative a comparação entre datas</p>
+        <span class="timeline-badge">📅 {{ t('timeline.badge', 'LINHA DO TEMPO DE COLETAS') }}</span>
+        <h3>{{ t('timeline.title', 'Explore a Evolução Histórica do Mercado') }}</h3>
+        <p class="timeline-sub">{{ t('timeline.subtitle', 'Selecione uma data específica para ver o Retrato do Mercado daquele dia ou ative a comparação entre datas') }}</p>
       </div>
 
       <div class="timeline-controls">
         <button 
           :class="['mode-btn', { active: compareMode }]" 
           @click="toggleCompareMode"
-          title="Comparar duas coletas passadas lado a lado"
+          :title="t('timeline.compare_tooltip', 'Comparar duas coletas passadas lado a lado')"
         >
-          ⚔️ {{ compareMode ? 'Modo Único' : 'Modo Comparar Datas' }}
+          ⚔️ {{ compareMode ? t('timeline.mode_single', 'Modo Único') : t('timeline.mode_compare', 'Modo Comparar Datas') }}
         </button>
       </div>
     </div>
@@ -40,7 +40,7 @@
         >
           <span class="pill-dot"></span>
           <span class="pill-date">{{ d.label }}</span>
-          <small class="pill-count">{{ d.count }} registros</small>
+          <small class="pill-count">{{ d.count }} {{ t('timeline.records', 'registros') }}</small>
         </button>
         </div>
       </transition>
@@ -49,12 +49,12 @@
     <!-- Banner comparativo quando no Modo Comparação -->
     <div v-if="compareMode && compareDateA && compareDateB" class="compare-summary-banner">
       <div class="compare-col">
-        <span class="compare-tag tag-a">📍 Ponto A (Base):</span>
+        <span class="compare-tag tag-a">📍 {{ t('timeline.point_a', 'Ponto A (Base):') }}</span>
         <strong>{{ formatDateLabel(compareDateA) }}</strong>
       </div>
       <div class="compare-vs">VS</div>
       <div class="compare-col">
-        <span class="compare-tag tag-b">🎯 Ponto B (Atual):</span>
+        <span class="compare-tag tag-b">🎯 {{ t('timeline.point_b', 'Ponto B (Atual):') }}</span>
         <strong>{{ formatDateLabel(compareDateB) }}</strong>
       </div>
     </div>
@@ -63,6 +63,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   rawItems: { type: Array, default: () => [] },
@@ -99,11 +102,11 @@ const availableDates = computed(() => {
   return sorted.map((d, index) => {
     const isToday = index === 0
     const dObj = new Date(d.dateStr + 'T00:00:00')
-    const formatted = dObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    const formatted = dObj.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })
     return {
       dateStr: d.dateStr,
       count: d.count,
-      label: isToday ? `${formatted} (Última)` : formatted
+      label: isToday ? `${formatted} (${t('timeline.latest', 'Última')})` : formatted
     }
   })
 })
@@ -135,7 +138,7 @@ function toggleCompareMode() {
 function formatDateLabel(dateStr) {
   if (!dateStr) return '-'
   const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 </script>
 

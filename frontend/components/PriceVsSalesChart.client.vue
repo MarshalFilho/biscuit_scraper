@@ -1,8 +1,8 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.5s;">
     <div class="chart-header-box">
-      <h3>📊 Volume de Vendas por Faixa de Preço</h3>
-      <p class="chart-subtitle">Descubra em qual faixa de preço o mercado mais vende</p>
+      <h3>📊 {{ t('charts.price_vs_sales', 'Volume de Vendas por Faixa de Preço') }}</h3>
+      <p class="chart-subtitle">{{ t('charts.price_vs_sales_desc', 'Descubra em qual faixa de preço o mercado mais vende') }}</p>
     </div>
     <div class="chart-wrapper">
       <apexchart v-if="isMounted" type="bar" height="320" :options="chartOptions" :series="series"></apexchart>
@@ -12,6 +12,9 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
+
+const { t, locale } = useAppI18n()
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -20,22 +23,22 @@ const props = defineProps({
 const isMounted = ref(false)
 onMounted(() => { isMounted.value = true })
 
-const priceRanges = [
-  { label: 'Até R$ 25', min: 0, max: 25 },
+const priceRanges = computed(() => [
+  { label: t('charts.up_to', 'Até') + ' R$ 25', min: 0, max: 25 },
   { label: 'R$ 25 - R$ 50', min: 25.01, max: 50 },
   { label: 'R$ 50 - R$ 100', min: 50.01, max: 100 },
   { label: 'R$ 100 - R$ 200', min: 100.01, max: 200 },
-  { label: 'Acima R$ 200', min: 200.01, max: Infinity }
-]
+  { label: t('charts.above', 'Acima') + ' R$ 200', min: 200.01, max: Infinity }
+])
 
 const series = computed(() => {
-  const meliSales = priceRanges.map(r => {
+  const meliSales = priceRanges.value.map(r => {
     return props.items
       .filter(i => i.plataforma === 'meli' && i.preco >= r.min && i.preco <= r.max)
       .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
   })
 
-  const shopeeSales = priceRanges.map(r => {
+  const shopeeSales = priceRanges.value.map(r => {
     return props.items
       .filter(i => i.plataforma === 'shopee' && i.preco >= r.min && i.preco <= r.max)
       .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
@@ -64,16 +67,16 @@ const chartOptions = computed(() => ({
   },
   dataLabels: {
     enabled: true,
-    formatter: (val) => val > 0 ? val.toLocaleString('pt-BR') : '',
+    formatter: (val) => val > 0 ? val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') : '',
     style: { fontSize: '11px', fontWeight: 'bold', colors: ['#ffffff'] }
   },
   stroke: { show: true, width: 2, colors: ['transparent'] },
   xaxis: {
-    categories: priceRanges.map(r => r.label),
+    categories: priceRanges.value.map(r => r.label),
     labels: { style: { colors: '#475569', fontWeight: 600 } }
   },
   yaxis: {
-    title: { text: 'Vendas Totais (un)', style: { color: '#475569', fontWeight: 600 } },
+    title: { text: t('kpis.sales', 'Vendas Totais') + ' (' + t('charts.units_short', 'un') + ')', style: { color: '#475569', fontWeight: 600 } },
     labels: { style: { colors: '#475569' } }
   },
   legend: { position: 'top', labels: { colors: '#0f172a' } },
@@ -81,7 +84,7 @@ const chartOptions = computed(() => ({
   theme: { mode: 'light' },
   tooltip: {
     theme: 'light',
-    y: { formatter: (val) => val.toLocaleString('pt-BR') + " vendas" }
+    y: { formatter: (val) => val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + " " + t('report.sales_units', 'vendas') }
   }
 }))
 </script>
