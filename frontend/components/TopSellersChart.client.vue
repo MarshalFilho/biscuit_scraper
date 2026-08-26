@@ -2,7 +2,7 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.6s;">
     <div class="chart-header-box">
       <div class="header-titles">
-        <h3>🏪 {{ t('charts.top_sellers', 'Análise de Vendedores & Lojas em Destaque') }}</h3>
+        <h3>{{ t('charts.top_sellers', '🏆 Ranking de Vendedores Líderes por Faturamento') }}</h3>
         <p class="chart-subtitle">{{ t('charts.top_sellers_desc', 'Lojas e vendedores com maior volume de vendas no mercado') }}</p>
       </div>
       <div class="view-toggle">

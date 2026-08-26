@@ -2,7 +2,7 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.4s;">
     <div class="chart-header">
       <div>
-        <h3>🥧 {{ t('charts.category_share', 'Share de Volume de Vendas por Categoria') }}</h3>
+        <h3>{{ t('charts.category_share', '🥧 Share de Volume de Vendas por Categoria') }}</h3>
         <p class="chart-subtitle">{{ t('charts.category_share_desc', 'Fatia de mercado e total de unidades vendidas em cada segmento') }}</p>
       </div>
       <div class="total-badge" v-if="totalSalesCount > 0">

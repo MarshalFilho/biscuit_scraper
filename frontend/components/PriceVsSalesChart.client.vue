@@ -1,7 +1,7 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.5s;">
     <div class="chart-header-box">
-      <h3>📊 {{ t('charts.price_vs_sales', 'Volume de Vendas por Faixa de Preço') }}</h3>
+      <h3>{{ t('charts.price_vs_sales', '🎯 Distribuição de Vendas por Faixa de Preço') }}</h3>
       <p class="chart-subtitle">{{ t('charts.price_vs_sales_desc', 'Descubra em qual faixa de preço o mercado mais vende') }}</p>
     </div>
     <div class="chart-wrapper">
