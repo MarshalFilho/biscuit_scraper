@@ -55,7 +55,22 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       sales: 'Vendas Totais',
       sales_suffix: 'vendas',
       unit_million: 'mi',
-      unit_thousand: 'mil'
+      unit_thousand: 'mil',
+      total_items_sub: 'Anúncios monitorados',
+      avg_price_sub: 'Média de valor ativo',
+      top_platform_sub: 'Canal com maior oferta',
+      champion_product_sub: 'Líder em vendas',
+      revenue_sub: 'Estimativa (Preço × Vendas)'
+    },
+    sections: {
+      ai_title: '🧠 Inteligência Executiva & IA',
+      ai_subtitle: 'Diagnóstico automatizado de mercado para orientar suas decisões estratégicas.',
+      kpi_title: '💰 Resultados & Métricas Consolidadas',
+      kpi_subtitle: 'Resumo dos valores, preços e volume capturados no nicho monitorado.',
+      charts_title: '📊 Mapeamento Visual de Concorrência',
+      charts_subtitle: 'Distribuição de lojas líderes, faixas de preço e categorias de mercado.',
+      table_title: '🔍 Catálogo Completo de Anúncios',
+      table_subtitle: 'Detalhamento de cada anúncio coletado com preço, vendedor e link oficial.'
     },
     timeline: {
       badge: 'LINHA DO TEMPO DE COLETAS',
@@ -273,6 +288,25 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       suggested_terms: '🔍 Termos de Busca sugeridos:',
       blacklist_label: '🚫 Blacklist (Palavras a ignorar):',
       btn_apply: '🚀 Aplicar aos Meus Filtros do Robô'
+    },
+    auth: {
+      login_title: 'Acesso à Plataforma',
+      login_subtitle: 'Painel de Inteligência Competitiva e Análise de Mercado',
+      email_label: 'E-mail de Acesso',
+      email_placeholder: 'seu@email.com',
+      password_label: 'Sua Senha',
+      password_placeholder: '••••••••',
+      btn_login: 'Entrar no Dashboard 🚀',
+      btn_logging_in: 'Autenticando...',
+      login_failed: 'Credenciais inválidas. Verifique seu e-mail e senha.',
+      secure_access: 'Acesso Seguro & Criptografado',
+      logout: 'Sair',
+      logged_as: 'Conectado como'
+    },
+    alert: {
+      anti_bot_title: 'Alerta de Coleta Automática',
+      anti_bot_desc: 'O robô de coleta encontrou uma verificação de segurança (Anti-bot/Captcha) na última execução. Os dados históricos anteriores continuam disponíveis.',
+      dismiss: 'Entendido'
     }
   },
   en: {
@@ -327,7 +361,22 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       sales: 'Total Sales',
       sales_suffix: 'sales',
       unit_million: 'M',
-      unit_thousand: 'k'
+      unit_thousand: 'k',
+      total_items_sub: 'Monitored listings',
+      avg_price_sub: 'Average active price',
+      top_platform_sub: 'Channel with highest supply',
+      champion_product_sub: 'Sales volume leader',
+      revenue_sub: 'Est. (Price × Sales)'
+    },
+    sections: {
+      ai_title: '🧠 Executive AI Intelligence',
+      ai_subtitle: 'Automated market diagnostics to guide your strategic decisions.',
+      kpi_title: '💰 Financial & Consolidated Metrics',
+      kpi_subtitle: 'Overview of values, pricing and volume captured across the monitored niche.',
+      charts_title: '📊 Visual Competition & Category Mapping',
+      charts_subtitle: 'Distribution of leading stores, price brackets and market categories.',
+      table_title: '🔍 Complete Product Catalog',
+      table_subtitle: 'Breakdown of each scraped ad with price, seller, and official links.'
     },
     timeline: {
       badge: 'SCRAPE TIMELINE',
@@ -545,6 +594,25 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       suggested_terms: '🔍 Suggested Search Terms:',
       blacklist_label: '🚫 Blacklist (Words to ignore):',
       btn_apply: '🚀 Apply to My Scraper Filters'
+    },
+    auth: {
+      login_title: 'Platform Login',
+      login_subtitle: 'Competitive Market Intelligence & Analytics Dashboard',
+      email_label: 'Email Address',
+      email_placeholder: 'you@email.com',
+      password_label: 'Password',
+      password_placeholder: '••••••••',
+      btn_login: 'Sign in to Dashboard 🚀',
+      btn_logging_in: 'Signing in...',
+      login_failed: 'Invalid credentials. Please check your email and password.',
+      secure_access: 'Secure & Encrypted Access',
+      logout: 'Logout',
+      logged_as: 'Logged in as'
+    },
+    alert: {
+      anti_bot_title: 'Automated Collection Alert',
+      anti_bot_desc: 'The automated scraper encountered a security challenge (Anti-bot/Captcha) on its last run. Previous historical data remains available.',
+      dismiss: 'Dismiss'
     }
   }
 }

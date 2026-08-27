@@ -6,6 +6,7 @@
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.total_items', 'Total de Produtos') }}</h3>
           <p class="kpi-value text-gradient">{{ formatLargeNumber(totalProducts) }}</p>
+          <span class="kpi-subtext">{{ t('kpis.total_items_sub', 'Anúncios monitorados') }}</span>
         </div>
       </div>
       
@@ -14,6 +15,7 @@
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.avg_price', 'Preço Médio') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(averagePrice, false) }}</p>
+          <span class="kpi-subtext">{{ t('kpis.avg_price_sub', 'Média de valor ativo') }}</span>
         </div>
       </div>
       
@@ -24,6 +26,7 @@
           <p class="kpi-value text-gradient" style="text-transform: capitalize;">
             {{ topPlatform === 'meli' ? 'Mercado Livre' : (topPlatform === 'shopee' ? 'Shopee' : t('global.both', 'Ambas')) }}
           </p>
+          <span class="kpi-subtext">{{ t('kpis.top_platform_sub', 'Canal com maior oferta') }}</span>
         </div>
       </div>
 
@@ -34,7 +37,8 @@
           <p class="kpi-value-small text-gradient" :title="topProduct?.titulo">
             {{ topProduct ? (topProduct.titulo.length > 20 ? topProduct.titulo.substring(0, 20) + '...' : topProduct.titulo) : 'N/A' }}
           </p>
-          <small class="kpi-subtext" v-if="topProduct">{{ formatLargeNumber(topProduct.vendas_totais) }} {{ t('kpis.sales_suffix', 'vendas') }}</small>
+          <span class="kpi-subtext" v-if="topProduct">{{ formatLargeNumber(topProduct.vendas_totais) }} {{ t('kpis.sales_suffix', 'vendas') }}</span>
+          <span class="kpi-subtext" v-else>{{ t('kpis.champion_product_sub', 'Líder em vendas') }}</span>
         </div>
       </div>
 
@@ -43,6 +47,7 @@
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.revenue', 'Faturamento Est.') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(estimatedRevenue, true) }}</p>
+          <span class="kpi-subtext">{{ t('kpis.revenue_sub', 'Estimativa (Preço × Vendas)') }}</span>
         </div>
       </div>
     </div>

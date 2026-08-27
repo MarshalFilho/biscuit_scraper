@@ -114,6 +114,18 @@ def fase_bronze():
             launch_args["channel"] = "chrome"
 
         context = p.chromium.launch_persistent_context(**launch_args)
+        
+        # Injeta cookies de sessão autenticados se existirem
+        auth_file = os.path.join(AUTH_DIR, "auth_shopee.json")
+        if os.path.exists(auth_file):
+            try:
+                with open(auth_file, "r", encoding="utf-8") as f:
+                    cookies = json.load(f)
+                    if isinstance(cookies, list) and len(cookies) > 0:
+                        context.add_cookies(cookies)
+                        print(f"🍪 [{len(cookies)} Cookies] Sessão autenticada da Shopee injetada com sucesso!", flush=True)
+            except Exception as e:
+                print(f"⚠️ Aviso ao injetar cookies da Shopee: {e}", flush=True)
 
         for termo in config.get_termos_busca():
             page = context.new_page()

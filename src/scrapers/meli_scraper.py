@@ -188,6 +188,21 @@ def fase_bronze():
             launch_args["channel"] = "chrome"
 
         context = p.chromium.launch_persistent_context(**launch_args)
+        
+        # Injeta cookies de sessão autenticados se existirem
+        auth_file = os.path.join(AUTH_DIR, "auth_meli.json")
+        if not os.path.exists(auth_file):
+            auth_file = os.path.join(AUTH_DIR, "auth.json")
+        if os.path.exists(auth_file):
+            try:
+                with open(auth_file, "r", encoding="utf-8") as f:
+                    cookies = json.load(f)
+                    if isinstance(cookies, list) and len(cookies) > 0:
+                        context.add_cookies(cookies)
+                        print(f"🍪 [{len(cookies)} Cookies] Sessão autenticada do Mercado Livre injetada com sucesso!", flush=True)
+            except Exception as e:
+                print(f"⚠️ Aviso ao injetar cookies do Mercado Livre: {e}", flush=True)
+
         page = context.pages[0] if context.pages else context.new_page()
         page.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });

@@ -1,6 +1,8 @@
 <template>
   <div class="container">
-    <Navbar :projectName="nomeProjeto" @auth-change="user => authUser = user" />
+    <Navbar :projectName="nomeProjeto" :user="authUser" @auth-change="handleAuthChange" />
+
+    <AntiBotAlert :alerta="statusAlerta" />
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
@@ -136,38 +138,67 @@
         </button>
       </div>
 
-      <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Tabela e Gráficos) -->
-      <div v-if="activeViewTab === 'overview'">
-        <!-- Métricas Globais (KPIs) -->
-        <KpiCards 
-          :totalProducts="totalProducts"
-          :averagePrice="averagePrice"
-          :topPlatform="topPlatform"
-          :topProduct="topProduct"
-          :estimatedRevenue="estimatedRevenue"
-          :dateRangeText="dateRangeText"
-        />
+      <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Gráficos e Tabela) -->
+      <div v-if="activeViewTab === 'overview'" class="overview-layout">
+        <!-- SEÇÃO 2: Métricas Financeiras & KPIs -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <div class="section-title-box">
+              <span class="section-badge green">💰 Métricas</span>
+              <h3>{{ t('sections.kpi_title', 'Resultados & Métricas Consolidadas') }}</h3>
+            </div>
+            <p class="section-subtitle">{{ t('sections.kpi_subtitle', 'Resumo dos valores, preços e volume capturados no nicho monitorado.') }}</p>
+          </div>
+          <KpiCards 
+            :totalProducts="totalProducts"
+            :averagePrice="averagePrice"
+            :topPlatform="topPlatform"
+            :topProduct="topProduct"
+            :estimatedRevenue="estimatedRevenue"
+            :dateRangeText="dateRangeText"
+          />
+        </section>
 
-        <div class="content-grid">
-          <!-- Tabela Principal -->
+        <!-- SEÇÃO 3: Mapeamento Visual de Concorrência & Gráficos -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <div class="section-title-box">
+              <span class="section-badge blue">📊 Concorrência</span>
+              <h3>{{ t('sections.charts_title', 'Mapeamento Visual de Concorrência') }}</h3>
+            </div>
+            <p class="section-subtitle">{{ t('sections.charts_subtitle', 'Distribuição de lojas líderes, faixas de preço e categorias de mercado.') }}</p>
+          </div>
+          
+          <div class="charts-container">
+            <!-- Linha 1 de Gráficos: Top Produtos + Barras de Faixa de Preço -->
+            <div class="charts-row">
+              <TopProductsChart :items="filteredProducts" class="half-width" />
+              <PriceVsSalesChart :items="filteredProducts" class="half-width" />
+            </div>
+            
+            <!-- Linha 2 de Gráficos: Vendedores em Destaque (Expandido) -->
+            <div class="charts-row">
+              <TopSellersChart :items="filteredProducts" class="full-width" />
+            </div>
+
+            <!-- Linha 3 de Gráficos: Share de Volume por Categoria -->
+            <div class="charts-row">
+              <CategoryVolumeChart :items="filteredProducts" class="full-width" />
+            </div>
+          </div>
+        </section>
+
+        <!-- SEÇÃO 4: Catálogo Detalhado de Anúncios -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <div class="section-title-box">
+              <span class="section-badge purple">🔍 Produtos</span>
+              <h3>{{ t('sections.table_title', 'Catálogo Completo de Anúncios') }}</h3>
+            </div>
+            <p class="section-subtitle">{{ t('sections.table_subtitle', 'Detalhamento de cada anúncio coletado com preço, vendedor e link oficial.') }}</p>
+          </div>
           <DataTable :items="filteredProducts" @delete-product="onDeleteProduct" class="full-width" />
-          
-          <!-- Linha 1 de Gráficos: Top Produtos + Barras de Faixa de Preço -->
-          <div class="charts-row">
-            <TopProductsChart :items="filteredProducts" class="half-width" />
-            <PriceVsSalesChart :items="filteredProducts" class="half-width" />
-          </div>
-          
-          <!-- Linha 2 de Gráficos: Vendedores em Destaque (Expandido) -->
-          <div class="charts-row">
-            <TopSellersChart :items="filteredProducts" class="full-width" />
-          </div>
-
-          <!-- Linha 3 de Gráficos: Share de Volume por Categoria -->
-          <div class="charts-row">
-            <CategoryVolumeChart :items="filteredProducts" class="full-width" />
-          </div>
-        </div>
+        </section>
       </div>
 
       <!-- VISÃO 2: Ranking de Aceleração & Tendências -->
@@ -187,6 +218,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 import Navbar from '~/components/Navbar.vue'
+import AntiBotAlert from '~/components/AntiBotAlert.vue'
 import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
@@ -209,6 +241,7 @@ const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
 const nomeProjeto = ref('Scraper Pro')
+const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard
 const activeViewTab = ref('overview') // 'overview', 'trending', 'pricing'
@@ -371,15 +404,30 @@ const lastScrapeFormatted = computed(() => {
   return `${dateFormatted} ${atWord} ${hours}:${minutes}`
 })
 
-onMounted(async () => {
+async function loadDashboardData() {
   try {
     loading.value = true
+    error.value = null
     loadBlockedProducts()
     
-    // Tenta carregar relatorio de inteligencia executiva do Supabase ou da API local
+    // 1. Obtém sessão do usuário logado
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.user) {
+      authUser.value = session.user
+    }
+
+    // 2. Carrega configurações do tenant
     try {
-      const { data: cfg } = await supabase.from('configuracoes_scraper').select('blocked_products, relatorio_insights, nome_projeto').limit(1).single()
+      let cfgQuery = supabase.from('configuracoes_scraper').select('blocked_products, relatorio_insights, nome_projeto, status_alerta')
+      if (authUser.value) {
+        cfgQuery = cfgQuery.eq('user_id', authUser.value.id)
+      }
+      const { data: cfg } = await cfgQuery.limit(1).maybeSingle()
+      
       if (cfg) {
+        if (cfg.status_alerta) {
+          statusAlerta.value = cfg.status_alerta
+        }
         if (cfg.relatorio_insights) {
           aiReportData.value = cfg.relatorio_insights
         }
@@ -404,13 +452,19 @@ onMounted(async () => {
       } catch (e) {}
     }
 
-    const { data: prodData, error: prodErr } = await supabase
+    // 3. Carrega produtos filtrados pelo user_id
+    let prodQuery = supabase
       .from('produtos')
       .select(`
         id, plataforma, titulo, link, id_externo, vendedor, criado_em,
         historico_coletas ( preco, vendas_totais, data_coleta )
       `)
+
+    if (authUser.value) {
+      prodQuery = prodQuery.eq('user_id', authUser.value.id)
+    }
       
+    const { data: prodData, error: prodErr } = await prodQuery
     if (prodErr) throw prodErr
     
     if (prodData) {
@@ -436,6 +490,15 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+function handleAuthChange(user) {
+  authUser.value = user
+  loadDashboardData()
+}
+
+onMounted(() => {
+  loadDashboardData()
 })
 
 // Texto explicativo do período para os KPIs
@@ -658,5 +721,78 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   color: #ffffff;
   border-color: #2563eb;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.overview-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+}
+
+.section-header {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.section-title-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.section-title-box h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.section-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.section-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.section-badge.green {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.section-badge.blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.section-badge.purple {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 </style>

@@ -14,8 +14,15 @@
         >
           <span class="lang-flag">{{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}</span>
         </button>
-        <div class="user-box">
-          <LoginModal @auth-change="user => $emit('auth-change', user)" />
+
+        <div class="user-box" v-if="user">
+          <div class="user-pill">
+            <span class="user-avatar">👤</span>
+            <span class="user-email" :title="user.email">{{ user.email }}</span>
+            <button @click="logout" class="btn-logout" :title="t('auth.logout', 'Sair')">
+              🚪 {{ t('auth.logout', 'Sair') }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -23,16 +30,28 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+import { createClient } from '@supabase/supabase-js'
 import { useAppI18n } from '~/composables/useAppI18n'
-import LoginModal from './LoginModal.vue'
 
-defineProps({
-  projectName: { type: String, default: 'Scraper Pro' }
+const props = defineProps({
+  projectName: { type: String, default: 'Scraper Pro' },
+  user: { type: Object, default: null }
 })
 
-defineEmits(['auth-change'])
+const emit = defineEmits(['auth-change'])
 
 const { locale, toggleLanguage, t } = useAppI18n()
+const router = useRouter()
+
+const config = useRuntimeConfig()
+const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+
+async function logout() {
+  await supabase.auth.signOut()
+  emit('auth-change', null)
+  router.push('/login')
+}
 </script>
 
 <style scoped>
@@ -112,5 +131,45 @@ const { locale, toggleLanguage, t } = useAppI18n()
 .user-box {
   display: flex;
   align-items: center;
+}
+
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+}
+
+.user-avatar {
+  font-size: 0.9rem;
+}
+
+.user-email {
+  font-weight: 600;
+  color: #334155;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: #fee2e2;
 }
 </style>
