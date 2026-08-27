@@ -16,15 +16,53 @@ def conectar_supabase() -> Client:
         
     return create_client(url, key)
 
-def atualizar_status_scraper(user_id, status_mensagem):
+def atualizar_status_scraper(user_id, status_mensagem, status_alerta=None):
     if not user_id:
         return
     try:
         supabase = conectar_supabase()
-        supabase.table("configuracoes_scraper").update({"status_scraper": status_mensagem}).eq("user_id", user_id).execute()
+        payload = {"status_scraper": status_mensagem}
+        if status_alerta is not None:
+            payload["status_alerta"] = status_alerta
+        supabase.table("configuracoes_scraper").update(payload).eq("user_id", user_id).execute()
     except Exception as e:
         print(f"⚠️ Erro ao atualizar status na nuvem: {e}")
 
+def listar_tenants_ativos(supabase: Client = None):
+    """
+    Retorna lista de todos os tenants/usuários cadastrados com configurações no Supabase.
+    """
+    try:
+        client = supabase or conectar_supabase()
+        res = client.table("configuracoes_scraper").select("user_id, nome_projeto, nicho_mercado, termos_busca, blacklist, modo_paginacao").execute()
+        return res.data or []
+    except Exception as e:
+        print(f"⚠️ Erro ao listar tenants ativos no Supabase: {e}")
+        return []
+
+def registrar_alerta_antibot(user_id: str, plataforma: str, mensagem: str, screenshot_path: str = None, supabase: Client = None):
+    """
+    Registra um alerta de Anti-Bot / CAPTCHA no Supabase para notificar o Dashboard.
+    """
+    if not user_id:
+        return
+    try:
+        client = supabase or conectar_supabase()
+        agora = datetime.utcnow().strftime("%d/%m/%Y às %H:%M UTC")
+        alerta_obj = {
+            "tipo": "antibot_detected",
+            "plataforma": plataforma,
+            "mensagem": f"⚠️ [{plataforma.upper()}] {mensagem} ({agora})",
+            "data": agora,
+            "screenshot_path": screenshot_path or None
+        }
+        client.table("configuracoes_scraper").update({
+            "status_alerta": alerta_obj,
+            "status_scraper": f"⚠️ Pausado por Anti-Bot na {plataforma.upper()} em {agora}"
+        }).eq("user_id", user_id).execute()
+        print(f"🚨 [Alerta] Anti-bot registrado no Supabase para o usuário {user_id}!")
+    except Exception as e:
+        print(f"⚠️ Erro ao registrar alerta de anti-bot no Supabase: {e}")
 
 def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str, vendedor: str = None, user_id: str = None) -> str:
     """
@@ -47,12 +85,10 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
 
     if response.data and len(response.data) > 0:
         produto_id = response.data[0]["id"]
-        # Se recebemos vendedor e o registro antigo não tinha, atualiza
         if vendedor:
             supabase.table("produtos").update({"vendedor": vendedor}).eq("id", produto_id).execute()
         return produto_id
         
-    # Se não existir, insere
     novo_produto = {
         "plataforma": plataforma,
         "id_externo": id_externo,
@@ -65,7 +101,6 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     if user_id:
         novo_produto["user_id"] = user_id
     
-    # O Supabase retorna os dados inseridos
     res_insert = supabase.table("produtos").insert(novo_produto).execute()
     return res_insert.data[0]["id"]
 

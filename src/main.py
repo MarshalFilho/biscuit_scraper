@@ -47,10 +47,12 @@ def sincronizar_sessao_nuvem(user_id):
 
 def executar_scrapers(plataforma, user_id, rodar_ia=True):
     from utils.bot_detector import BotDetectionError
-    from utils.supabase_client import atualizar_status_scraper
+    from utils.supabase_client import atualizar_status_scraper, registrar_alerta_antibot
     
-    try:
-        if plataforma in ["meli", "todos"]:
+    agora_str = time.strftime('%d/%m/%Y às %H:%M')
+    
+    if plataforma in ["meli", "todos"]:
+        try:
             print("\n=== Executando Scraper Mercado Livre ===")
             atualizar_status_scraper(user_id, "🛒 Mercado Livre [1/3]: Acessando as páginas da web...")
             from scrapers.meli_scraper import fase_bronze, fase_ouro, fase_prata
@@ -61,8 +63,14 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
             
             atualizar_status_scraper(user_id, "🛒 Mercado Livre [3/3]: Extraindo produtos e enviando ao Supabase...")
             fase_ouro()
-            
-        if plataforma in ["shopee", "todos"]:
+        except BotDetectionError as e:
+            print(f"🚨 [Anti-Bot] Bloqueio detectado no Mercado Livre: {e.mensagem}")
+            registrar_alerta_antibot(user_id, "meli", e.mensagem)
+        except Exception as e:
+            print(f"⚠️ Erro inesperado no scraper do Mercado Livre: {e}")
+        
+    if plataforma in ["shopee", "todos"]:
+        try:
             print("\n=== Executando Scraper Shopee ===")
             atualizar_status_scraper(user_id, "🧡 Shopee [1/3]: Acessando as páginas da web...")
             from scrapers.shopee_scraper import fase_bronze, fase_ouro, fase_prata
@@ -73,9 +81,11 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
             
             atualizar_status_scraper(user_id, "🧡 Shopee [3/3]: Extraindo produtos e enviando ao Supabase...")
             fase_ouro()
-    except BotDetectionError as e:
-        logger.critical("bot_detection", error=e.mensagem)
-        sys.exit(1)
+        except BotDetectionError as e:
+            print(f"🚨 [Anti-Bot] Bloqueio detectado na Shopee: {e.mensagem}")
+            registrar_alerta_antibot(user_id, "shopee", e.mensagem)
+        except Exception as e:
+            print(f"⚠️ Erro inesperado no scraper da Shopee: {e}")
 
     if rodar_ia:
         print("\n=== Executando Módulos de IA ===")
@@ -89,6 +99,7 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
         try:
             from utils.ai_engine import gerar_relatorio_ia_executivo
             gerar_relatorio_ia_executivo()
+            atualizar_status_scraper(user_id, f"✅ Coleta diária finalizada com sucesso em {agora_str}")
         except Exception as e:
             logger.warning("ai_report_error", error=str(e))
 
@@ -96,6 +107,7 @@ def main():
     parser = argparse.ArgumentParser(description="Pipeline de Inteligência e Extração para E-commerce")
     parser.add_argument("--plataforma", choices=["meli", "shopee", "todos"], default="todos",
                         help="Plataforma de e-commerce a raspar (padrão: todos)")
+    parser.add_argument("--daily-cron", action="store_true", help="Executa a rotina agendada diária para todos os clientes ativos")
     parser.add_argument("--daemon", action="store_true", help="Modo Polling Contínuo escutando Supabase")
     parser.add_argument("--cloud", action="store_true", help="Modo One-Shot para rodar no GitHub Actions")
     parser.add_argument("--login", action="store_true", help="Abre o navegador visível para validar verificação/login inicial")
@@ -110,6 +122,39 @@ def main():
         )
         inicializar_sessao_mercadolivre()
         inicializar_sessao_shopee()
+        return
+
+    if args.daily_cron:
+        print("\n⏰ [Cron Diário Nuvem] Iniciando rotina diária de coleta automatizada...")
+        from utils.supabase_client import conectar_supabase, listar_tenants_ativos
+        
+        try:
+            supabase = conectar_supabase()
+            tenants = listar_tenants_ativos(supabase)
+        except Exception as e:
+            print(f"⚠️ Erro ao conectar no Supabase para buscar tenants: {e}")
+            tenants = []
+
+        if not tenants:
+            fallback_user_id = os.environ.get("SUPABASE_USER_ID", "693b19e1-936e-4322-ac9a-79467d143566")
+            print(f"ℹ️ Nenhum tenant listado dinamicamente. Executando com fallback para o tenant padrão ({fallback_user_id}).")
+            tenants = [{"user_id": fallback_user_id, "nome_projeto": "Projeto Padrão"}]
+
+        print(f"📊 Total de clientes/tenants a processar: {len(tenants)}")
+        for idx, tenant in enumerate(tenants, 1):
+            user_id = tenant.get("user_id")
+            nome = tenant.get("nome_projeto") or f"Tenant #{idx}"
+            print(f"\n──────────────────────────────────────────────")
+            print(f"🚀 [{idx}/{len(tenants)}] Processando Cliente: {nome} ({user_id})")
+            print(f"──────────────────────────────────────────────")
+            
+            os.environ["CURRENT_USER_ID"] = user_id
+            sincronizar_sessao_nuvem(user_id)
+            config.recarregar_config()
+            executar_scrapers(args.plataforma, user_id)
+            time.sleep(2)
+
+        print("\n🎉 [Cron Diário Nuvem] Todos os clientes foram processados com sucesso!")
         return
     
     if args.daemon:
@@ -162,7 +207,6 @@ def main():
             time.sleep(300)
             
     elif args.cloud:
-        # MODO ONE-SHOT / CHECAGEM DE NUVEM (GitHub Actions)
         print("\n☁️ Modo Nuvem (GitHub Actions) ativado. Verificando agendamento...")
         user_id = os.environ.get("SUPABASE_USER_ID")
         if not user_id:

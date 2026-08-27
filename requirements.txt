@@ -10,3 +10,4 @@ pytest
 ruff
 structlog
 sentry-sdk
+google-generativeai
