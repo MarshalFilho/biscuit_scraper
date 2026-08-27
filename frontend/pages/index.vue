@@ -442,15 +442,6 @@ async function loadDashboardData() {
       console.warn("Nao foi possivel carregar configuracoes do Supabase:", e)
     }
 
-    if (!aiReportData.value) {
-      try {
-        const localReport = await $fetch('/api/report')
-        if (localReport) {
-          aiReportData.value = localReport
-        }
-      } catch (e) {}
-    }
-
     // 3. Carrega produtos filtrados pelo user_id
     let prodQuery = supabase
       .from('produtos')
