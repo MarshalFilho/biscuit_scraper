@@ -262,15 +262,72 @@ const selectedSeller = ref(null)
 const { t, locale } = useAppI18n()
 
 const effectiveReport = computed(() => {
+  let raw = null
   if (props.reportData) {
     if (props.reportData[locale.value] && Array.isArray(props.reportData[locale.value].modulos)) {
-      return props.reportData[locale.value]
-    }
-    if (Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
-      return props.reportData
+      raw = props.reportData[locale.value]
+    } else if (Array.isArray(props.reportData.modulos) && props.reportData.modulos.length > 0) {
+      raw = props.reportData
     }
   }
-  return defaultReportData.value
+
+  if (!raw) return defaultReportData.value
+
+  const rawMods = raw.modulos || []
+  const hasStrategy = rawMods.some(m => m.id === 'estrategia' || m.tipo === 'estrategia_completa')
+  if (hasStrategy && rawMods.length <= 4) {
+    return raw
+  }
+
+  // Consolidação inteligente dos 7 módulos legados nos 4 Macro-Módulos oficiais
+  const topSellers = rawMods.find(m => m.id === 'top_sellers' || m.tipo === 'vendedores')
+  const viralProds = rawMods.find(m => m.id === 'viral_products' || m.tipo === 'produtos')
+  const seo = rawMods.find(m => m.id === 'seo_strategy' || m.id === 'seo' || m.tipo === 'palavras_chave' || m.tipo === 'seo_completo')
+  const oceanBlue = rawMods.find(m => m.id === 'ocean_blue' || m.tipo === 'faixas_preco')
+  const platformBattle = rawMods.find(m => m.id === 'platform_battle' || m.tipo === 'plataformas')
+  const actions = rawMods.find(m => m.id === 'action_recommendations' || m.tipo === 'recomendacoes')
+  const niches = rawMods.find(m => m.id === 'niche_opportunities' || m.tipo === 'oportunidades')
+
+  const modEstrategia = {
+    id: 'estrategia',
+    titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
+    tipo: 'estrategia_completa',
+    resumo: (actions?.resumo || niches?.resumo) || t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
+    recomendacoes: (actions?.itens || actions?.recomendacoes || []),
+    oportunidades_nicho: (niches?.itens || niches?.oportunidades_nicho || [])
+  }
+
+  const modVendedores = {
+    id: 'vendedores_produtos',
+    titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
+    tipo: 'vendedores',
+    resumo: topSellers?.resumo || t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
+    itens: (topSellers?.itens || topSellers?.vendedores || [])
+  }
+
+  const modSeo = {
+    id: 'seo',
+    titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
+    tipo: 'seo_completo',
+    resumo: seo?.resumo || t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
+    palavras_chave: (seo?.palavras_chave || seo?.itens || []),
+    titulos_recomendados: (seo?.titulos_recomendados || []),
+    combinacoes_longtail: (seo?.combinacoes_longtail || [])
+  }
+
+  const modPlataformas = {
+    id: 'plataformas_precos',
+    titulo: t('report.tab_platforms', '⚔️ Batalha de Marketplaces'),
+    tipo: 'plataformas',
+    resumo: (platformBattle?.resumo || oceanBlue?.resumo) || t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
+    itens: (platformBattle?.itens || platformBattle?.dados || []),
+    faixas_preco: (oceanBlue?.itens || oceanBlue?.faixas || [])
+  }
+
+  return {
+    atualizado_em: raw.atualizado_em || t('report.default_model', 'Modelo Padrão'),
+    modulos: [modEstrategia, modVendedores, modSeo, modPlataformas]
+  }
 })
 
 const modules = computed(() => effectiveReport.value.modulos || [])
@@ -280,18 +337,10 @@ function getModuleTabName(mod) {
   if (!mod) return ''
   const id = mod.id || ''
   const tipo = mod.tipo || ''
-  if (id === 'estrategia' || tipo === 'estrategia_completa' || id === 'action_recommendations' || tipo === 'recomendacoes' || id === 'alerts' || tipo === 'alertas') {
-    return t('report.tab_strategy', '🎯 Estratégia & Nichos')
-  }
-  if (id === 'vendedores_produtos' || id === 'top_sellers' || id === 'viral_products' || tipo === 'vendedores' || tipo === 'produtos') {
-    return t('report.tab_sellers', '🏆 Top Lojas & Produtos')
-  }
-  if (id === 'seo' || id === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') {
-    return t('report.tab_seo', '🏷️ Estratégia de SEO')
-  }
-  if (id === 'plataformas_precos' || id === 'ocean_blue' || id === 'platform_battle' || tipo === 'plataformas' || tipo === 'faixas_preco') {
-    return t('report.tab_platforms', '⚔️ Batalha de Marketplaces')
-  }
+  if (id === 'estrategia' || tipo === 'estrategia_completa') return t('report.tab_strategy', '🎯 Estratégia & Nichos')
+  if (id === 'vendedores_produtos' || tipo === 'vendedores') return t('report.tab_sellers', '🏆 Top Lojas & Produtos')
+  if (id === 'seo' || tipo === 'seo_completo') return t('report.tab_seo', '🏷️ Estratégia de SEO')
+  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', '⚔️ Batalha de Marketplaces')
   return mod.titulo || t('report.tab_strategy', '🎯 Insights')
 }
 
