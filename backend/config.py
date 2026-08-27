@@ -11,7 +11,7 @@ load_dotenv()
 
 # Definição dinâmica de caminhos do projeto
 current_dir = os.path.dirname(os.path.abspath(__file__))
-if os.path.basename(current_dir) == "src":
+if os.path.basename(current_dir) in ["src", "backend"]:
     BASE_DIR = os.path.dirname(current_dir)
 else:
     BASE_DIR = current_dir

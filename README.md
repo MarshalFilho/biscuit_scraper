@@ -95,7 +95,10 @@ biscuit_scraper/
 │   │   └── login.vue                # 🔐 Tela de Login com Glassmorphism
 │   └── nuxt.config.ts               # Configuração do Nuxt 3 e módulos
 │
-├── src/                             # 🐍 Engine de Scraping & IA em Python
+├── database/                        # 🗄️ Scripts SQL, Migrações e Políticas de RLS
+│   └── database_setup.sql           # 📄 Script SQL com Tabelas, Índices e RLS
+│
+├── backend/                         # 🐍 Engine de Scraping & IA em Python
 │   ├── main.py                      # Ponto de Entrada CLI (--daily-cron / --plataforma)
 │   ├── config.py                    # Gerenciador de Parâmetros e Pastas
 │   ├── ai/
@@ -112,7 +115,6 @@ biscuit_scraper/
 │       └── supabase_client.py       # Cliente Supabase & Gravação de Séries Temporais
 │
 ├── data/                            # 📁 Armazenamento Local (Bronze/Prata/Ouro/Auth)
-├── database_setup.sql               # 📄 Script SQL com Migrações, Índices e RLS
 ├── requirements.txt                 # Dependências do Python
 └── README.md                        # Documentação Oficial
 ```
@@ -124,7 +126,7 @@ biscuit_scraper/
 ### 1. Configuração do Banco de Dados (Supabase)
 1. Crie um projeto gratuito no [Supabase](https://supabase.com/).
 2. Abra o **SQL Editor** no painel do Supabase.
-3. Cole e execute o arquivo [`database_setup.sql`](database_setup.sql) para criar as tabelas, índices e políticas de segurança RLS.
+3. Cole e execute o arquivo [`database/database_setup.sql`](database/database_setup.sql) para criar as tabelas, índices e políticas de segurança RLS.
 4. Em **Authentication ➔ Users**, crie o seu primeiro usuário com e-mail e senha.
 
 ### 2. Rodando o Frontend Localmente
@@ -138,7 +140,7 @@ Acesse no seu navegador: **`http://localhost:3000`** (Faça o login com as crede
 ### 3. Gerando Cookies de Login para o Robô da Nuvem (Opcional - Feito 1 vez)
 Para que o robô no GitHub Actions navegue como um usuário logado:
 ```bash
-python src/main.py --login
+python backend/main.py --login
 ```
 Faça o login nas janelas reais do Chrome que abrirem (Mercado Livre e Shopee). Os cookies serão salvos em `data/auth/auth_meli.json` e `data/auth/auth_shopee.json`.
 

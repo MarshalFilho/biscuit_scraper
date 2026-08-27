@@ -65,7 +65,7 @@ jobs:
         run: |
           PLAT="${{ github.event.inputs.plataforma || 'todos' }}"
           echo "🚀 Disparando rotina diária no GitHub Actions (Plataforma: $PLAT)..."
-          python src/main.py --daily-cron --plataforma "$PLAT"
+          python backend/main.py --daily-cron --plataforma "$PLAT"
 
       - name: 📤 Salvar Artefatos & Diagnósticos (Logs e Screenshots)
         if: always()
