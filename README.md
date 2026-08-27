@@ -1,181 +1,162 @@
-# 🚀 E-Commerce Market Intelligence & AI Scraping Engine
+# 🚀 E-Commerce Market Intelligence & AI Analytics SaaS
 
-Pipeline autônomo e genérico de raspagem de dados, inteligência competitiva e análise preditiva de mercado para e-commerce (Mercado Livre e Shopee). 
-
-O sistema coleta dados de preços, estoque e velocidade de vendas, armazena em **PostgreSQL (Supabase)**, sintetiza insights estratégicos via **Google Gemini AI** e disponibiliza um dashboard em **Nuxt 3** com animações fluidas, skeletons e design moderno.
+> Plataforma SaaS de **Inteligência Competitiva e Análise de Mercado para E-Commerce** (Mercado Livre e Shopee), com scraping automatizado na nuvem (GitHub Actions), banco de dados **Multi-Tenant (Supabase)** com Row Level Security (RLS) e diagnósticos preditivos via **Google Gemini AI**.
 
 ---
 
-## 🏛️ Arquitetura do Sistema (100% Custo Zero)
+## 🏛️ Arquitetura do Sistema (100% Custo Zero / Serverless)
 
-O projeto adota uma arquitetura bifurcada e serverless, projetada para operar no **Free Tier perpétuo**:
+```mermaid
+graph TD
+    subgraph Nuvem Automática [Automação Diária - GitHub Actions]
+        Cron[⏰ Cron Diário 06:00 BRT] --> Scraper[🤖 Python 3.12 + Playwright Stealth]
+        Scraper --> Meli[🛒 Mercado Livre]
+        Scraper --> Shopee[🧡 Shopee]
+        Scraper --> Gemini[🧠 Google Gemini 1.5 Flash]
+    end
 
+    subgraph Banco de Dados [Supabase PostgreSQL]
+        Scraper -->|Service Role Key| DB[(PostgreSQL + RLS)]
+        DB --> Auth[🔐 Supabase Auth JWT]
+        DB --> Produtos[📦 Tabela Produtos 1:N Histórico]
+        DB --> Configs[⚙️ Multi-Tenant Configs & Alertas]
+    end
+
+    subgraph Frontend SaaS [Vercel]
+        Auth --> NuxtApp[✨ Dashboard Nuxt 3 / Vue 3]
+        DB -->|Anon Key + RLS auth.uid| NuxtApp
+        NuxtApp --> Visual[📊 ApexCharts + 4 Macro-Seções + PT/EN]
+    end
 ```
- ┌────────────────────────────────────────────────────────┐
- │                   FRONTEND (Vercel)                    │
- │  Nuxt 3 (SSR/Nitro) + Vue 3 + Tailwind/Glassmorphism   │
- └───────────────────────────┬────────────────────────────┘
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
- ┌──────────────────────┐          ┌──────────────────────┐
- │ DATABASE (Supabase)  │          │   ENGINE SCRAPER     │
- │  PostgreSQL Relativo │          │   Google Cloud Run   │
- │  + Realtime Status   │          │   Python + Docker    │
- └──────────────────────┘          └──────────┬───────────┘
-                                              │
-                                              ▼
-                                   ┌──────────────────────┐
-                                   │  IA ANALYTICS ENGINE │
-                                   │  Google Gemini 2.5   │
-                                   └──────────────────────┘
-```
-
-1. **Dashboard Frontend (Vercel)**: Aplicação Nuxt 3 reativa que consome o Supabase em tempo real, exibe gráficos interativos (ApexCharts), ranking de produtos virais, monitor de guerra de preços e relatórios executivos de IA.
-2. **Engine de Extração (Google Cloud Run / Local)**: Robô em Python usando **Playwright**, **curl_cffi** (anti-bot) e **BeautifulSoup**, estruturado sob a **Arquitetura Medalhão** (Bronze ➔ Prata ➔ Ouro).
-3. **Módulo de Inteligência Artificial (Google Gemini)**: Categorização automática de novos produtos e geração de relatórios com 7 pilares estratégicos (Top Vendedores, Produtos Virais, Estratégia de SEO, Faixas de Preço/Oceano Azul, Batalha de Plataformas, Alertas e Recomendações).
 
 ---
 
-## 📂 Estrutura de Diretórios
+## ✨ Principais Funcionalidades
+
+1. **🏢 Arquitetura Multi-Tenant com RLS:**
+   - Cada cliente/inquilino (*tenant*) possui seu próprio isolamento de dados no Supabase via Row Level Security (`auth.uid() = user_id`).
+   - Um cliente monitorando *Informática/Games* nunca acessa os produtos de outro cliente monitorando *Artesanato/Biscuit*.
+
+2. **🤖 Scraping Autônomo na Nuvem (GitHub Actions):**
+   - Agendamento diário automático às `06:00 BRT` sem exigir que o computador do cliente fique ligado.
+   - Restauração de cookies de sessão autenticados (`AUTH_MELI_JSON` e `AUTH_SHOPEE_JSON`) para contornar proteções anti-bot/WAF.
+   - **Sistema de Alerta Anti-Bot:** Se encontrar Captcha, tira screenshot, salva nos artefatos de debug e notifica o Dashboard do usuário sem interromper a execução.
+
+3. **🧠 Diagnóstico Executivo com IA (Google Gemini 1.5 Flash):**
+   - Categorização automática em linguagem natural.
+   - Geração de relatório executivo bilíngue (PT 🇧🇷 / EN 🇺🇸) cobrindo:
+     - 🏆 *Top Vendedores & Lojas Líderes*
+     - 🔥 *Produtos Virais & Aceleração de Vendas*
+     - 🏷️ *Faixas de Preço e Sweet Spots de Lucro*
+     - ⚔️ *Batalha de Plataformas (Mercado Livre vs Shopee)*
+
+4. **📊 Dashboard Analítico Ultra-Fluido (Nuxt 3 + Vue 3):**
+   - **Hierarquia Visual em 4 Macro-Seções Temáticas:**
+     - 🟣 *Seção 1: Inteligência Executiva de IA*
+     - 🟢 *Seção 2: Desempenho Financeiro & KPIs com descrições didáticas*
+     - 🔵 *Seção 3: Mapeamento Visual de Concorrência (ApexCharts)*
+     - 🔍 *Seção 4: Catálogo Operacional de Anúncios com busca e exportação CSV*
+   - **Linha do Tempo (Time Machine):** Navegação por qualquer data passada ou comparação lado a lado (Data A vs Data B).
+   - **Internacionalização Dinâmica:** Alternância instantânea de idioma entre Português 🇧🇷 e Inglês 🇺🇸.
+
+---
+
+## 📂 Estrutura de Diretórios Organizada
 
 ```text
 biscuit_scraper/
 │
-├── frontend/                        # Dashboard Web em Nuxt 3
-│   ├── assets/css/main.css          # Design System (Glassmorphism, Shimmer Skeletons)
-│   ├── components/                  # Componentes Vue reativos
-│   │   ├── AiExecutiveReport.client.vue  # Relatório executivo de 7 módulos (IA)
-│   │   ├── DataTable.vue            # Tabela de produtos com Infinite Scroll anti-CLS
-│   │   ├── PriceStrategyMonitor.vue # Monitor de aumentos vs guerra de preços
-│   │   ├── TrendingProductsTab.vue  # Ranking de produtos virais / aceleração
-│   │   ├── ScraperConfig.vue        # Central de preferências & disparo com Realtime
-│   │   └── TimelineScrapeSelector.vue # Comparador histórico de coletas
-│   ├── server/api/                  # Server Routes Nitro (Webhooks e proxy Gemini)
-│   ├── biome.json                   # Configuração de Linter & Formatter ultrarrápido
-│   └── playwright.config.ts         # Testes E2E do Frontend
+├── .github/
+│   └── workflows/
+│       ├── daily_scrape.yml         # ⏰ Workflow Diário Cron & Manual no GitHub Actions
+│       └── deploy_frontend.yml      # 🚀 CI/CD de deploy do Frontend
 │
-├── src/                             # Engine Python (Scraping & IA)
-│   ├── cloud_server.py              # Microserviço Flask / Webhook para o Cloud Run
-│   ├── main.py                      # Ponto de entrada CLI e execução de pipeline
-│   ├── config.py                    # Gerenciador de configurações e regras de busca
-│   ├── ai/                          # Módulos de IA (Categorizador e Prompts)
-│   ├── scrapers/                    # Robôs de coleta (Mercado Livre e Shopee)
-│   │   ├── meli_scraper.py
-│   │   ├── shopee_scraper.py
-│   │   └── login_session.py
-│   └── utils/                       # Utilitários (Supabase client, Bot detector, AI Engine)
+├── frontend/                        # 💻 Dashboard SaaS em Nuxt 3 (Vue 3)
+│   ├── assets/css/main.css          # Design System Glassmorphism & Tokens
+│   ├── components/                  # Componentes Vue 3 Modulares
+│   │   ├── AiExecutiveReport.client.vue  # Relatório Executivo com Gemini AI
+│   │   ├── AntiBotAlert.vue         # Banner de Notificação de Status Anti-Bot
+│   │   ├── CategoryVolumeChart.client.vue # Gráfico de Volume por Categoria
+│   │   ├── DataTable.vue            # Tabela de Anúncios com Infinite Scroll
+│   │   ├── KpiCards.vue             # Cards Financeiros com Legendas Didáticas
+│   │   ├── Navbar.vue               # Barra Superior com Sessão & Logout
+│   │   ├── PriceRangeHistogramFilter.vue # Histograma Range Slider
+│   │   ├── PriceStrategyMonitor.vue # Monitor de Aumento vs Guerra de Preços
+│   │   ├── TopProductsChart.client.vue # Top 10 Produtos Mais Vendidos
+│   │   ├── TopSellersChart.client.vue # Top Lojas e Concorrentes
+│   │   └── TrendingProductsTab.vue  # Ranking de Velocidade e Aceleração
+│   ├── composables/                 # Composables Reativos
+│   │   ├── useAppI18n.ts            # Dicionário Bilíngue Reativo (PT / EN)
+│   │   └── useSupabase.ts           # Singleton Supabase com persistência de sessão
+│   ├── middleware/
+│   │   └── auth.global.ts           # 🛡️ Guarda Global de Rotas (Redireciona para /login)
+│   ├── pages/
+│   │   ├── index.vue                # Painel Principal do Dashboard
+│   │   └── login.vue                # 🔐 Tela de Login com Glassmorphism
+│   └── nuxt.config.ts               # Configuração do Nuxt 3 e módulos
 │
-├── tests/                           # Suíte de Testes Automatizados
-│   └── test_parsers.py              # Testes unitários de parsing de preço e links
+├── src/                             # 🐍 Engine de Scraping & IA em Python
+│   ├── main.py                      # Ponto de Entrada CLI (--daily-cron / --plataforma)
+│   ├── config.py                    # Gerenciador de Parâmetros e Pastas
+│   ├── ai/
+│   │   ├── categorizer.py           # Classificador de Categorias por IA
+│   │   └── insights_generator.py    # Gerador de Insights Estatísticos
+│   ├── scrapers/
+│   │   ├── login_session.py         # Inicializador de Sessão Chrome Real (Bypass WAF)
+│   │   ├── meli_scraper.py          # Pipeline Medalhão do Mercado Livre
+│   │   └── shopee_scraper.py        # Pipeline Medalhão da Shopee
+│   └── utils/
+│       ├── ai_engine.py             # Integração com Google Gemini API
+│       ├── bot_detector.py          # Verificador de Captcha e Bloqueios
+│       ├── relevancia.py            # Filtro de Palavras-Chave e Blacklist
+│       └── supabase_client.py       # Cliente Supabase & Gravação de Séries Temporais
 │
-├── requirements.txt                 # Dependências Python (Playwright, Supabase, Structlog, Ruff)
-├── AGENTS_GUIDELINES.md             # Diretrizes de Governança, UX e Qualidade para IAs
-├── PLANO_DESENVOLVIMENTO.md         # Roadmap e arquitetura de implantação
-└── .env.example                     # Template de variáveis de ambiente
+├── data/                            # 📁 Armazenamento Local (Bronze/Prata/Ouro/Auth)
+├── database_setup.sql               # 📄 Script SQL com Migrações, Índices e RLS
+├── requirements.txt                 # Dependências do Python
+└── README.md                        # Documentação Oficial
 ```
 
 ---
 
-## ⚙️ Variáveis de Ambiente (`.env`)
+## ⚡ Guia de Inicialização Rápida
 
-Crie um arquivo `.env` na raiz do projeto com base no [`.env.example`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/.env.example):
+### 1. Configuração do Banco de Dados (Supabase)
+1. Crie um projeto gratuito no [Supabase](https://supabase.com/).
+2. Abra o **SQL Editor** no painel do Supabase.
+3. Cole e execute o arquivo [`database_setup.sql`](database_setup.sql) para criar as tabelas, índices e políticas de segurança RLS.
+4. Em **Authentication ➔ Users**, crie o seu primeiro usuário com e-mail e senha.
 
-```ini
-# Supabase (Banco de Dados & Autenticação)
-SUPABASE_URL=https://sua-url.supabase.co
-SUPABASE_KEY=sua-service-role-key-aqui
-SUPABASE_USER_ID=seu-uuid-de-usuario-aqui
-
-# Frontend Nuxt (Público)
-NUXT_PUBLIC_SUPABASE_URL=https://sua-url.supabase.co
-NUXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-aqui
-
-# Inteligência Artificial (Google Gemini)
-GEMINI_API_KEY=sua-gemini-api-key-aqui
-
-# Webhook Cloud (Opcional - Google Cloud Run)
-SCRAPER_WEBHOOK_URL=https://seu-servico-cloudrun.a.run.app/trigger
-```
-
----
-
-## 🚀 Como Executar o Projeto
-
-### 1. Rodando o Dashboard Frontend (Nuxt 3)
-
-```powershell
+### 2. Rodando o Frontend Localmente
+```bash
 cd frontend
-npm install --legacy-peer-deps
+npm install
 npm run dev
 ```
+Acesse no seu navegador: **`http://localhost:3000`** (Faça o login com as credenciais do Supabase).
 
-Acesse no navegador: `http://localhost:3000`
-
----
-
-### 2. Rodando o Engine de Scraping (Python)
-
-Instale as dependências e o navegador do Playwright:
-
-```powershell
-pip install -r requirements.txt
-playwright install chromium
-```
-
-#### A. Execução Manual via Terminal
-```powershell
-# Executar para todas as plataformas (Meli + Shopee + IA)
-python src/main.py --plataforma todos
-
-# Executar apenas Mercado Livre
-python src/main.py --plataforma meli
-
-# Executar apenas Shopee
-python src/main.py --plataforma shopee
-```
-
-#### B. Modo Servidor / Webhook (Cloud Run)
-```powershell
-python src/cloud_server.py
-```
-O servidor escutará na porta `8080` e responderá a requisições `POST /trigger` disparadas pelo Dashboard.
-
-#### C. Salvar Sessão de Login (Evitar CAPTCHAs)
-```powershell
+### 3. Gerando Cookies de Login para o Robô da Nuvem (Opcional - Feito 1 vez)
+Para que o robô no GitHub Actions navegue como um usuário logado:
+```bash
 python src/main.py --login
 ```
+Faça o login nas janelas reais do Chrome que abrirem (Mercado Livre e Shopee). Os cookies serão salvos em `data/auth/auth_meli.json` e `data/auth/auth_shopee.json`.
 
 ---
 
-## 🧪 Qualidade de Código e Testes
+## 🔑 Configuração de Segredos no GitHub Actions
 
-O projeto segue padrões de qualidade estritos definidos no [`AGENTS_GUIDELINES.md`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/AGENTS_GUIDELINES.md):
+No seu repositório no GitHub, vá em **Settings ➔ Secrets and variables ➔ Actions ➔ New repository secret** e cadastre:
 
-### Python (Backend)
-- **Linter & Formatação com Ruff**:
-  ```powershell
-  python -m ruff check src/ --fix
-  ```
-- **Testes Unitários com Pytest**:
-  ```powershell
-  python -m pytest tests/
-  ```
-
-### TypeScript / Vue (Frontend)
-- **Linter & Formatação com Biome**:
-  ```powershell
-  cd frontend
-  npm run lint
-  ```
-- **Testes E2E com Playwright**:
-  ```powershell
-  cd frontend
-  npm run test:e2e
-  ```
+| Secret | Descrição |
+| :--- | :--- |
+| `SUPABASE_URL` | URL do seu projeto Supabase (`https://xxxx.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave secreta `service_role` (ignora RLS no scraping na nuvem) |
+| `GEMINI_API_KEY` | Chave do Google Gemini API (Google AI Studio) |
+| `AUTH_MELI_JSON` | Conteúdo do arquivo `data/auth/auth_meli.json` |
+| `AUTH_SHOPEE_JSON` | Conteúdo do arquivo `data/auth/auth_shopee.json` |
 
 ---
 
-## 📄 Licença e Uso
-
-Desenvolvido para fins de inteligência competitiva e automação em e-commerce. Estrutura 100% modular e adaptável para qualquer nicho de produtos.
+## 📄 Licença
+Distribuído sob a licença MIT. Consulte `LICENSE` para mais detalhes.

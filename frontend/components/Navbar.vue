@@ -43,9 +43,7 @@ const emit = defineEmits(['auth-change'])
 
 const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
-
-const config = useRuntimeConfig()
-const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+const supabase = useSupabase()
 
 async function logout() {
   await supabase.auth.signOut()

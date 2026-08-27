@@ -231,8 +231,7 @@ import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vu
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
 
-const config = useRuntimeConfig()
-const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+const supabase = useSupabase()
 
 const { t, locale } = useAppI18n()
 

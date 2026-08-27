@@ -79,9 +79,7 @@ definePageMeta({
 
 const { t, locale, toggleLanguage } = useAppI18n()
 const router = useRouter()
-
-const config = useRuntimeConfig()
-const supabase = createClient(config.public.supabaseUrl, config.public.supabaseAnonKey)
+const supabase = useSupabase()
 
 const email = ref('')
 const password = ref('')
@@ -100,15 +98,23 @@ async function handleLogin() {
     })
 
     if (error) {
-      errorMessage.value = t('auth.login_failed', 'Credenciais inválidas. Verifique seu e-mail e senha.')
+      console.warn("Supabase Auth Error:", error)
+      if (error.message.includes('Invalid login credentials')) {
+        errorMessage.value = t('auth.login_failed', 'Credenciais inválidas. Verifique seu e-mail e senha.')
+      } else if (error.message.includes('Email not confirmed')) {
+        errorMessage.value = '⚠️ E-mail não confirmado. Desmarque "Confirm email" no Supabase Auth.'
+      } else {
+        errorMessage.value = error.message
+      }
       return
     }
 
     if (data?.session) {
-      router.push('/')
+      // Redireciona com reload completo para carregar os dados autenticados
+      window.location.href = '/'
     }
   } catch (err) {
-    errorMessage.value = t('auth.login_failed', 'Erro ao conectar ao servidor de autenticação.')
+    errorMessage.value = err.message || t('auth.login_failed', 'Erro ao conectar ao servidor de autenticação.')
     console.error('Login error:', err)
   } finally {
     loading.value = false
