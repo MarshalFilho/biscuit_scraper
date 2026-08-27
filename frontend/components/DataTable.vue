@@ -1,13 +1,69 @@
 <template>
   <div class="glass-panel table-container animate-fade-in" style="animation-delay: 0.3s;">
+    <!-- Cabeçalho Principal da Tabela -->
     <div class="table-header">
       <div class="table-title">
         <h3>📦 {{ t('table.title', 'Tabela de Produtos Monitorados') }}</h3>
-        <p class="subtitle">{{ t('table.subtitle', 'Clique nas colunas para ordenar os dados (▲ / ▼)') }}</p>
+        <p class="subtitle">{{ t('table.subtitle', 'Filtre e ordene os dados diretamente nesta tabela sem precisar rolar a página.') }}</p>
       </div>
       <div class="table-actions">
-        <button @click="exportToCSV" class="btn outline-btn ml-2" title="Export CSV">{{ t('table.export_csv', '⬇️ Exportar CSV') }}</button>
-        <input type="text" v-model="search" :placeholder="t('table.search_placeholder', 'Buscar por título...')" class="search-input glass-panel ml-2" />
+        <button @click="exportToCSV" class="btn outline-btn" title="Export CSV">
+          ⬇️ {{ t('table.export_csv', 'Exportar CSV') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros Integrada da Tabela (In-Table Toolbar) -->
+    <div class="in-table-toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          v-model="search" 
+          :placeholder="t('table.search_placeholder', 'Buscar por título do anúncio...')" 
+          class="table-search-input" 
+        />
+        <button v-if="search" @click="search = ''" class="clear-search-btn" title="Limpar busca">✕</button>
+      </div>
+
+      <div class="quick-filters-row">
+        <!-- Plataforma Pills -->
+        <div class="platform-pills">
+          <button 
+            type="button"
+            :class="['plat-pill', { active: localPlatform === 'Todas' }]" 
+            @click="localPlatform = 'Todas'"
+          >
+            🌐 {{ t('filters.both', 'Todas') }}
+          </button>
+          <button 
+            type="button"
+            :class="['plat-pill meli-pill', { active: localPlatform === 'meli' }]" 
+            @click="localPlatform = 'meli'"
+          >
+            🟡 Mercado Livre
+          </button>
+          <button 
+            type="button"
+            :class="['plat-pill shopee-pill', { active: localPlatform === 'shopee' }]" 
+            @click="localPlatform = 'shopee'"
+          >
+            🟠 Shopee
+          </button>
+        </div>
+
+        <!-- Categoria Dropdown -->
+        <div class="category-select-wrap" v-if="tableCategories.length > 1">
+          <select v-model="localCategory" class="table-select">
+            <option value="Todas">📂 {{ t('filters.all_categories', 'Todas as Categorias') }}</option>
+            <option v-for="cat in tableCategories" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <!-- Contador de Registros -->
+        <div class="table-counter-badge">
+          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('timeline.records', 'produtos') }}</span>
+        </div>
       </div>
     </div>
     
@@ -122,7 +178,7 @@
       </table>
     </div>
 
-    <!-- Paginação removida em favor de Infinite Scrolling -->
+    <!-- Paginação por Infinite Scrolling / Botão Carregar Mais -->
     <div v-if="!isLoading && visibleLimit < filteredData.length" class="text-center mt-3 mb-2">
       <button @click="loadMore" class="btn outline-btn">{{ t('table.btn_load_more', 'Carregar mais produtos ↓') }}</button>
     </div>
@@ -147,7 +203,9 @@ const props = defineProps({
 const emit = defineEmits(['delete-product'])
 
 const search = ref('')
-const visibleLimit = ref(50) // Começa com 50 itens
+const localPlatform = ref('Todas')
+const localCategory = ref('Todas')
+const visibleLimit = ref(50)
 const selectedProduct = ref(null)
 const loadMoreTrigger = ref(null)
 
@@ -172,21 +230,29 @@ onUnmounted(() => {
   if (observer) observer.disconnect()
 })
 
+const tableCategories = computed(() => {
+  const cats = new Set()
+  props.items.forEach(p => {
+    if (p.categoria) cats.add(p.categoria)
+  })
+  return Array.from(cats).sort()
+})
+
 // Ordenação interativa por coluna
 const sortKey = ref('vendas_totais')
-const sortOrder = ref('desc') // 'asc' ou 'desc'
+const sortOrder = ref('desc')
 
 function sortBy(key) {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
     sortKey.value = key
-    sortOrder.value = 'desc' // Padrão desc para métricas
+    sortOrder.value = 'desc'
   }
 }
 
 // Zera o limite visível quando busca ou ordena
-watch([search, sortKey, sortOrder], () => {
+watch([search, localPlatform, localCategory, sortKey, sortOrder], () => {
   visibleLimit.value = 50
 })
 
@@ -197,7 +263,7 @@ function openModal(item) {
 function confirmDelete(item) {
   const isHidden = item._isHidden
   if (isHidden) {
-    emit('delete-product', item) // A função pai deve cuidar do toggle
+    emit('delete-product', item)
   } else {
     const msg = t('table.confirm_hide', 'Deseja silenciar/ocultar o anúncio:\n\n"{title}"\n\nVocê pode desfazer isso depois.').replace('{title}', item.titulo)
     if (confirm(msg)) {
@@ -209,9 +275,17 @@ function confirmDelete(item) {
 const filteredData = computed(() => {
   let result = props.items
   
+  if (localPlatform.value !== 'Todas') {
+    result = result.filter(item => item.plataforma === localPlatform.value)
+  }
+
+  if (localCategory.value !== 'Todas') {
+    result = result.filter(item => item.categoria === localCategory.value)
+  }
+
   if (search.value) {
-    const lowerSearch = search.value.toLowerCase()
-    result = result.filter(item => item.titulo.toLowerCase().includes(lowerSearch))
+    const lowerSearch = search.value.toLowerCase().trim()
+    result = result.filter(item => item.titulo.toLowerCase().includes(lowerSearch) || (item.vendedor && item.vendedor.toLowerCase().includes(lowerSearch)))
   }
   
   return [...result].sort((a, b) => {
@@ -258,26 +332,24 @@ function exportToCSV() {
     const criado = item.criado_em ? new Date(item.criado_em).toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US') : ''
     
     return [
-      item.plataforma,
-      item.categoria,
-      `"${item.titulo.replace(/"/g, '""')}"`,
+      item.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee',
+      `"${(item.categoria || '').replace(/"/g, '""')}"`,
+      `"${(item.titulo || '').replace(/"/g, '""')}"`,
       precoAtual,
       item.vendas_totais || 0,
       crescimento,
       varPreco,
       criado,
-      `"${item.link}"`
+      `"${item.link || ''}"`
     ].join(';')
   })
   
-  const csvContent = [headers.join(';'), ...rows].join('\n')
-  const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement("a")
+  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
-  
-  link.setAttribute("href", url)
-  link.setAttribute("download", `relatorio_produtos_${new Date().toISOString().split('T')[0]}.csv`)
-  link.style.visibility = 'hidden'
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `biscuit_produtos_${new Date().toISOString().split('T')[0]}.csv`)
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -285,90 +357,298 @@ function exportToCSV() {
 </script>
 
 <style scoped>
-.table-container { padding: 1.5rem; margin-bottom: 2rem; }
-.table-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
-.table-title h3 { font-size: 1.25rem; color: var(--text-main); margin: 0 0 0.2rem 0; }
-.subtitle { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
-.table-actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
-.loading-more-row { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 1.5rem 0 !important; }
-.load-more-trigger { width: 100%; display: flex; justify-content: center; align-items: center; height: 30px; }
+.table-container {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
 
-.btn { padding: 0.6rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: none; font-size: 0.9rem; }
-.outline-btn { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); }
-.outline-btn:hover { background: #f1f5f9; border-color: var(--neon-blue); color: var(--neon-blue); }
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
 
-.search-input { background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); padding: 0.65rem 1rem; border-radius: 8px; width: 280px; outline: none; transition: border-color 0.3s ease; font-size: 0.9rem; }
-.search-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+.table-title h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.in-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.9rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 1.2rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  min-width: 260px;
+  flex: 1;
+}
+
+.search-icon {
+  margin-right: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.table-search-input {
+  border: none;
+  background: none;
+  outline: none;
+  width: 100%;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0 0.2rem;
+}
+
+.clear-search-btn:hover {
+  color: #0f172a;
+}
+
+.quick-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.platform-pills {
+  display: flex;
+  background: #e2e8f0;
+  padding: 0.2rem;
+  border-radius: 8px;
+  gap: 0.2rem;
+}
+
+.plat-pill {
+  border: none;
+  background: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.plat-pill:hover {
+  color: #0f172a;
+}
+
+.plat-pill.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.plat-pill.meli-pill.active {
+  color: #b45309;
+}
+
+.plat-pill.shopee-pill.active {
+  color: #c2410c;
+}
+
+.table-select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+}
+
+.table-counter-badge {
+  font-size: 0.82rem;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  white-space: nowrap;
+}
 
 .table-scroll {
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: 580px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
 }
-.data-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; }
-.data-table th, .data-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
 .data-table th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: #f8fafc;
-  color: #475569;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
   font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-.sortable-header { cursor: pointer; user-select: none; transition: background 0.2s ease; }
-.sortable-header:hover { background: #f1f5f9; color: var(--neon-blue); }
-.sort-icon { display: inline-block; margin-left: 0.3rem; opacity: 0.6; font-size: 0.8rem; }
-.sortable-header:hover .sort-icon { opacity: 1; }
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+}
 
-.data-table tbody tr { transition: background 0.2s ease; }
-.data-table tbody tr:hover { background: #f8fafc; }
+.sortable-header:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
 
-.title-cell { max-width: 240px; font-weight: 500; }
-.clickable-title { cursor: pointer; transition: color 0.2s ease; }
-.clickable-title:hover .title-text { color: #2563eb; text-decoration: underline; }
-.title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.88rem; }
-.seller-subtext { display: block; font-size: 0.72rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.1rem; }
+.data-table td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
 
-.price-cell, .old-price-cell, .variation-cell, .sales-diff-cell { white-space: nowrap; font-size: 0.85rem; }
-.price-cell { font-weight: 700; color: #0f172a; }
+.data-table tr:hover td {
+  background: #f8fafc;
+}
 
-.text-muted { color: var(--text-muted); }
-.text-red { color: #dc2626; font-weight: bold; }
-.text-green { color: #16a34a; font-weight: bold; }
-.sales-value { font-weight: 700; color: #0f172a; margin-right: 0.3rem; }
+.clickable-title {
+  cursor: pointer;
+}
 
-.badge-growth { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 99px; font-size: 0.7rem; font-weight: 800; background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-.badge-stable { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
-.badge-price-up { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
-.badge-price-down { display: inline-block; padding: 0.12rem 0.4rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.title-text {
+  font-weight: 600;
+  color: #1e293b;
+}
 
-.badge { padding: 0.25rem 0.55rem; border-radius: 99px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.3rem; }
-.badge.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-.badge.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
-.badge.category { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
-.badge-icon { vertical-align: middle; flex-shrink: 0; }
+.title-text:hover {
+  color: #2563eb;
+}
 
-.badge-new { font-size: 0.62rem; background: linear-gradient(90deg, #d97706, #dc2626); color: white; padding: 0.15rem 0.4rem; border-radius: 99px; margin-right: 0.3rem; font-weight: bold; text-transform: uppercase; display: inline-block; vertical-align: middle; }
+.seller-subtext {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
 
-.action-th { text-align: center; width: 110px; }
-.action-cell { text-align: center; width: 110px; }
-.action-btns-wrap { display: flex; gap: 0.35rem; justify-content: center; align-items: center; }
-.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s ease; text-decoration: none; border: 1px solid #cbd5e1; }
-.action-btn-icon { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-.action-btn-icon:hover { background: #dbeafe; border-color: #93c5fd; transform: translateY(-1px); }
-.link-btn-icon { background: #f8fafc; color: #475569; border-color: #cbd5e1; font-weight: bold; }
-.link-btn-icon:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; transform: translateY(-1px); }
-.delete-btn-icon { background: #fef2f2; color: #dc2626; border-color: #fca5a5; font-size: 0.82rem; }
-.delete-btn-icon:hover { background: #fee2e2; border-color: #f87171; transform: translateY(-1px); }
-.empty-state { text-align: center; padding: 3rem !important; color: var(--text-muted); font-style: italic; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.badge.meli {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde047;
+}
+
+.badge.shopee {
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+}
+
+.badge.category {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-new {
+  font-size: 0.68rem;
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 800;
+  margin-right: 0.4rem;
+}
+
+.price-cell {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.badge-price-up {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.badge-price-down {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+.badge-growth {
+  background: #dcfce7;
+  color: #15803d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-left: 0.3rem;
+}
+
+.action-btns-wrap {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.icon-btn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
 </style>
-

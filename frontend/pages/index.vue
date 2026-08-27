@@ -26,18 +26,28 @@
         <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
       </div>
 
-      <!-- Super Filtros Globais (Comanda a página) -->
+      <!-- Super Filtros Globais (Barra de Controle Elegante) -->
       <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
         <div class="filters-header">
-          <div>
-            <h4>🔍 {{ t('filters.title', 'Super Filtros Globais') }}</h4>
+          <div class="filters-title-group">
+            <h4>🔍 {{ t('filters.title', 'Filtros Globais do Dashboard') }}</h4>
             <span class="filters-info">{{ t('filters.subtitle', 'Altera em tempo real todos os KPIs, gráficos e tabelas do painel') }}</span>
+          </div>
+
+          <div class="filters-header-actions">
+            <button 
+              type="button" 
+              class="btn-toggle-histogram" 
+              @click="showPriceHistogram = !showPriceHistogram"
+            >
+              📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
+            </button>
           </div>
         </div>
         
-        <div class="filters-grid">
+        <div class="filters-main-row">
           <!-- Plataforma -->
-          <div class="filter-group">
+          <div class="filter-item">
             <label>{{ t('filters.platform', 'Plataforma:') }}</label>
             <div class="toggle-group">
               <button 
@@ -52,28 +62,20 @@
                 :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
                 @click="selectedPlatform = 'meli'"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
-                  <rect width="24" height="24" rx="12" fill="#FFE600"/>
-                  <path d="M7 11.5L10 14.5L17 7.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Mercado Livre
+                🟡 Meli
               </button>
               <button 
                 type="button" 
                 :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
                 @click="selectedPlatform = 'shopee'"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="platform-svg">
-                  <path d="M6 8V6C6 4.34315 7.34315 3 9 3H15C16.6569 3 18 4.34315 18 6V8M3 8H21L19.5 21H4.5L3 8Z" stroke="#EE4D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#EE4D2D" stroke-width="1.8" stroke-linecap="round"/>
-                </svg>
-                Shopee
+                🟠 Shopee
               </button>
             </div>
           </div>
 
           <!-- Categoria -->
-          <div class="filter-group">
+          <div class="filter-item flex-1">
             <label>{{ t('filters.category', 'Categoria:') }}</label>
             <select v-model="selectedCategory" class="glass-input">
               <option value="Todas">{{ t('filters.all_categories', 'Todas as Categorias') }}</option>
@@ -82,31 +84,33 @@
           </div>
 
           <!-- Vendas Mínimas -->
-          <div class="filter-group">
-            <label>{{ t('filters.min_sales', 'Vendas Mínimas:') }}</label>
-            <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input" />
+          <div class="filter-item">
+            <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
+            <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
           </div>
 
-          <!-- Ocultar Sem Vendas e Ocultados -->
-          <div class="filter-group checkbox-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          <!-- Checkboxes Rápidos -->
+          <div class="filter-item checkboxes-item">
             <label class="checkbox-label">
               <input type="checkbox" v-model="hideZeroSales" />
-              {{ t('filters.hide_zero', 'Ocultar produtos com 0 vendas') }}
+              {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
             </label>
             <label class="checkbox-label text-muted">
               <input type="checkbox" v-model="showHiddenProducts" />
-              {{ t('filters.show_hidden', 'Mostrar anúncios silenciados') }}
+              {{ t('filters.show_hidden', 'Mostrar silenciados') }}
             </label>
           </div>
         </div>
         
-        <!-- Filtro Estilo Upwork: Histograma Interativo de Preços -->
-        <div style="margin-top: 1.5rem;">
-          <PriceRangeHistogramFilter 
-            :items="processedProducts" 
-            @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
-          />
-        </div>
+        <!-- Histograma de Preços Expansível -->
+        <transition name="slide-fade">
+          <div v-if="showPriceHistogram" class="histogram-expand-wrapper">
+            <PriceRangeHistogramFilter 
+              :items="processedProducts" 
+              @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
+            />
+          </div>
+        </transition>
       </div>
 
       <!-- Linha do Tempo Interativa de Coletas (Timeline & Date Picker) -->
@@ -315,6 +319,7 @@ const maxPrice = ref(null)
 const minSales = ref(null)
 const hideZeroSales = ref(false)
 const showHiddenProducts = ref(false)
+const showPriceHistogram = ref(false)
 
 const defaultCategoryRules = [
   { keyword: 'vela', category: 'Velas de Aniversário' },
@@ -784,5 +789,105 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.filters-panel {
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.8rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.filters-title-group h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.filters-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.btn-toggle-histogram {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-histogram:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.filters-main-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-item label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 200px;
+}
+
+.sales-input {
+  width: 90px;
+}
+
+.checkboxes-item {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.histogram-expand-wrapper {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #e2e8f0;
 }
 </style>
