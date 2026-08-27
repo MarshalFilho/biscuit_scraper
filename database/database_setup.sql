@@ -75,16 +75,16 @@ DROP POLICY IF EXISTS "Tenant acessa apenas suas configuracoes" ON public.config
 CREATE POLICY "Tenant acessa apenas suas configuracoes"
 ON public.configuracoes_scraper
 FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = user_id OR user_id IS NULL)
+WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
 -- 🛡️ POLÍTICA 2: `produtos`
 DROP POLICY IF EXISTS "Tenant acessa apenas seus proprios produtos" ON public.produtos;
 CREATE POLICY "Tenant acessa apenas seus proprios produtos"
 ON public.produtos
 FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+USING (auth.uid() = user_id OR user_id IS NULL)
+WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
 -- 🛡️ POLÍTICA 3: `historico_coletas` (Baseado no produto_id pertencente ao user_id)
 DROP POLICY IF EXISTS "Tenant acessa historico dos seus proprios produtos" ON public.historico_coletas;
@@ -95,6 +95,6 @@ USING (
     EXISTS (
         SELECT 1 FROM public.produtos
         WHERE public.produtos.id = public.historico_coletas.produto_id
-        AND public.produtos.user_id = auth.uid()
+        AND (public.produtos.user_id = auth.uid() OR public.produtos.user_id IS NULL)
     )
 );

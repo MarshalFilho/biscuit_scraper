@@ -419,7 +419,7 @@ async function loadDashboardData() {
     try {
       let cfgQuery = supabase.from('configuracoes_scraper').select('blocked_products, relatorio_insights, nome_projeto, status_alerta')
       if (authUser.value) {
-        cfgQuery = cfgQuery.eq('user_id', authUser.value.id)
+        cfgQuery = cfgQuery.or(`user_id.eq.${authUser.value.id},user_id.is.null`)
       }
       const { data: cfg } = await cfgQuery.limit(1).maybeSingle()
       
@@ -442,7 +442,7 @@ async function loadDashboardData() {
       console.warn("Nao foi possivel carregar configuracoes do Supabase:", e)
     }
 
-    // 3. Carrega produtos filtrados pelo user_id
+    // 3. Carrega produtos do usuário ou legados (user_id is null)
     let prodQuery = supabase
       .from('produtos')
       .select(`
@@ -451,7 +451,7 @@ async function loadDashboardData() {
       `)
 
     if (authUser.value) {
-      prodQuery = prodQuery.eq('user_id', authUser.value.id)
+      prodQuery = prodQuery.or(`user_id.eq.${authUser.value.id},user_id.is.null`)
     }
       
     const { data: prodData, error: prodErr } = await prodQuery
