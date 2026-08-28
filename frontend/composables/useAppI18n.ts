@@ -399,6 +399,13 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toast_success_title: 'Solicitação Enviada!',
       toast_success_msg: 'Seu pedido de novo termo foi enviado com sucesso ao administrador.',
       toast_error_title: 'Erro ao Solicitar'
+    },
+    admin: {
+      approval_title: 'Central de Autorizações & Solicitações de Clientes Light',
+      approval_subtitle: 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.',
+      manage_all_terms: 'Configurações de Extração & IA',
+      no_pending: 'Nenhuma solicitação pendente no momento.',
+      no_pending_desc: 'Quando os clientes do plano Light solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.'
     }
   },
   en: {
@@ -798,6 +805,13 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toast_success_title: 'Request Sent!',
       toast_success_msg: 'Your request for a new term has been sent to the administrator.',
       toast_error_title: 'Request Failed'
+    },
+    admin: {
+      approval_title: 'Light Client Terms Authorization & Approval Hub',
+      approval_subtitle: 'Review, approve, or decline new search terms and product niches submitted by clients.',
+      manage_all_terms: 'Extraction Settings & AI',
+      no_pending: 'No pending requests at this time.',
+      no_pending_desc: 'When Light plan clients submit new search terms, they will appear here for your 1-click approval.'
     }
   }
 }

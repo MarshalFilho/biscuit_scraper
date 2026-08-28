@@ -125,5 +125,12 @@
     "toast_success_title": "Request Sent!",
     "toast_success_msg": "Your request for a new term has been sent to the administrator.",
     "toast_error_title": "Request Failed"
+  },
+  "admin": {
+    "approval_title": "Light Client Terms Authorization & Approval Hub",
+    "approval_subtitle": "Review, approve, or decline new search terms and product niches submitted by clients.",
+    "manage_all_terms": "Extraction Settings & AI",
+    "no_pending": "No pending requests at this time.",
+    "no_pending_desc": "When Light plan clients submit new search terms, they will appear here for your 1-click approval."
   }
 }

@@ -125,5 +125,12 @@
     "toast_success_title": "Solicitação Enviada!",
     "toast_success_msg": "Seu pedido de novo termo foi enviado com sucesso ao administrador.",
     "toast_error_title": "Erro ao Solicitar"
+  },
+  "admin": {
+    "approval_title": "Central de Autorizações & Solicitações de Clientes Light",
+    "approval_subtitle": "Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.",
+    "manage_all_terms": "Configurações de Extração & IA",
+    "no_pending": "Nenhuma solicitação pendente no momento.",
+    "no_pending_desc": "Quando os clientes do plano Light solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique."
   }
 }

@@ -35,6 +35,60 @@
       <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
     </div>
 
+    <!-- PAINEL EXCLUSIVO ADMIN: Central de Autorizações de Clientes Light -->
+    <section v-if="isAdmin" class="admin-approval-panel glass-panel animate-fade-in">
+      <div class="admin-header-row">
+        <div class="admin-title-box">
+          <div class="admin-badge-row">
+            <span class="admin-crown-badge">👑 PAINEL DO ADMINISTRADOR</span>
+            <span class="pending-count-badge" v-if="adminPendingRequests.length > 0">
+              {{ adminPendingRequests.length }} pendente(s)
+            </span>
+          </div>
+          <h3>{{ t('admin.approval_title', 'Central de Autorizações & Solicitações de Clientes Light') }}</h3>
+          <p class="admin-subtitle">{{ t('admin.approval_subtitle', 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.') }}</p>
+        </div>
+        <div class="admin-header-actions">
+          <button type="button" class="btn-manage-terms" @click="isKeywordsModalOpen = true">
+            ⚙️ {{ t('keywords.badge', 'Configurar Termos & IA') }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista de Solicitações Pendentes dos Clientes -->
+      <div v-if="adminPendingRequests.length > 0" class="admin-requests-grid">
+        <div v-for="req in adminPendingRequests" :key="req.id" class="admin-request-card">
+          <div class="req-card-left">
+            <div class="req-main-info">
+              <strong class="req-term-title">🔍 {{ req.termo }}</strong>
+              <span v-if="req.nicho" class="req-nicho-pill">{{ req.nicho }}</span>
+            </div>
+            <p v-if="req.motivo" class="req-reason-text">"{{ req.motivo }}"</p>
+            <div class="req-footer-meta">
+              <span>👤 <strong>Solicitante:</strong> {{ req.solicitante_email || 'Cliente Light' }}</span>
+              <span v-if="req.data_solicitacao" class="req-date">🕒 {{ new Date(req.data_solicitacao).toLocaleDateString() }}</span>
+            </div>
+          </div>
+          <div class="req-card-actions">
+            <button type="button" class="btn-action-approve" @click="approveAdminRequest(req)" title="Autorizar e incluir na raspagem do robô">
+              ✓ Autorizar Termo
+            </button>
+            <button type="button" class="btn-action-reject" @click="rejectAdminRequest(req)" title="Recusar pedido">
+              ✕ Recusar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="admin-empty-requests">
+        <span class="empty-icon">✨</span>
+        <div>
+          <strong>{{ t('admin.no_pending', 'Nenhuma solicitação pendente no momento.') }}</strong>
+          <p>{{ t('admin.no_pending_desc', 'Quando os clientes do plano Light solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.') }}</p>
+        </div>
+      </div>
+    </section>
+
     <!-- Estado Vazio para Novos Usuários Sem Produtos Raspados -->
     <div v-else-if="productsRaw.length === 0" class="empty-account-container animate-fade-in">
       <div class="empty-account-card glass-panel">
@@ -319,11 +373,85 @@ const { t, locale } = useAppI18n()
 
 const isKeywordsModalOpen = ref(false)
 const isRequestTermModalOpen = ref(false)
+const adminPendingRequests = ref([])
+
+const isAdmin = computed(() => {
+  if (!authUser.value) return false
+  const appRole = String(authUser.value.app_metadata?.role || '').toLowerCase()
+  const userRole = String(authUser.value.user_metadata?.role || '').toLowerCase()
+  const directRole = String(authUser.value.role || '').toLowerCase()
+  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin') return true
+  if (authUser.value.email === 'adm@gmail.com') return true
+  return false
+})
+
+async function approveAdminRequest(req) {
+  try {
+    const targetId = req.target_user_id || authUser.value?.id
+    const { data: cfg } = await supabase
+      .from('configuracoes_scraper')
+      .select('termos_busca, solicitacoes_termos')
+      .eq('user_id', targetId)
+      .limit(1)
+      .maybeSingle()
+
+    const currentTerms = Array.isArray(cfg?.termos_busca) ? [...cfg.termos_busca] : []
+    let currentReqs = Array.isArray(cfg?.solicitacoes_termos) ? [...cfg.solicitacoes_termos] : []
+
+    if (!currentTerms.includes(req.termo)) {
+      currentTerms.push(req.termo)
+    }
+    currentReqs = currentReqs.filter(r => r.id !== req.id)
+
+    await supabase
+      .from('configuracoes_scraper')
+      .upsert({
+        user_id: targetId,
+        termos_busca: currentTerms,
+        solicitacoes_termos: currentReqs,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
+
+    adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
+    toast.success(`Termo "${req.termo}" autorizado e adicionado à lista de busca do robô!`, 'Termo Autorizado')
+  } catch (err) {
+    toast.error('Erro ao autorizar solicitação: ' + err.message)
+  }
+}
+
+async function rejectAdminRequest(req) {
+  try {
+    const targetId = req.target_user_id || authUser.value?.id
+    const { data: cfg } = await supabase
+      .from('configuracoes_scraper')
+      .select('solicitacoes_termos')
+      .eq('user_id', targetId)
+      .limit(1)
+      .maybeSingle()
+
+    let currentReqs = Array.isArray(cfg?.solicitacoes_termos) ? [...cfg.solicitacoes_termos] : []
+    currentReqs = currentReqs.filter(r => r.id !== req.id)
+
+    await supabase
+      .from('configuracoes_scraper')
+      .upsert({
+        user_id: targetId,
+        solicitacoes_termos: currentReqs,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
+
+    adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
+    toast.info(`Solicitação do termo "${req.termo}" recusada.`)
+  } catch (err) {
+    toast.error('Erro ao recusar solicitação: ' + err.message)
+  }
+}
 
 function onKeywordsSaved(payload) {
   if (payload?.blacklist) {
     blacklist.value = payload.blacklist
   }
+  loadDashboardData()
 }
 
 function handleClientToast(payload) {
@@ -543,7 +671,7 @@ async function loadDashboardData() {
       console.warn("Nao foi possivel carregar configuracoes do Supabase:", e)
     }
 
-    // 3. Carrega produtos exclusivos do usuário
+    // 3. Carrega produtos
     let prodQuery = supabase
       .from('produtos')
       .select(`
@@ -551,7 +679,8 @@ async function loadDashboardData() {
         historico_coletas ( preco, vendas_totais, data_coleta )
       `)
 
-    if (authUser.value) {
+    // Se NÃO for admin, filtra pelo usuário específico
+    if (authUser.value && !isAdmin.value) {
       prodQuery = prodQuery.eq('user_id', authUser.value.id)
     }
       
@@ -574,6 +703,29 @@ async function loadDashboardData() {
           historico_coletas: sortedHistory
         }
       })
+    }
+
+    // 4. Se for Admin, carrega todas as solicitações pendentes de todos os clientes
+    if (isAdmin.value) {
+      try {
+        const { data: allCfgs } = await supabase
+          .from('configuracoes_scraper')
+          .select('user_id, termos_busca, solicitacoes_termos')
+
+        if (allCfgs) {
+          const pending = []
+          for (const cfg of allCfgs) {
+            if (Array.isArray(cfg.solicitacoes_termos)) {
+              for (const req of cfg.solicitacoes_termos) {
+                pending.push({ ...req, target_user_id: cfg.user_id })
+              }
+            }
+          }
+          adminPendingRequests.value = pending
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar solicitacoes para admin:', e)
+      }
     }
   } catch (err) {
     console.error(err)
@@ -1182,5 +1334,208 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   border-radius: 8px;
   font-size: 0.82rem;
   color: #475569;
+}
+
+/* Painel Exclusivo Admin */
+.admin-approval-panel {
+  background: #fdf4ff;
+  border: 1.5px solid #f0abfc;
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 15px -2px rgba(162, 28, 175, 0.08);
+}
+
+.admin-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.3rem;
+}
+
+.admin-crown-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  letter-spacing: 0.04em;
+}
+
+.pending-count-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #fae8ff;
+  color: #a21caf;
+  border: 1px solid #f5d0fe;
+  padding: 0.2rem 0.55rem;
+  border-radius: 99px;
+}
+
+.admin-title-box h3 {
+  margin: 0 0 0.2rem 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #701a75;
+}
+
+.admin-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #86198f;
+}
+
+.btn-manage-terms {
+  background: #a21caf;
+  color: #ffffff;
+  border: none;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(162, 28, 175, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-manage-terms:hover {
+  background: #86198f;
+  transform: translateY(-1px);
+}
+
+.admin-requests-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.admin-request-card {
+  background: #ffffff;
+  border: 1px solid #f5d0fe;
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: 0 2px 6px rgba(162, 28, 175, 0.05);
+}
+
+.req-card-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.req-main-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.req-term-title {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.req-nicho-pill {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.req-reason-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #475569;
+  font-style: italic;
+}
+
+.req-footer-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.req-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-action-approve {
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-action-approve:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.btn-action-reject {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-action-reject:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.admin-empty-requests {
+  background: #ffffff;
+  border: 1px dashed #f0abfc;
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  color: #701a75;
+  font-size: 0.88rem;
+}
+
+.empty-icon {
+  font-size: 1.5rem;
+}
+
+.admin-empty-requests p {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: #86198f;
 }
 </style>
