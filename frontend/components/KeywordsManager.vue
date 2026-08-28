@@ -198,7 +198,7 @@ const supabase = useSupabase()
 
 const MAX_TERMS = 15
 
-const niche = ref('Biscuit')
+const niche = ref('')
 const terms = ref([])
 const blacklist = ref([])
 const newTermInput = ref('')
@@ -214,32 +214,29 @@ async function loadUserKeywords() {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     const userId = currentUser?.id || props.user?.id
 
-    let query = supabase.from('configuracoes_scraper').select('termos_busca, blacklist, nicho_mercado')
-    if (userId) {
-      query = query.eq('user_id', userId)
+    if (!userId) {
+      terms.value = []
+      blacklist.value = []
+      niche.value = ''
+      return
     }
-    const { data, error } = await query.limit(1).maybeSingle()
+
+    const { data, error } = await supabase
+      .from('configuracoes_scraper')
+      .select('termos_busca, blacklist, nicho_mercado')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle()
 
     if (data) {
-      if (Array.isArray(data.termos_busca) && data.termos_busca.length > 0) {
-        terms.value = [...data.termos_busca]
-      } else {
-        terms.value = ['topo de bolo biscuit', 'vela biscuit', 'lembrancinha biscuit', 'chaveiro biscuit', 'cachorro biscuit', 'biscuit pet', 'boneco biscuit', 'pessoa biscuit', 'biscuit']
-      }
-
-      if (Array.isArray(data.blacklist)) {
-        blacklist.value = [...data.blacklist]
-      } else {
-        blacklist.value = ['racao', 'racoes', 'papel', 'molde', 'silicone']
-      }
-
-      if (data.nicho_mercado) {
-        niche.value = data.nicho_mercado
-      }
+      terms.value = Array.isArray(data.termos_busca) ? [...data.termos_busca] : []
+      blacklist.value = Array.isArray(data.blacklist) ? [...data.blacklist] : []
+      niche.value = data.nicho_mercado || ''
     } else {
-      // Padrões
-      terms.value = ['topo de bolo biscuit', 'vela biscuit', 'lembrancinha biscuit', 'chaveiro biscuit', 'cachorro biscuit', 'biscuit pet', 'boneco biscuit', 'pessoa biscuit', 'biscuit']
-      blacklist.value = ['racao', 'racoes', 'papel', 'molde', 'silicone']
+      // Usuário novo: inicia completamente limpo
+      terms.value = []
+      blacklist.value = []
+      niche.value = ''
     }
   } catch (e) {
     console.warn('Erro ao carregar termos do usuário:', e)
