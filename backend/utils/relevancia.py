@@ -76,31 +76,11 @@ def verificar_relevancia(titulo, termo_busca):
             if not has_match:
                 return False
                 
-    # 6. Regra de Associação com o Termo de Busca
+    # 6. Regra de Associação com o Termo de Busca (pelo menos 1 palavra chave relevante do termo)
     palavras_busca = [normalizar_texto(w) for w in termo_busca.split() if len(w) > 2]
-    has_search_term_match = False
-    for pb in palavras_busca:
-        # Mantendo retrocompatibilidade com 'biscuit' para o caso de nichos genéricos legados
-        if pb == "biscuit":
-            if "biscui" in titulo_norm:
-                has_search_term_match = True
-                break
-        else:
-            if pb in titulo_norm:
-                has_search_term_match = True
-                break
-                
-    if not has_search_term_match:
-        return False
-        
-    # 7. Salvaguarda para Termos Sem Tema
-    tem_tema = False
-    for tema in config.get_regras_conteudo_busca().keys():
-        if normalizar_texto(tema) in termo_norm:
-            tem_tema = True
-            break
+    if palavras_busca:
+        has_search_term_match = any(pb in titulo_norm for pb in palavras_busca)
+        if not has_search_term_match:
+            return False
             
-    if not tem_tema and "biscui" not in titulo_norm:
-        return False
-        
     return True
