@@ -3,8 +3,8 @@
     <!-- Barra Superior com Alternador de Idioma -->
     <header class="login-header">
       <div class="brand">
-        <span class="logo-icon">✨</span>
-        <span class="logo-text">Scraper SaaS</span>
+        <span class="logo-icon">📈</span>
+        <span class="logo-text">MarketPulse AI</span>
       </div>
       <button @click="toggleLanguage" class="lang-toggle-btn" :title="t('navbar.toggle_tooltip')">
         {{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}

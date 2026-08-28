@@ -55,21 +55,30 @@
                 :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
                 @click="selectedPlatform = 'Todas'"
               >
-                {{ t('filters.both', '🌐 Ambas') }}
+                🌐 {{ t('filters.both', 'Todas') }}
               </button>
               <button 
                 type="button" 
                 :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
                 @click="selectedPlatform = 'meli'"
               >
-                🟡 Meli
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
+                  <circle cx="12" cy="12" r="11" fill="#FFE600"/>
+                  <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Mercado Livre
               </button>
               <button 
                 type="button" 
                 :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
                 @click="selectedPlatform = 'shopee'"
               >
-                🟠 Shopee
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
+                  <rect width="24" height="24" rx="5" fill="#EE4D2D"/>
+                  <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Shopee
               </button>
             </div>
           </div>
@@ -243,19 +252,22 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
-const nomeProjeto = ref('Scraper Pro')
+const nomeProjeto = ref('MarketPulse AI')
 const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard
 const activeViewTab = ref('overview') // 'overview', 'trending', 'pricing'
 const timelineSelectedDate = ref(null)
+const timelineCompareRange = ref(null)
 
 function onTimelineSelectDate(dateStr) {
+  timelineCompareRange.value = null
   timelineSelectedDate.value = dateStr
 }
 
 function onTimelineCompareDates({ dateA, dateB }) {
-  console.log("Comparando datas:", dateA, dateB)
+  timelineSelectedDate.value = null
+  timelineCompareRange.value = { dateA, dateB }
 }
 
 // Configurações e Categorias dinâmicas
@@ -526,37 +538,65 @@ const processedProducts = computed(() => {
   return productsRaw.value
     .map(p => {
       let snapshot = p
-      if (timelineSelectedDate.value && timelineSelectedDate.value !== 'latest') {
+      let hist = null
+      let varInfo = null
+      let salesDiff = null
+
+      if (timelineCompareRange.value) {
+        const { dateA, dateB } = timelineCompareRange.value
+        const entryA = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(dateA))
+        const entryB = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(dateB))
+        
+        const priceB = entryB ? entryB.preco : p.preco
+        const salesB = entryB ? entryB.vendas_totais : p.vendas_totais
+        const priceA = entryA ? entryA.preco : p.preco
+        const salesA = entryA ? entryA.vendas_totais : 0
+
+        snapshot = { ...p, preco: priceB, vendas_totais: salesB }
+        hist = { preco: priceA, vendas_totais: salesA }
+        salesDiff = Math.max(0, salesB - salesA)
+        if (priceA > 0) {
+          const diff = priceB - priceA
+          if (Math.abs(diff) > 0.05) {
+            varInfo = { diff, perc: (diff / priceA) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+          }
+        }
+      } else if (timelineSelectedDate.value && timelineSelectedDate.value !== 'latest') {
         const histEntry = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(timelineSelectedDate.value))
         if (histEntry) {
           snapshot = { ...p, preco: histEntry.preco, vendas_totais: histEntry.vendas_totais }
         } else {
           snapshot = { ...p, _hiddenByTimeline: true }
         }
-      }
-      
-      const pData = snapshot
-      const createdDate = pData.criado_em ? new Date(pData.criado_em) : new Date()
-      const isNew = (pData.historico_coletas && pData.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
-      
-      let hist = null
-      let varInfo = null
-      let salesDiff = null
-      
-      hist = getHistoricalData(pData, selectedTimeframe.value)
-      if (hist) {
-        salesDiff = Math.max(0, pData.vendas_totais - hist.vendas_totais)
-        if (hist.preco > 0) {
-          const diff = pData.preco - hist.preco
-          if (Math.abs(diff) > 0.05) {
-            varInfo = { diff, perc: (diff / hist.preco) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+        hist = getHistoricalData(snapshot, selectedTimeframe.value)
+        if (hist) {
+          salesDiff = Math.max(0, snapshot.vendas_totais - hist.vendas_totais)
+          if (hist.preco > 0) {
+            const diff = snapshot.preco - hist.preco
+            if (Math.abs(diff) > 0.05) {
+              varInfo = { diff, perc: (diff / hist.preco) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+            }
+          }
+        }
+      } else {
+        hist = getHistoricalData(p, selectedTimeframe.value)
+        if (hist) {
+          salesDiff = Math.max(0, p.vendas_totais - hist.vendas_totais)
+          if (hist.preco > 0) {
+            const diff = p.preco - hist.preco
+            if (Math.abs(diff) > 0.05) {
+              varInfo = { diff, perc: (diff / hist.preco) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+            }
           }
         }
       }
 
+      const createdDate = snapshot.criado_em ? new Date(snapshot.criado_em) : new Date()
+      const isNew = (snapshot.historico_coletas && snapshot.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
+
       return {
-        ...pData,
-        categoria: getCategoryByRules(pData.titulo),
+        ...snapshot,
+        categoria: getCategoryByRules(snapshot.titulo),
         isNew,
         hist,
         varInfo,

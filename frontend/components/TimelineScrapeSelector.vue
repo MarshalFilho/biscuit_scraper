@@ -3,13 +3,13 @@
     <div class="timeline-header">
       <div class="header-info">
         <div class="badge-row">
-          <span class="timeline-badge">📅 {{ t('timeline.badge', 'LINHA DO TEMPO DE COLETAS') }}</span>
+          <span class="timeline-badge">📅 {{ t('timeline.badge', 'Linha do Tempo de Coletas') }}</span>
         </div>
-        <h3>{{ t('timeline.title', 'Explore a Evolução Histórica do Mercado') }}</h3>
-        <p class="timeline-sub">{{ t('timeline.subtitle', 'Selecione uma data específica para ver o Retrato do Mercado daquele dia ou ative a comparação entre datas.') }}</p>
+        <h3>{{ t('timeline.title', 'Evolução Histórica e Comparação de Datas') }}</h3>
+        <p class="timeline-sub">{{ t('timeline.subtitle', 'Selecione uma data para ver o retrato daquele dia ou compare duas datas para ver o crescimento real de vendas e preços.') }}</p>
       </div>
 
-      <!-- Seletor de Modo de Visualização -->
+      <!-- Alternador de Modo -->
       <div class="mode-tabs">
         <button 
           :class="['mode-tab-btn', { active: !compareMode }]" 
@@ -26,10 +26,10 @@
       </div>
     </div>
 
-    <!-- MODO 1: Retrato do Dia (Pílulas de Datas) -->
+    <!-- MODO 1: Retrato do Dia (1 Data) -->
     <div v-if="!compareMode" class="timeline-content">
       <div class="pills-label-row">
-        <small class="text-muted">👉 Clique em uma data para carregar os dados daquele dia:</small>
+        <small class="text-muted">👉 Clique em uma data para ver o estado do mercado naquele dia:</small>
       </div>
       <div class="timeline-scroll-wrapper">
         <div v-if="isLoading" class="timeline-pills">
@@ -44,7 +44,7 @@
           >
             <span class="pill-dot"></span>
             <span class="pill-date">{{ d.label }}</span>
-            <span class="pill-count">{{ d.count }} {{ t('timeline.records', 'itens') }}</span>
+            <span class="pill-count">{{ d.count }} itens</span>
           </button>
         </div>
         <div v-else class="text-muted text-sm py-2">
@@ -53,26 +53,28 @@
       </div>
     </div>
 
-    <!-- MODO 2: Comparação de 2 Datas (A vs B) -->
+    <!-- MODO 2: Comparação Real de 2 Datas (A vs B) -->
     <div v-else class="compare-mode-container">
       <div class="compare-selectors-grid">
+        <!-- Ponto A: Data Base (Mais antiga) -->
         <div class="compare-box box-a">
-          <label>📍 {{ t('timeline.point_a', 'Data Base (Ponto A):') }}</label>
-          <select v-model="compareDateA" @change="emitCompare" class="glass-select">
-            <option v-for="d in availableDates" :key="'a-'+d.dateStr" :value="d.dateStr">
+          <label>📍 Data Base (Ponto A - Passado):</label>
+          <select v-model="compareDateA" @change="onDateAChange" class="glass-select">
+            <option v-for="d in datesForPointA" :key="'a-'+d.dateStr" :value="d.dateStr">
               {{ d.label }} ({{ d.count }} itens)
             </option>
           </select>
         </div>
 
         <div class="compare-divider">
-          <span>VS</span>
+          <span>➔ VS ➔</span>
         </div>
 
+        <!-- Ponto B: Data Atual (Mais recente) -->
         <div class="compare-box box-b">
-          <label>🎯 {{ t('timeline.point_b', 'Data Comparada (Ponto B):') }}</label>
-          <select v-model="compareDateB" @change="emitCompare" class="glass-select">
-            <option v-for="d in availableDates" :key="'b-'+d.dateStr" :value="d.dateStr">
+          <label>🎯 Data de Comparação (Ponto B - Mais Recente):</label>
+          <select v-model="compareDateB" @change="onDateBChange" class="glass-select">
+            <option v-for="d in datesForPointB" :key="'b-'+d.dateStr" :value="d.dateStr">
               {{ d.label }} ({{ d.count }} itens)
             </option>
           </select>
@@ -80,7 +82,7 @@
       </div>
 
       <div v-if="compareDateA && compareDateB" class="compare-status-pill">
-        <span>⚔️ Comparando <strong>{{ formatDateLabel(compareDateA) }}</strong> contra <strong>{{ formatDateLabel(compareDateB) }}</strong></span>
+        <span>⚔️ Analisando crescimento e oscilação de preços entre <strong>{{ formatDateLabel(compareDateA) }}</strong> e <strong>{{ formatDateLabel(compareDateB) }}</strong></span>
       </div>
     </div>
   </div>
@@ -104,6 +106,7 @@ const selectedDate = ref('latest')
 const compareDateA = ref(null)
 const compareDateB = ref(null)
 
+// Extrai todas as datas de coleta únicas disponíveis nos históricos dos produtos
 const availableDates = computed(() => {
   const map = new Map()
 
@@ -121,6 +124,7 @@ const availableDates = computed(() => {
     }
   }
 
+  // Ordenadas da MAIS RECENTE para a MAIS ANTIGA
   const sorted = Array.from(map.values()).sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr))
 
   return sorted.map((d, index) => {
@@ -130,14 +134,27 @@ const availableDates = computed(() => {
     return {
       dateStr: d.dateStr,
       count: d.count,
-      label: isToday ? `${formatted} (${t('timeline.latest', 'Última')})` : formatted
+      label: isToday ? `${formatted} (Última)` : formatted
     }
   })
 })
 
+// Ponto A: datas permitidas (qualquer data exceto a mais recente se houver mais de uma)
+const datesForPointA = computed(() => {
+  return availableDates.value
+})
+
+// Ponto B: datas permitidas (datas mais recentes que o Ponto A)
+const datesForPointB = computed(() => {
+  if (!compareDateA.value) return availableDates.value
+  const dateATime = new Date(compareDateA.value).getTime()
+  const valid = availableDates.value.filter(d => new Date(d.dateStr).getTime() > dateATime)
+  return valid.length > 0 ? valid : availableDates.value
+})
+
 function setSingleMode() {
   compareMode.value = false
-  if (availableDates.value.length > 0 && selectedDate.value === 'latest') {
+  if (availableDates.value.length > 0) {
     selectedDate.value = availableDates.value[0].dateStr
   }
   emit('select-date', selectedDate.value)
@@ -146,13 +163,34 @@ function setSingleMode() {
 function setCompareMode() {
   compareMode.value = true
   if (availableDates.value.length >= 2) {
-    compareDateA.value = availableDates.value[1].dateStr
+    // Ponto A = mais antiga, Ponto B = mais recente
     compareDateB.value = availableDates.value[0].dateStr
-    emitCompare()
+    compareDateA.value = availableDates.value[availableDates.value.length - 1].dateStr
   } else if (availableDates.value.length === 1) {
     compareDateA.value = availableDates.value[0].dateStr
     compareDateB.value = availableDates.value[0].dateStr
   }
+  emitCompare()
+}
+
+function onDateAChange() {
+  if (new Date(compareDateA.value) >= new Date(compareDateB.value)) {
+    // Ajusta B para a data mais recente disponível
+    if (availableDates.value.length > 0) {
+      compareDateB.value = availableDates.value[0].dateStr
+    }
+  }
+  emitCompare()
+}
+
+function onDateBChange() {
+  if (new Date(compareDateA.value) >= new Date(compareDateB.value)) {
+    // Ajusta A para a data mais antiga disponível
+    if (availableDates.value.length > 1) {
+      compareDateA.value = availableDates.value[availableDates.value.length - 1].dateStr
+    }
+  }
+  emitCompare()
 }
 
 function selectSingleDate(dateStr) {
@@ -339,7 +377,7 @@ onMounted(() => {
 .compare-selectors-grid {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.2rem;
   flex-wrap: wrap;
 }
 
@@ -374,7 +412,8 @@ onMounted(() => {
 
 .compare-divider {
   font-weight: 900;
-  color: #94a3b8;
+  font-size: 0.82rem;
+  color: #64748b;
   padding-top: 1rem;
 }
 

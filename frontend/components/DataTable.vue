@@ -3,31 +3,31 @@
     <!-- Cabeçalho Principal da Tabela -->
     <div class="table-header">
       <div class="table-title">
-        <h3>📦 {{ t('table.title', 'Tabela de Produtos Monitorados') }}</h3>
-        <p class="subtitle">{{ t('table.subtitle', 'Filtre e ordene os dados diretamente nesta tabela sem precisar rolar a página.') }}</p>
+        <h3>📦 {{ t('table.title', 'Catálogo Completo de Anúncios') }}</h3>
+        <p class="subtitle">{{ t('table.subtitle', 'Filtre, pesquise e navegue pelas páginas diretamente por esta tabela.') }}</p>
       </div>
       <div class="table-actions">
-        <button @click="exportToCSV" class="btn outline-btn" title="Export CSV">
+        <button @click="exportToCSV" class="btn outline-btn" title="Exportar CSV">
           ⬇️ {{ t('table.export_csv', 'Exportar CSV') }}
         </button>
       </div>
     </div>
 
-    <!-- Barra de Filtros Integrada da Tabela (In-Table Toolbar) -->
+    <!-- Barra Integrada de Filtros e Busca da Tabela -->
     <div class="in-table-toolbar">
       <div class="search-box">
         <span class="search-icon">🔍</span>
         <input 
           type="text" 
           v-model="search" 
-          :placeholder="t('table.search_placeholder', 'Buscar por título do anúncio...')" 
+          :placeholder="t('table.search_placeholder', 'Buscar por título ou loja...')" 
           class="table-search-input" 
         />
         <button v-if="search" @click="search = ''" class="clear-search-btn" title="Limpar busca">✕</button>
       </div>
 
       <div class="quick-filters-row">
-        <!-- Plataforma Pills -->
+        <!-- Pílulas de Plataforma com Ícones Oficiais -->
         <div class="platform-pills">
           <button 
             type="button"
@@ -41,14 +41,23 @@
             :class="['plat-pill meli-pill', { active: localPlatform === 'meli' }]" 
             @click="localPlatform = 'meli'"
           >
-            🟡 Mercado Livre
+            <svg class="plat-svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="11" fill="#FFE600"/>
+              <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Mercado Livre
           </button>
           <button 
             type="button"
             :class="['plat-pill shopee-pill', { active: localPlatform === 'shopee' }]" 
             @click="localPlatform = 'shopee'"
           >
-            🟠 Shopee
+            <svg class="plat-svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <rect width="24" height="24" rx="6" fill="#EE4D2D"/>
+              <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            Shopee
           </button>
         </div>
 
@@ -62,11 +71,12 @@
 
         <!-- Contador de Registros -->
         <div class="table-counter-badge">
-          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('timeline.records', 'produtos') }}</span>
+          <span>📊 <strong>{{ filteredData.length }}</strong> produtos</span>
         </div>
       </div>
     </div>
     
+    <!-- Tabela Responsiva -->
     <div class="table-scroll">
       <table class="data-table">
         <thead>
@@ -101,16 +111,17 @@
           </tr>
         </tbody>
         <tbody v-else>
-          <tr v-for="item in visibleData" :key="item.id">
+          <tr v-for="item in paginatedData" :key="item.id">
             <td>
               <span :class="['badge', item.plataforma]">
-                <svg v-if="item.plataforma === 'meli'" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="badge-icon">
-                  <rect width="24" height="24" rx="12" fill="#FFE600"/>
-                  <path d="M7 11.5L10 14.5L17 7.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg v-if="item.plataforma === 'meli'" width="14" height="14" viewBox="0 0 24 24" fill="none" class="badge-icon">
+                  <circle cx="12" cy="12" r="11" fill="#FFE600"/>
+                  <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="badge-icon">
-                  <path d="M6 8V6C6 4.34315 7.34315 3 9 3H15C16.6569 3 18 4.34315 18 6V8M3 8H21L19.5 21H4.5L3 8Z" stroke="#EE4D2D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#EE4D2D" stroke-width="1.8" stroke-linecap="round"/>
+                <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" class="badge-icon">
+                  <rect width="24" height="24" rx="5" fill="#EE4D2D"/>
+                  <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
                 </svg>
                 {{ item.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}
               </span>
@@ -167,20 +178,65 @@
           <tr v-if="filteredData.length === 0 && !isLoading">
             <td colspan="8" class="empty-state">{{ t('table.empty', 'Nenhum produto encontrado com os filtros aplicados.') }}</td>
           </tr>
-          <tr v-if="visibleLimit < filteredData.length">
-            <td colspan="8" class="loading-more-row">
-              <div ref="loadMoreTrigger" class="load-more-trigger">
-                {{ t('table.loading_more', 'Carregando mais produtos...') }}
-              </div>
-            </td>
-          </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Paginação por Infinite Scrolling / Botão Carregar Mais -->
-    <div v-if="!isLoading && visibleLimit < filteredData.length" class="text-center mt-3 mb-2">
-      <button @click="loadMore" class="btn outline-btn">{{ t('table.btn_load_more', 'Carregar mais produtos ↓') }}</button>
+    <!-- Paginação Completa e Elegante -->
+    <div v-if="!isLoading && filteredData.length > 0" class="pagination-footer">
+      <div class="pagination-info">
+        <span>Mostrando <strong>{{ (currentPage - 1) * itemsPerPage + 1 }}</strong> a <strong>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</strong> de <strong>{{ filteredData.length }}</strong> produtos</span>
+      </div>
+
+      <div class="pagination-controls">
+        <div class="items-per-page">
+          <label>Por página:</label>
+          <select v-model="itemsPerPage" class="per-page-select">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+        </div>
+
+        <div class="page-buttons">
+          <button 
+            :disabled="currentPage === 1" 
+            @click="currentPage = 1" 
+            class="page-btn" 
+            title="Primeira Página"
+          >
+            «
+          </button>
+          <button 
+            :disabled="currentPage === 1" 
+            @click="currentPage--" 
+            class="page-btn" 
+            title="Página Anterior"
+          >
+            ‹ Anterior
+          </button>
+
+          <span class="page-current">Pág. {{ currentPage }} de {{ totalPages }}</span>
+
+          <button 
+            :disabled="currentPage === totalPages" 
+            @click="currentPage++" 
+            class="page-btn" 
+            title="Próxima Página"
+          >
+            Próxima ›
+          </button>
+          <button 
+            :disabled="currentPage === totalPages" 
+            @click="currentPage = totalPages" 
+            class="page-btn" 
+            title="Última Página"
+          >
+            »
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal Analítico -->
@@ -189,7 +245,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAppI18n } from '~/composables/useAppI18n'
 import ProductModal from './ProductModal.vue'
 
@@ -205,30 +261,11 @@ const emit = defineEmits(['delete-product'])
 const search = ref('')
 const localPlatform = ref('Todas')
 const localCategory = ref('Todas')
-const visibleLimit = ref(50)
 const selectedProduct = ref(null)
-const loadMoreTrigger = ref(null)
 
-let observer = null
-
-onMounted(() => {
-  observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && visibleLimit.value < filteredData.value.length) {
-      loadMore()
-    }
-  }, { rootMargin: '100px' })
-})
-
-watch(loadMoreTrigger, (el) => {
-  if (observer) {
-    observer.disconnect()
-    if (el) observer.observe(el)
-  }
-})
-
-onUnmounted(() => {
-  if (observer) observer.disconnect()
-})
+// Paginação
+const currentPage = ref(1)
+const itemsPerPage = ref(25)
 
 const tableCategories = computed(() => {
   const cats = new Set()
@@ -251,9 +288,9 @@ function sortBy(key) {
   }
 }
 
-// Zera o limite visível quando busca ou ordena
-watch([search, localPlatform, localCategory, sortKey, sortOrder], () => {
-  visibleLimit.value = 50
+// Zera a página quando busca ou filtra
+watch([search, localPlatform, localCategory, sortKey, sortOrder, itemsPerPage], () => {
+  currentPage.value = 1
 })
 
 function openModal(item) {
@@ -285,7 +322,10 @@ const filteredData = computed(() => {
 
   if (search.value) {
     const lowerSearch = search.value.toLowerCase().trim()
-    result = result.filter(item => item.titulo.toLowerCase().includes(lowerSearch) || (item.vendedor && item.vendedor.toLowerCase().includes(lowerSearch)))
+    result = result.filter(item => 
+      (item.titulo && item.titulo.toLowerCase().includes(lowerSearch)) || 
+      (item.vendedor && item.vendedor.toLowerCase().includes(lowerSearch))
+    )
   }
   
   return [...result].sort((a, b) => {
@@ -312,13 +352,14 @@ const filteredData = computed(() => {
   })
 })
 
-const visibleData = computed(() => {
-  return filteredData.value.slice(0, visibleLimit.value)
+const totalPages = computed(() => {
+  return Math.ceil(filteredData.value.length / itemsPerPage.value) || 1
 })
 
-function loadMore() {
-  visibleLimit.value += 50
-}
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  return filteredData.value.slice(start, start + itemsPerPage.value)
+})
 
 function exportToCSV() {
   if (filteredData.value.length === 0) return
@@ -408,7 +449,7 @@ function exportToCSV() {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 0.4rem 0.8rem;
-  min-width: 260px;
+  min-width: 280px;
   flex: 1;
 }
 
@@ -449,9 +490,9 @@ function exportToCSV() {
 .platform-pills {
   display: flex;
   background: #e2e8f0;
-  padding: 0.2rem;
+  padding: 0.25rem;
   border-radius: 8px;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .plat-pill {
@@ -464,6 +505,14 @@ function exportToCSV() {
   color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.plat-svg {
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .plat-pill:hover {
@@ -477,11 +526,13 @@ function exportToCSV() {
 }
 
 .plat-pill.meli-pill.active {
-  color: #b45309;
+  color: #854d0e;
+  border: 1px solid #fde047;
 }
 
 .plat-pill.shopee-pill.active {
-  color: #c2410c;
+  color: #9a3412;
+  border: 1px solid #fdba74;
 }
 
 .table-select {
@@ -568,8 +619,8 @@ function exportToCSV() {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.5rem;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -650,5 +701,82 @@ function exportToCSV() {
 .icon-btn:hover {
   background: #e2e8f0;
   transform: translateY(-1px);
+}
+
+.pagination-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.2rem;
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.per-page-select {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.page-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.page-btn {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-current {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding: 0 0.4rem;
 }
 </style>
