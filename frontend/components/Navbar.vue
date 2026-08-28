@@ -26,20 +26,20 @@
           <span class="schedule-text">{{ t('navbar.daily_schedule', '⏰ Coleta Diária às 22h00') }}</span>
         </div>
 
-        <!-- 1. Botão para ADMIN e PRO: Gerenciar Termos e Palavras-Chave -->
+        <!-- 1. Botão para PRO: Gerenciar seus Termos e Palavras-Chave -->
         <button 
-          v-if="canManageDirectly"
+          v-if="isPro"
           type="button"
           class="btn-keywords"
           @click="$emit('open-keywords')"
-          :title="isAdmin ? t('keywords.admin_btn_title', 'Painel Admin: Configurar Palavras-chave, Blacklist e IA') : t('keywords.pro_btn_title', 'Painel Pro: Gerenciar seus termos e IA')"
+          :title="t('keywords.pro_btn_title', 'Painel Pro: Gerenciar seus termos e IA')"
         >
-          🎯 {{ isAdmin ? t('keywords.badge', 'Termos & IA') : t('keywords.badge_pro', 'Meus Termos & IA') }}
+          🎯 {{ t('keywords.badge_pro', 'Meus Termos & IA') }}
         </button>
 
-        <!-- 2. Botão para LIGHT: Solicitar Novo Termo -->
+        <!-- 2. Botão para BASIC: Solicitar Novo Termo -->
         <button 
-          v-else
+          v-else-if="isBasic"
           type="button"
           class="btn-request-term"
           @click="$emit('open-request-term')"
@@ -93,18 +93,20 @@ const router = useRouter()
 const supabase = useSupabase()
 
 const currentRole = computed(() => {
-  if (!props.user) return 'pro'
+  if (!props.user) return 'basic'
   const appRole = String(props.user.app_metadata?.role || '').toLowerCase()
   const userRole = String(props.user.user_metadata?.role || '').toLowerCase()
   const directRole = String(props.user.role || '').toLowerCase()
+  const email = String(props.user.email || '').toLowerCase()
 
-  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin') return 'admin'
-  if (appRole === 'basic' || userRole === 'basic' || directRole === 'basic' || appRole === 'light' || userRole === 'light' || appRole === 'cliente') return 'basic'
-  return 'pro'
+  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin' || email === 'adm@gmail.com') return 'admin'
+  if (appRole === 'pro' || userRole === 'pro' || directRole === 'pro' || email === 'marshalfilho@gmail.com' || email === 'isadora@gmail.com') return 'pro'
+  return 'basic'
 })
 
 const isAdmin = computed(() => currentRole.value === 'admin')
-const canManageDirectly = computed(() => currentRole.value === 'admin' || currentRole.value === 'pro')
+const isPro = computed(() => currentRole.value === 'pro')
+const isBasic = computed(() => currentRole.value === 'basic')
 
 async function logout() {
   await supabase.auth.signOut()

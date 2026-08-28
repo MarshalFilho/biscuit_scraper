@@ -97,7 +97,7 @@
       <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
     </div>
 
-    <!-- PAINEL EXCLUSIVO ADMIN: Central de Autorizações de Clientes Light -->
+    <!-- PAINEL EXCLUSIVO ADMIN: Central de Autorizações de Clientes Básicos -->
     <section v-if="isAdmin" class="admin-approval-panel glass-panel animate-fade-in">
       <div class="admin-header-row">
         <div class="admin-title-box">
@@ -109,11 +109,6 @@
           </div>
           <h3>{{ t('admin.approval_title', 'Central de Autorizações & Solicitações de Clientes Básicos') }}</h3>
           <p class="admin-subtitle">{{ t('admin.approval_subtitle', 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.') }}</p>
-        </div>
-        <div class="admin-header-actions">
-          <button type="button" class="btn-manage-terms" @click="isKeywordsModalOpen = true">
-            ⚙️ {{ t('keywords.badge', 'Configurar Termos & IA') }}
-          </button>
         </div>
       </div>
 
@@ -154,8 +149,8 @@
       </div>
     </section>
 
-    <!-- Estado Vazio para Novos Usuários Sem Produtos Raspados -->
-    <div v-else-if="productsRaw.length === 0" class="empty-account-container animate-fade-in">
+    <!-- Estado Vazio para Novos Usuários Sem Produtos Raspados (Apenas Clientes Pro e Básico) -->
+    <div v-else-if="!isAdmin && productsRaw.length === 0" class="empty-account-container animate-fade-in">
       <div class="empty-account-card glass-panel">
         <div class="empty-icon-circle">📊</div>
         <h2>{{ t('onboarding.welcome_title', 'Sua conta está pronta para o monitoramento!') }}</h2>
@@ -438,8 +433,32 @@ import RequestTermModal from '~/components/RequestTermModal.vue'
 
 const supabase = useSupabase()
 const toast = useToast()
-
 const { t, locale } = useAppI18n()
+
+// Estados Básicos & Autenticação
+const authUser = ref(null)
+const productsRaw = ref([])
+const loading = ref(true)
+const error = ref(null)
+const nomeProjeto = ref('SmartDashboard AI')
+const statusAlerta = ref(null)
+
+const currentRole = computed(() => {
+  if (!authUser.value) return 'basic'
+  const appRole = String(authUser.value.app_metadata?.role || '').toLowerCase()
+  const userRole = String(authUser.value.user_metadata?.role || '').toLowerCase()
+  const directRole = String(authUser.value.role || '').toLowerCase()
+  const email = String(authUser.value.email || '').toLowerCase()
+
+  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin' || email === 'adm@gmail.com') return 'admin'
+  if (appRole === 'pro' || userRole === 'pro' || directRole === 'pro' || email === 'marshalfilho@gmail.com' || email === 'isadora@gmail.com') return 'pro'
+  return 'basic'
+})
+
+const isAdmin = computed(() => currentRole.value === 'admin')
+const isPro = computed(() => currentRole.value === 'pro')
+const isBasic = computed(() => currentRole.value === 'basic')
+const canManageDirectly = computed(() => currentRole.value === 'pro')
 
 const isKeywordsModalOpen = ref(false)
 const isRequestTermModalOpen = ref(false)
@@ -572,13 +591,6 @@ function handleClientToast(payload) {
     toast.error(payload.message, payload.title)
   }
 }
-
-const productsRaw = ref([])
-const loading = ref(true)
-const error = ref(null)
-const authUser = ref(null)
-const nomeProjeto = ref('SmartDashboard AI')
-const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard
 const activeViewTab = ref('overview') // 'overview', 'trending', 'pricing'
