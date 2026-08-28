@@ -1,31 +1,34 @@
-# 🚀 E-Commerce Market Intelligence & AI Analytics SaaS
+# 📈 MarketPulse AI — E-Commerce Market Intelligence SaaS
 
-> Plataforma SaaS de **Inteligência Competitiva e Análise de Mercado para E-Commerce** (Mercado Livre e Shopee), com scraping automatizado na nuvem (GitHub Actions), banco de dados **Multi-Tenant (Supabase)** com Row Level Security (RLS) e diagnósticos preditivos via **Google Gemini AI**.
+> Plataforma SaaS de **Inteligência Competitiva e Análise de Mercado para E-Commerce** (Mercado Livre e Shopee), com Worker de Extração Local (IP Residencial livre de WAF), banco de dados **Multi-Tenant (Supabase)** com Row Level Security (RLS) e diagnósticos preditivos via **Google Gemini AI**.
 
 ---
 
-## 🏛️ Arquitetura do Sistema (100% Custo Zero / Serverless)
+## 🏛️ Arquitetura do Sistema
 
 ```mermaid
 graph TD
-    subgraph Nuvem Automática [Automação Diária - GitHub Actions]
-        Cron[⏰ Cron Diário 06:00 BRT] --> Scraper[🤖 Python 3.12 + Playwright Stealth]
-        Scraper --> Meli[🛒 Mercado Livre]
-        Scraper --> Shopee[🧡 Shopee]
-        Scraper --> Gemini[🧠 Google Gemini 1.5 Flash]
+    subgraph Frontend SaaS [Vercel / Nuxt 3]
+        NuxtApp[✨ Dashboard Nuxt 3 / Vue 3]
+        NuxtApp --> Visual[📊 ApexCharts + Paginação + PT/EN]
+        BtnDisparo[⚡ Botão: Disparar Raspagem] -->|disparo_pendente = true| DB
     end
 
     subgraph Banco de Dados [Supabase PostgreSQL]
-        Scraper -->|Service Role Key| DB[(PostgreSQL + RLS)]
+        DB[(PostgreSQL + RLS)]
         DB --> Auth[🔐 Supabase Auth JWT]
         DB --> Produtos[📦 Tabela Produtos 1:N Histórico]
         DB --> Configs[⚙️ Multi-Tenant Configs & Alertas]
     end
 
-    subgraph Frontend SaaS [Vercel]
-        Auth --> NuxtApp[✨ Dashboard Nuxt 3 / Vue 3]
-        DB -->|Anon Key + RLS auth.uid| NuxtApp
-        NuxtApp --> Visual[📊 ApexCharts + 4 Macro-Seções + PT/EN]
+    subgraph Worker Local [Worker Daemon - IP Residencial]
+        Worker[🎧 iniciar_worker.bat / backend/main.py --daemon]
+        Worker -->|1. Coleta Diária| Cron[⏰ Todos os dias às 22:00 BRT]
+        Worker -->|2. Disparo Sob Demanda| Polling[⚡ Escuta Supabase em Tempo Real]
+        Worker --> Meli[🛒 Mercado Livre]
+        Worker --> Shopee[🧡 Shopee]
+        Worker --> Gemini[🧠 Google Gemini AI]
+        Worker -->|Sincronização| DB
     end
 ```
 
@@ -37,128 +40,105 @@ graph TD
    - Cada cliente/inquilino (*tenant*) possui seu próprio isolamento de dados no Supabase via Row Level Security (`auth.uid() = user_id`).
    - Um cliente monitorando *Informática/Games* nunca acessa os produtos de outro cliente monitorando *Artesanato/Biscuit*.
 
-2. **🤖 Scraping Autônomo na Nuvem (GitHub Actions):**
-   - Agendamento diário automático às `06:00 BRT` sem exigir que o computador do cliente fique ligado.
-   - Restauração de cookies de sessão autenticados (`AUTH_MELI_JSON` e `AUTH_SHOPEE_JSON`) para contornar proteções anti-bot/WAF.
-   - **Sistema de Alerta Anti-Bot:** Se encontrar Captcha, tira screenshot, salva nos artefatos de debug e notifica o Dashboard do usuário sem interromper a execução.
+2. **🎧 Worker Daemon Local com IP Residencial (Zero Bloqueios WAF):**
+   - **Agendamento Diário Automático:** Executa todos os dias pontualmente às **22:00 (horário de Brasília)**.
+   - **Disparo Instantâneo Sob Demanda:** Ao clicar no botão de raspagem no Dashboard da Vercel, o worker detecta o comando em segundos e executa imediatamente.
+   - **Sem bloqueios de IP:** Utiliza o IP residencial local (livre das listas de bloqueio de datacenter do Cloudflare/Akamai).
 
-3. **🧠 Diagnóstico Executivo com IA (Google Gemini 1.5 Flash):**
+3. **🧠 Diagnóstico Executivo com IA (Google Gemini 2.5 Flash):**
    - Categorização automática em linguagem natural.
    - Geração de relatório executivo bilíngue (PT 🇧🇷 / EN 🇺🇸) cobrindo:
+     - 🎯 *Recomendações Estratégicas & Oportunidades de Nicho*
      - 🏆 *Top Vendedores & Lojas Líderes*
-     - 🔥 *Produtos Virais & Aceleração de Vendas*
-     - 🏷️ *Faixas de Preço e Sweet Spots de Lucro*
-     - ⚔️ *Batalha de Plataformas (Mercado Livre vs Shopee)*
+     - 🏷️ *Estratégias de SEO, Palavras-chave e Títulos de Alta Conversão*
+     - ⚔️ *Batalha de Marketplaces (Mercado Livre vs Shopee) e Faixas de Preço*
 
 4. **📊 Dashboard Analítico Ultra-Fluido (Nuxt 3 + Vue 3):**
-   - **Hierarquia Visual em 4 Macro-Seções Temáticas:**
-     - 🟣 *Seção 1: Inteligência Executiva de IA*
-     - 🟢 *Seção 2: Desempenho Financeiro & KPIs com descrições didáticas*
-     - 🔵 *Seção 3: Mapeamento Visual de Concorrência (ApexCharts)*
-     - 🔍 *Seção 4: Catálogo Operacional de Anúncios com busca e exportação CSV*
-   - **Linha do Tempo (Time Machine):** Navegação por qualquer data passada ou comparação lado a lado (Data A vs Data B).
+   - **Hierarquia Visual em 4 Macro-Módulos Temáticos**
+   - **Catálogo com Paginação Completa:** 10, 25, 50 ou 100 itens por página com busca instantânea.
+   - **Linha do Tempo & Comparação Real de Datas:** Análise de crescimento de vendas e oscilação de preço entre qualquer Data A e Data B.
    - **Internacionalização Dinâmica:** Alternância instantânea de idioma entre Português 🇧🇷 e Inglês 🇺🇸.
 
 ---
 
-## 📂 Estrutura de Diretórios Organizada
+## 📂 Estrutura de Diretórios do Monorepo
 
 ```text
 biscuit_scraper/
 │
-├── .github/
-│   └── workflows/
-│       ├── daily_scrape.yml         # ⏰ Workflow Diário Cron & Manual no GitHub Actions
-│       └── deploy_frontend.yml      # 🚀 CI/CD de deploy do Frontend
+├── iniciar_worker.bat               # 🚀 Atalho Windows: Inicia o Worker Daemon com 2 cliques
+│
+├── backend/                         # 🐍 Núcleo de Extração, IA e Sincronização (Python 3.12)
+│   ├── main.py                      # Ponto de entrada CLI e Daemon
+│   ├── config.py                    # Gerenciador de configurações e diretórios
+│   ├── ai/
+│   │   └── categorizer.py           # Categorizador automático NLP
+│   ├── scrapers/
+│   │   ├── meli_scraper.py          # Pipeline Mercado Livre (Bronze ➔ Prata ➔ Ouro)
+│   │   ├── shopee_scraper.py        # Pipeline Shopee (Bronze ➔ Prata ➔ Ouro)
+│   │   └── login_session.py         # Validação de sessão interativa
+│   └── utils/
+│       ├── ai_engine.py             # Integração com Google Gemini AI
+│       ├── bot_detector.py          # Detector resiliente de Anti-Bot / CAPTCHA
+│       └── supabase_client.py       # Cliente Supabase com isolamento multi-tenant
 │
 ├── frontend/                        # 💻 Dashboard SaaS em Nuxt 3 (Vue 3)
 │   ├── assets/css/main.css          # Design System Glassmorphism & Tokens
 │   ├── components/                  # Componentes Vue 3 Modulares
 │   │   ├── AiExecutiveReport.client.vue  # Relatório Executivo com Gemini AI
-│   │   ├── AntiBotAlert.vue         # Banner de Notificação de Status Anti-Bot
-│   │   ├── CategoryVolumeChart.client.vue # Gráfico de Volume por Categoria
-│   │   ├── DataTable.vue            # Tabela de Anúncios com Infinite Scroll
+│   │   ├── DataTable.vue            # Tabela de Catálogo com Paginação e SVGs
+│   │   ├── TimelineScrapeSelector.vue # Linha do Tempo e Comparação de Datas
 │   │   ├── KpiCards.vue             # Cards Financeiros com Legendas Didáticas
-│   │   ├── Navbar.vue               # Barra Superior com Sessão & Logout
-│   │   ├── PriceRangeHistogramFilter.vue # Histograma Range Slider
-│   │   ├── PriceStrategyMonitor.vue # Monitor de Aumento vs Guerra de Preços
-│   │   ├── TopProductsChart.client.vue # Top 10 Produtos Mais Vendidos
-│   │   ├── TopSellersChart.client.vue # Top Lojas e Concorrentes
-│   │   └── TrendingProductsTab.vue  # Ranking de Velocidade e Aceleração
-│   ├── composables/                 # Composables Reativos
+│   │   ├── Navbar.vue               # Barra Superior com Marca e Alternador de Idioma
+│   │   ├── PriceStrategyMonitor.vue # Monitor de Guerra de Preços
+│   │   └── TopProductsChart.client.vue # Gráficos Interativos ApexCharts
+│   ├── composables/
 │   │   ├── useAppI18n.ts            # Dicionário Bilíngue Reativo (PT / EN)
 │   │   └── useSupabase.ts           # Singleton Supabase com persistência de sessão
-│   ├── middleware/
-│   │   └── auth.global.ts           # 🛡️ Guarda Global de Rotas (Redireciona para /login)
 │   ├── pages/
 │   │   ├── index.vue                # Painel Principal do Dashboard
 │   │   └── login.vue                # 🔐 Tela de Login com Glassmorphism
-│   └── nuxt.config.ts               # Configuração do Nuxt 3 e módulos
+│   └── nuxt.config.ts               # Configuração do Nuxt 3
 │
 ├── database/                        # 🗄️ Scripts SQL, Migrações e Políticas de RLS
 │   └── database_setup.sql           # 📄 Script SQL com Tabelas, Índices e RLS
 │
-├── backend/                         # 🐍 Engine de Scraping & IA em Python
-│   ├── main.py                      # Ponto de Entrada CLI (--daily-cron / --plataforma)
-│   ├── config.py                    # Gerenciador de Parâmetros e Pastas
-│   ├── ai/
-│   │   ├── categorizer.py           # Classificador de Categorias por IA
-│   │   └── insights_generator.py    # Gerador de Insights Estatísticos
-│   ├── scrapers/
-│   │   ├── login_session.py         # Inicializador de Sessão Chrome Real (Bypass WAF)
-│   │   ├── meli_scraper.py          # Pipeline Medalhão do Mercado Livre
-│   │   └── shopee_scraper.py        # Pipeline Medalhão da Shopee
-│   └── utils/
-│       ├── ai_engine.py             # Integração com Google Gemini API
-│       ├── bot_detector.py          # Verificador de Captcha e Bloqueios
-│       ├── relevancia.py            # Filtro de Palavras-Chave e Blacklist
-│       └── supabase_client.py       # Cliente Supabase & Gravação de Séries Temporais
-│
-├── data/                            # 📁 Armazenamento Local (Bronze/Prata/Ouro/Auth)
-├── requirements.txt                 # Dependências do Python
-└── README.md                        # Documentação Oficial
+└── data/                            # 📁 Armazenamento estruturado de dados
+    ├── mercado_livre/ (bronze/prata/ouro)
+    └── shopee/ (bronze/prata/ouro)
 ```
 
 ---
 
-## ⚡ Guia de Inicialização Rápida
+## 🚀 Como Executar o Sistema
 
-### 1. Configuração do Banco de Dados (Supabase)
-1. Crie um projeto gratuito no [Supabase](https://supabase.com/).
-2. Abra o **SQL Editor** no painel do Supabase.
-3. Cole e execute o arquivo [`database/database_setup.sql`](database/database_setup.sql) para criar as tabelas, índices e políticas de segurança RLS.
-4. Em **Authentication ➔ Users**, crie o seu primeiro usuário com e-mail e senha.
+### 1. Iniciar o Worker Daemon Local
+Para deixar o robô escutando o dashboard e agendado para rodar **todos os dias às 22:00**:
+* **No Windows:** Basta dar 2 cliques no arquivo [`iniciar_worker.bat`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/iniciar_worker.bat).
+* **Ou via terminal:**
+```bash
+python backend/main.py --daemon
+```
 
-### 2. Rodando o Frontend Localmente
+### 2. Execução Manual Única (One-Shot)
+Para rodar a extração imediatamente no terminal:
+```bash
+python backend/main.py --plataforma todos
+```
+
+### 3. Rodar o Frontend Localmente
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Acesse no seu navegador: **`http://localhost:3000`** (Faça o login com as credenciais do Supabase).
-
-### 3. Gerando Cookies de Login para o Robô da Nuvem (Opcional - Feito 1 vez)
-Para que o robô no GitHub Actions navegue como um usuário logado:
-```bash
-python backend/main.py --login
-```
-Faça o login nas janelas reais do Chrome que abrirem (Mercado Livre e Shopee). Os cookies serão salvos em `data/auth/auth_meli.json` e `data/auth/auth_shopee.json`.
+Acesse em: `http://localhost:3000`
 
 ---
 
-## 🔑 Configuração de Segredos no GitHub Actions
+## 🔒 Segurança e Banco de Dados (Supabase)
 
-No seu repositório no GitHub, vá em **Settings ➔ Secrets and variables ➔ Actions ➔ New repository secret** e cadastre:
-
-| Secret | Descrição |
-| :--- | :--- |
-| `SUPABASE_URL` | URL do seu projeto Supabase (`https://xxxx.supabase.co`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave secreta `service_role` (ignora RLS no scraping na nuvem) |
-| `GEMINI_API_KEY` | Chave do Google Gemini API (Google AI Studio) |
-| `AUTH_MELI_JSON` | Conteúdo do arquivo `data/auth/auth_meli.json` |
-| `AUTH_SHOPEE_JSON` | Conteúdo do arquivo `data/auth/auth_shopee.json` |
-
----
-
-## 📄 Licença
-Distribuído sob a licença MIT. Consulte `LICENSE` para mais detalhes.
+Para inicializar ou atualizar seu banco de dados Supabase:
+1. Abra o **SQL Editor** no painel do Supabase.
+2. Execute o conteúdo do arquivo [`database/database_setup.sql`](file:///c:/Users/marsh/OneDrive/Desktop/trabalhos/projetos_pessoais/biscuit_scraper/database/database_setup.sql).
+3. Todas as tabelas (`configuracoes_scraper`, `produtos`, `historico_coletas`) e políticas de segurança RLS estarão configuradas e ativas.

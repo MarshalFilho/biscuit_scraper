@@ -158,96 +158,79 @@ def main():
         return
     
     if args.daemon:
-        from utils.supabase_client import atualizar_status_scraper, conectar_supabase
+        from datetime import date
+        from utils.supabase_client import atualizar_status_scraper, conectar_supabase, listar_tenants_ativos
         
-        print("\n🎧 Modo Daemon ativado. Escutando a nuvem (Supabase)...")
-        user_id = os.environ.get("SUPABASE_USER_ID")
-        if not user_id:
-            print("❌ ERRO: SUPABASE_USER_ID não encontrado no .env. Não é possível rodar o daemon.")
-            return
+        print("\n" + "=" * 70)
+        print("🎧 [MarketPulse AI] Worker Local Ativo & Monitorando em Segundo Plano")
+        print("=" * 70)
+        print("⚡ Resposta Imediata: Escutando cliques de 'Disparar Raspagem' da Vercel")
+        print("⏰ Agendamento Diário: Coleta automática programada para todos os dias às 22:00")
+        print("🛡️ IP Residencial: Raspagem limpa e veloz sem bloqueios de WAF / Datacenter")
+        print("=" * 70 + "\n", flush=True)
 
+        user_id = os.environ.get("SUPABASE_USER_ID", "693b19e1-936e-4322-ac9a-79467d143566")
         try:
             supabase = conectar_supabase()
         except Exception as e:
             print(f"❌ Erro ao conectar no Supabase: {e}")
             return
-            
+
+        ultimo_dia_cron = None
+
         while True:
             try:
-                print(f"\n[{time.strftime('%H:%M:%S')}] Checando status de disparo_pendente para usuário: {user_id}...")
-                response = supabase.table("configuracoes_scraper").select("disparo_pendente").eq("user_id", user_id).execute()
+                agora_hora = time.strftime('%H:%M')
+                hoje = date.today()
+
+                # 1. DISPARO AGENDADO DIÁRIO ÀS 22:00
+                if agora_hora == "22:00" and ultimo_dia_cron != hoje:
+                    print(f"\n⏰ [22:00] HORÁRIO PROGRAMADO ATINGIDO! Iniciando Coleta Diária Automática...", flush=True)
+                    ultimo_dia_cron = hoje
+                    
+                    tenants = listar_tenants_ativos(supabase)
+                    if not tenants:
+                        tenants = [{"user_id": user_id, "nome_projeto": "Projeto Principal"}]
+
+                    for idx, t in enumerate(tenants, 1):
+                        t_user_id = t.get("user_id")
+                        t_nome = t.get("nome_projeto") or f"Tenant #{idx}"
+                        print(f"🚀 [{idx}/{len(tenants)}] Executando Coleta Agendada para: {t_nome}...")
+                        os.environ["CURRENT_USER_ID"] = t_user_id
+                        sincronizar_sessao_nuvem(t_user_id)
+                        config.recarregar_config()
+                        executar_scrapers(args.plataforma, t_user_id)
+
+                    print("🎉 [22:00] Coleta diária das 22h concluída para todos os clientes!", flush=True)
+
+                # 2. DISPARO INSTANTÂNEO SOB DEMANDA (CLIQUES NO DASHBOARD VERCEL)
+                response = supabase.table("configuracoes_scraper").select("user_id, nome_projeto, disparo_pendente").eq("disparo_pendente", True).execute()
                 
                 if response.data and len(response.data) > 0:
-                    pendente = response.data[0].get("disparo_pendente", False)
-                    if pendente:
-                        print("🚀 DISPARO PENDENTE DETECTADO! Iniciando extração...")
-                        atualizar_status_scraper(user_id, "🤖 Robô acordou na Nuvem! Baixando preferências...")
+                    for row in response.data:
+                        target_user_id = row.get("user_id")
+                        nome_cli = row.get("nome_projeto") or "Cliente"
+                        print(f"\n🚀 [DISPARO INSTANTÂNEO DETECTADO] Solicitado pelo Dashboard para: {nome_cli} ({target_user_id})!", flush=True)
                         
-                        sincronizar_sessao_nuvem(user_id)
+                        atualizar_status_scraper(target_user_id, "🤖 Robô Local acordou! Sincronizando e iniciando extração...")
+                        os.environ["CURRENT_USER_ID"] = target_user_id
+                        sincronizar_sessao_nuvem(target_user_id)
                         config.recarregar_config()
-                        executar_scrapers(args.plataforma, user_id)
-                            
-                        print("\n✅ Extração concluída. Atualizando status na nuvem...")
+                        executar_scrapers(args.plataforma, target_user_id)
+                        
+                        print(f"\n✅ Extração concluída para {nome_cli}. Atualizando status no Supabase...", flush=True)
                         supabase.table("configuracoes_scraper").update({
                             "disparo_pendente": False,
-                            "status_scraper": "🎉 Raspagem concluída com sucesso!"
-                        }).eq("user_id", user_id).execute()
-                        print("✅ Status resetado. Aguardando novo comando...")
+                            "status_scraper": "🎉 Raspagem e IA concluídas com sucesso!"
+                        }).eq("user_id", target_user_id).execute()
                         
-                        time.sleep(6)
-                        supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", user_id).execute()
-                    else:
-                        print("💤 Nenhum disparo pendente. Dormindo...")
-                else:
-                    print("⚠️ Nenhuma configuração encontrada para este usuário.")
-                    
-            except Exception as e:
-                print(f"❌ Erro no loop do daemon: {e}")
+                        time.sleep(5)
+                        supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", target_user_id).execute()
                 
-            time.sleep(300)
-            
-    elif args.cloud:
-        print("\n☁️ Modo Nuvem (GitHub Actions) ativado. Verificando agendamento...")
-        user_id = os.environ.get("SUPABASE_USER_ID")
-        if not user_id:
-            print("❌ ERRO: SUPABASE_USER_ID não configurado no ambiente. Abortando.")
-            return
-
-        from utils.supabase_client import atualizar_status_scraper, conectar_supabase
-        try:
-            supabase = conectar_supabase()
-            res = supabase.table("configuracoes_scraper").select("disparo_pendente").eq("user_id", user_id).execute()
-            
-            if res.data and len(res.data) > 0:
-                pendente = res.data[0].get("disparo_pendente", False)
-                if not pendente:
-                    print("💤 Nenhum disparo pendente no Supabase. Encerrando execução em nuvem graciosamente sem raspar.")
-                    return
-            else:
-                print("⚠️ Nenhuma linha de configuração encontrada no Supabase para este usuário. Encerrando.")
-                return
-        except Exception as e:
-            print(f"⚠️ Erro ao checar disparo pendente no Supabase: {e}")
-            return
-
-        print("🚀 DISPARO PENDENTE DETECTADO NO SUPABASE! Iniciando pipeline de extração...")
-        atualizar_status_scraper(user_id, "🤖 Robô acordou no GitHub Actions! Sincronizando sessão...")
-        
-        sincronizar_sessao_nuvem(user_id)
-        config.recarregar_config()
-        executar_scrapers(args.plataforma, user_id)
-        
-        print("\n✅ Extração na nuvem concluída.")
-        try:
-            supabase.table("configuracoes_scraper").update({
-                "disparo_pendente": False,
-                "status_scraper": "🎉 Raspagem concluída com sucesso!"
-            }).eq("user_id", user_id).execute()
-            
-            time.sleep(6)
-            supabase.table("configuracoes_scraper").update({"status_scraper": None}).eq("user_id", user_id).execute()
-        except Exception as e:
-            print(f"Erro ao finalizar status no Supabase: {e}")
+            except Exception as e:
+                print(f"⚠️ Erro no loop do daemon: {e}", flush=True)
+                
+            time.sleep(10)
             
     else:
         user_id = args.user_id or os.environ.get("SUPABASE_USER_ID")
