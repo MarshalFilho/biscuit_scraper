@@ -25,23 +25,28 @@ USERS_TO_SETUP = [
     },
     {
         "email": "marshalfilho@gmail.com",
-        "password": "Pro@2026!", # fallback se precisar criar
+        "password": "Pro@2026!",
         "role": "pro"
     },
     {
         "email": "isadora@gmail.com",
-        "password": "Pro@2026!", # fallback se precisar criar
+        "password": "Pro@2026!",
         "role": "pro"
+    },
+    {
+        "email": "basic@gmail.com",
+        "password": "Basic@2026!",
+        "role": "basic"
     },
     {
         "email": "light@gmail.com",
         "password": "Light@2026!",
-        "role": "light"
+        "role": "basic"
     }
 ]
 
 print("\n" + "=" * 65)
-print("🚀 Configurando Cargos (Admin, Pro, Light) no Supabase Auth")
+print("🚀 Configurando Cargos (Admin, Pro, Basic) no Supabase Auth")
 print("=" * 65 + "\n")
 
 try:

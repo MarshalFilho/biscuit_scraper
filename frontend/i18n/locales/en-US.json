@@ -126,11 +126,17 @@
     "toast_success_msg": "Your request for a new term has been sent to the administrator.",
     "toast_error_title": "Request Failed"
   },
+  "onboarding": {
+    "welcome_title": "Your account is ready for monitoring!",
+    "welcome_desc": "No products have been collected for your user yet. Configure your niche and search terms by clicking the button below.",
+    "basic_desc": "Your Basic Plan account is active! When the administrator finishes scraping your monitored terms, your products and charts will appear here. You can also request new terms from the administrator.",
+    "schedule_info": "Scheduled Scrape:"
+  },
   "admin": {
-    "approval_title": "Light Client Terms Authorization & Approval Hub",
+    "approval_title": "Basic Client Terms Authorization & Approval Hub",
     "approval_subtitle": "Review, approve, or decline new search terms and product niches submitted by clients.",
     "manage_all_terms": "Extraction Settings & AI",
     "no_pending": "No pending requests at this time.",
-    "no_pending_desc": "When Light plan clients submit new search terms, they will appear here for your 1-click approval."
+    "no_pending_desc": "When Basic plan clients submit new search terms, they will appear here for your 1-click approval."
   }
 }

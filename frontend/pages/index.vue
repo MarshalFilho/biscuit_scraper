@@ -45,7 +45,7 @@
               {{ adminPendingRequests.length }} pendente(s)
             </span>
           </div>
-          <h3>{{ t('admin.approval_title', 'Central de Autorizações & Solicitações de Clientes Light') }}</h3>
+          <h3>{{ t('admin.approval_title', 'Central de Autorizações & Solicitações de Clientes Básicos') }}</h3>
           <p class="admin-subtitle">{{ t('admin.approval_subtitle', 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.') }}</p>
         </div>
         <div class="admin-header-actions">
@@ -65,7 +65,7 @@
             </div>
             <p v-if="req.motivo" class="req-reason-text">"{{ req.motivo }}"</p>
             <div class="req-footer-meta">
-              <span>👤 <strong>Solicitante:</strong> {{ req.solicitante_email || 'Cliente Light' }}</span>
+              <span>👤 <strong>Solicitante:</strong> {{ req.solicitante_email || 'Cliente Básico' }}</span>
               <span v-if="req.data_solicitacao" class="req-date">🕒 {{ new Date(req.data_solicitacao).toLocaleDateString() }}</span>
             </div>
           </div>
@@ -84,7 +84,7 @@
         <span class="empty-icon">✨</span>
         <div>
           <strong>{{ t('admin.no_pending', 'Nenhuma solicitação pendente no momento.') }}</strong>
-          <p>{{ t('admin.no_pending_desc', 'Quando os clientes do plano Light solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.') }}</p>
+          <p>{{ t('admin.no_pending_desc', 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.') }}</p>
         </div>
       </div>
     </section>
@@ -95,11 +95,16 @@
         <div class="empty-icon-circle">📊</div>
         <h2>{{ t('onboarding.welcome_title', 'Sua conta está pronta para o monitoramento!') }}</h2>
         <p class="empty-description">
-          {{ t('onboarding.welcome_desc', 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.') }}
+          {{ isBasic ? t('onboarding.basic_desc', 'Sua conta do Plano Básico está ativa! Quando a raspagem automática for executada para os termos aprovados, seus produtos aparecerão aqui. Você também pode solicitar novos termos ao administrador.') : t('onboarding.welcome_desc', 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.') }}
         </p>
         <div class="empty-actions">
-          <button type="button" class="btn-configure-terms" @click="isKeywordsModalOpen = true">
-            🎯 {{ t('keywords.badge', 'Configurar Termos & IA') }}
+          <!-- Se for Admin ou Pro: Configurar Termos -->
+          <button v-if="canManageDirectly" type="button" class="btn-configure-terms" @click="isKeywordsModalOpen = true">
+            🎯 {{ isAdmin ? t('keywords.badge', 'Configurar Termos & IA') : t('keywords.badge_pro', 'Meus Termos & IA') }}
+          </button>
+          <!-- Se for Basic: Solicitar Termo -->
+          <button v-else type="button" class="btn-request-term-large" @click="isRequestTermModalOpen = true">
+            💡 {{ t('request_term.btn_label', 'Solicitar Termo ao Administrador') }}
           </button>
         </div>
         <div class="empty-schedule-box">
@@ -375,15 +380,21 @@ const isKeywordsModalOpen = ref(false)
 const isRequestTermModalOpen = ref(false)
 const adminPendingRequests = ref([])
 
-const isAdmin = computed(() => {
-  if (!authUser.value) return false
+const currentRole = computed(() => {
+  if (!authUser.value) return 'basic'
   const appRole = String(authUser.value.app_metadata?.role || '').toLowerCase()
   const userRole = String(authUser.value.user_metadata?.role || '').toLowerCase()
   const directRole = String(authUser.value.role || '').toLowerCase()
-  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin') return true
-  if (authUser.value.email === 'adm@gmail.com') return true
-  return false
+
+  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin' || authUser.value.email === 'adm@gmail.com') return 'admin'
+  if (appRole === 'pro' || userRole === 'pro' || directRole === 'pro' || authUser.value.email === 'marshalfilho@gmail.com' || authUser.value.email === 'isadora@gmail.com') return 'pro'
+  return 'basic'
 })
+
+const isAdmin = computed(() => currentRole.value === 'admin')
+const isPro = computed(() => currentRole.value === 'pro')
+const isBasic = computed(() => currentRole.value === 'basic')
+const canManageDirectly = computed(() => currentRole.value === 'admin' || currentRole.value === 'pro')
 
 async function approveAdminRequest(req) {
   try {
@@ -1324,6 +1335,24 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .btn-configure-terms:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.btn-request-term-large {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.6rem;
+  border-radius: 99px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-request-term-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
 }
 
 .empty-schedule-box {

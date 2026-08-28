@@ -99,7 +99,7 @@ const currentRole = computed(() => {
   const directRole = String(props.user.role || '').toLowerCase()
 
   if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin') return 'admin'
-  if (appRole === 'light' || userRole === 'light' || directRole === 'light' || appRole === 'cliente') return 'light'
+  if (appRole === 'basic' || userRole === 'basic' || directRole === 'basic' || appRole === 'light' || userRole === 'light' || appRole === 'cliente') return 'basic'
   return 'pro'
 })
 
@@ -334,7 +334,7 @@ async function logout() {
   border: 1px solid #d8b4fe;
 }
 
-.role-light, .role-client {
+.role-basic, .role-light, .role-client {
   background: #e0f2fe;
   color: #0369a1;
   border: 1px solid #bae6fd;

@@ -378,6 +378,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
     onboarding: {
       welcome_title: 'Sua conta está pronta para o monitoramento!',
       welcome_desc: 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.',
+      basic_desc: 'Sua conta do Plano Básico está ativa! Quando a raspagem automática for executada para os termos aprovados, seus produtos aparecerão aqui. Você também pode solicitar novos termos ao administrador.',
       schedule_info: 'Rotina Agendada:'
     },
     request_term: {
@@ -401,11 +402,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toast_error_title: 'Erro ao Solicitar'
     },
     admin: {
-      approval_title: 'Central de Autorizações & Solicitações de Clientes Light',
+      approval_title: 'Central de Autorizações & Solicitações de Clientes Básicos',
       approval_subtitle: 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.',
       manage_all_terms: 'Configurações de Extração & IA',
       no_pending: 'Nenhuma solicitação pendente no momento.',
-      no_pending_desc: 'Quando os clientes do plano Light solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.'
+      no_pending_desc: 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.'
     }
   },
   en: {
@@ -784,6 +785,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
     onboarding: {
       welcome_title: 'Your account is ready for monitoring!',
       welcome_desc: 'No products have been collected for your user yet. Configure your niche and search terms by clicking the button below.',
+      basic_desc: 'Your Basic Plan account is active! When the administrator finishes scraping your monitored terms, your products and charts will appear here. You can also request new terms from the administrator.',
       schedule_info: 'Scheduled Scrape:'
     },
     request_term: {
@@ -807,11 +809,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toast_error_title: 'Request Failed'
     },
     admin: {
-      approval_title: 'Light Client Terms Authorization & Approval Hub',
+      approval_title: 'Basic Client Terms Authorization & Approval Hub',
       approval_subtitle: 'Review, approve, or decline new search terms and product niches submitted by clients.',
       manage_all_terms: 'Extraction Settings & AI',
       no_pending: 'No pending requests at this time.',
-      no_pending_desc: 'When Light plan clients submit new search terms, they will appear here for your 1-click approval.'
+      no_pending_desc: 'When Basic plan clients submit new search terms, they will appear here for your 1-click approval.'
     }
   }
 }

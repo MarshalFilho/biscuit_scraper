@@ -300,7 +300,7 @@ const userRole = computed(() => {
   const appRole = String(props.user.app_metadata?.role || '').toLowerCase()
   const userRole = String(props.user.user_metadata?.role || '').toLowerCase()
   if (appRole === 'admin' || userRole === 'admin') return 'admin'
-  if (appRole === 'light' || userRole === 'light') return 'light'
+  if (appRole === 'basic' || userRole === 'basic' || appRole === 'light' || userRole === 'light') return 'basic'
   return 'pro'
 })
 
