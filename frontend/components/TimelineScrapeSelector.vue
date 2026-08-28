@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-panel timeline-container animate-fade-in">
+  <div :class="['timeline-container animate-fade-in', { 'embedded-mode': embedded, 'glass-panel': !embedded }]">
     <div class="timeline-header">
       <div class="header-info">
         <div class="badge-row">
@@ -21,7 +21,7 @@
           :class="['mode-tab-btn', { active: compareMode }]" 
           @click="setCompareMode"
         >
-          ⚔️ {{ t('timeline.mode_compare', 'Comparar 2 Datas') }}
+          📊 {{ t('timeline.mode_compare', 'Comparar 2 Datas') }}
         </button>
       </div>
     </div>
@@ -82,7 +82,7 @@
       </div>
 
       <div v-if="compareDateA && compareDateB" class="compare-status-pill">
-        <span>⚔️ Analisando crescimento e oscilação de preços entre <strong>{{ formatDateLabel(compareDateA) }}</strong> e <strong>{{ formatDateLabel(compareDateB) }}</strong></span>
+        <span>📊 Analisando crescimento e oscilação de preços entre <strong>{{ formatDateLabel(compareDateA) }}</strong> e <strong>{{ formatDateLabel(compareDateB) }}</strong></span>
       </div>
     </div>
   </div>
@@ -96,7 +96,8 @@ const { t, locale } = useAppI18n()
 
 const props = defineProps({
   rawItems: { type: Array, default: () => [] },
-  isLoading: { type: Boolean, default: false }
+  isLoading: { type: Boolean, default: false },
+  embedded: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['select-date', 'compare-dates'])
@@ -225,6 +226,16 @@ onMounted(() => {
   border: 1px solid #e2e8f0;
   border-radius: 16px;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.timeline-container.embedded-mode {
+  padding: 1rem 0 0 0;
+  margin-bottom: 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid #f1f5f9;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .timeline-header {

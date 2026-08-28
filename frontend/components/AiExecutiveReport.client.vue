@@ -174,6 +174,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
 import SellerProductsModal from './SellerProductsModal.vue'
 
 const props = defineProps({
@@ -191,75 +192,184 @@ const props = defineProps({
   }
 })
 
-const defaultReportData = computed(() => ({
-  atualizado_em: t('report.default_model', 'Modelo Padrão'),
-  modulos: [
-    {
-      id: 'estrategia',
-      titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
-      tipo: 'estrategia_completa',
-      resumo: t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
-      recomendacoes: [
-        t('report.rec1', '🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
-        t('report.rec2', '💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
-        t('report.rec3', '⚡ **Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
-      ],
-      oportunidades_nicho: [
-        t('report.niche1', '✨ **Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
-        t('report.niche2', '💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.'),
-        t('report.niche3', '📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.')
-      ]
-    },
-    {
-      id: 'vendedores_produtos',
-      titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
-      tipo: 'vendedores',
-      resumo: t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
-      itens: [
-        { name: 'Loja Exemplo Premium', anuncios: 15, vendas: 1200, receita: 35000.0, top_produto: t('report.fake_prod1', 'Vela Personalizada Luxo'), plataforma: 'meli' },
-        { name: 'Biscuit Arte Express', anuncios: 8, vendas: 850, receita: 21500.0, top_produto: t('report.fake_prod2', 'Topo de Bolo Casamento'), plataforma: 'shopee' }
-      ]
-    },
-    {
-      id: 'seo',
-      titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
-      tipo: 'seo_completo',
-      resumo: t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
-      palavras_chave: [
-        { palavra: t('report.kw1', 'Personalizado'), frequencia: 42 },
-        { palavra: t('report.kw2', 'Kit Festa'), frequencia: 38 },
-        { palavra: t('report.kw3', 'Topo Bolo'), frequencia: 32 },
-        { palavra: t('report.kw4', 'Pronta Entrega'), frequencia: 24 }
-      ],
-      titulos_recomendados: [
-        t('report.title1', 'Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h'),
-        t('report.title2', 'Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo'),
-        t('report.title3', 'Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega')
-      ],
-      combinacoes_longtail: [
-        t('report.lt1', 'Vela personalizada + [Nome da Criança] + [Idade]'),
-        t('report.lt2', 'Topo de bolo biscuit + [Tema] + [Envio Rápido]'),
-        t('report.lt3', 'Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]')
-      ]
-    },
-    {
-      id: 'plataformas_precos',
-      titulo: t('report.tab_platforms', '⚔️ Batalha de Marketplaces'),
-      tipo: 'plataformas',
-      resumo: t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
-      itens: [
-        { nome: 'Mercado Livre', share: 52.0, vendas: 480, receita: 15000, vendedores_unicos: 15 },
-        { nome: 'Shopee', share: 48.0, vendas: 620, receita: 12000, vendedores_unicos: 28 }
-      ]
-    }
-  ]
-}))
-
 const isCollapsed = ref(false)
 const activeTab = ref(0)
 const selectedSeller = ref(null)
 
 const { t, locale } = useAppI18n()
+
+// Estatísticas dinâmicas agregadas diretamente dos produtos raspados
+const dynamicStats = computed(() => {
+  const prods = props.products || []
+  if (prods.length === 0) return null
+
+  const sellerMap = {}
+  let meliSales = 0
+  let meliRevenue = 0
+  const meliSellers = new Set()
+  
+  let shopeeSales = 0
+  let shopeeRevenue = 0
+  const shopeeSellers = new Set()
+
+  const wordCounts = {}
+  const stopWords = new Set(['para', 'com', 'kit', 'de', 'do', 'da', 'em', 'um', 'uma', 'os', 'as', 'e', 'ou', 'por', 'sem', 'fio', 'novo', 'original', 'envio', 'pronta', 'entrega', 'promoção', 'biscuit'])
+
+  for (const p of prods) {
+    const sName = (p.vendedor && p.vendedor.trim()) || (p.plataforma === 'meli' ? 'Vendedor Mercado Livre' : 'Vendedor Shopee')
+    const sales = p.vendas_totais || 0
+    const price = p.preco || 0
+    const rev = price * sales
+
+    if (!sellerMap[sName]) {
+      sellerMap[sName] = {
+        name: sName,
+        anuncios: 0,
+        vendas: 0,
+        receita: 0,
+        top_produto: p.titulo,
+        top_sales: sales,
+        plataforma: p.plataforma || 'meli',
+        products: []
+      }
+    }
+    sellerMap[sName].anuncios += 1
+    sellerMap[sName].vendas += sales
+    sellerMap[sName].receita += rev
+    sellerMap[sName].products.push(p)
+    if (sales >= sellerMap[sName].top_sales) {
+      sellerMap[sName].top_produto = p.titulo
+      sellerMap[sName].top_sales = sales
+    }
+
+    if (p.plataforma === 'shopee') {
+      shopeeSales += sales
+      shopeeRevenue += rev
+      shopeeSellers.add(sName)
+    } else {
+      meliSales += sales
+      meliRevenue += rev
+      meliSellers.add(sName)
+    }
+
+    if (p.titulo) {
+      const words = p.titulo.toLowerCase().match(/\b[a-záéíóúãõç]{4,}\b/gi) || []
+      for (const w of words) {
+        if (!stopWords.has(w.toLowerCase())) {
+          wordCounts[w] = (wordCounts[w] || 0) + 1
+        }
+      }
+    }
+  }
+
+  const topSellersList = Object.values(sellerMap)
+    .sort((a, b) => b.receita - a.receita || b.vendas - a.vendas)
+    .slice(0, 6)
+
+  const totalRev = meliRevenue + shopeeRevenue || 1
+  const meliShare = Math.round((meliRevenue / totalRev) * 100)
+  const shopeeShare = 100 - meliShare
+
+  const platformsList = []
+  if (meliSales > 0 || meliRevenue > 0 || meliSellers.size > 0 || prods.some(p => p.plataforma === 'meli')) {
+    platformsList.push({
+      nome: 'Mercado Livre',
+      share: shopeeRevenue === 0 && meliRevenue > 0 ? 100 : meliShare,
+      vendas: meliSales,
+      receita: meliRevenue,
+      vendedores_unicos: meliSellers.size || 1
+    })
+  }
+  if (shopeeSales > 0 || shopeeRevenue > 0 || shopeeSellers.size > 0 || prods.some(p => p.plataforma === 'shopee')) {
+    platformsList.push({
+      nome: 'Shopee',
+      share: meliRevenue === 0 && shopeeRevenue > 0 ? 100 : shopeeShare,
+      vendas: shopeeSales,
+      receita: shopeeRevenue,
+      vendedores_unicos: shopeeSellers.size || 1
+    })
+  }
+  if (platformsList.length === 0) {
+    platformsList.push({ nome: 'Mercado Livre', share: 100, vendas: meliSales, receita: meliRevenue, vendedores_unicos: meliSellers.size || 1 })
+  }
+
+  const topKeywordsList = Object.entries(wordCounts)
+    .map(([palavra, frequencia]) => ({ palavra: palavra.charAt(0).toUpperCase() + palavra.slice(1), frequencia }))
+    .sort((a, b) => b.frequencia - a.frequencia)
+    .slice(0, 6)
+
+  return {
+    topSellers: topSellersList,
+    platforms: platformsList,
+    keywords: topKeywordsList
+  }
+})
+
+const defaultReportData = computed(() => {
+  const stats = dynamicStats.value
+  return {
+    atualizado_em: t('report.default_model', 'Modelo Padrão'),
+    modulos: [
+      {
+        id: 'estrategia',
+        titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
+        tipo: 'estrategia_completa',
+        resumo: t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
+        recomendacoes: [
+          t('report.rec1', '🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
+          t('report.rec2', '💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
+          t('report.rec3', '⚡ **Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
+        ],
+        oportunidades_nicho: [
+          t('report.niche1', '✨ **Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
+          t('report.niche2', '💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.'),
+          t('report.niche3', '📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.')
+        ]
+      },
+      {
+        id: 'vendedores_produtos',
+        titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
+        tipo: 'vendedores',
+        resumo: t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
+        itens: stats?.topSellers?.length ? stats.topSellers : [
+          { name: 'Loja Exemplo Premium', anuncios: 15, vendas: 1200, receita: 35000.0, top_produto: t('report.fake_prod1', 'Vela Personalizada Luxo'), plataforma: 'meli' },
+          { name: 'Biscuit Arte Express', anuncios: 8, vendas: 850, receita: 21500.0, top_produto: t('report.fake_prod2', 'Topo de Bolo Casamento'), plataforma: 'shopee' }
+        ]
+      },
+      {
+        id: 'seo',
+        titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
+        tipo: 'seo_completo',
+        resumo: t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
+        palavras_chave: stats?.keywords?.length ? stats.keywords : [
+          { palavra: t('report.kw1', 'Personalizado'), frequencia: 42 },
+          { palavra: t('report.kw2', 'Kit Festa'), frequencia: 38 },
+          { palavra: t('report.kw3', 'Topo Bolo'), frequencia: 32 },
+          { palavra: t('report.kw4', 'Pronta Entrega'), frequencia: 24 }
+        ],
+        titulos_recomendados: [
+          t('report.title1', 'Vela Aniversário Biscuit Personalizada Tema Infantil + Envio 24h'),
+          t('report.title2', 'Topo De Bolo Casamento Noivinhos Biscuit Personalizados Luxo'),
+          t('report.title3', 'Kit 10 Lembrancinhas Safari Biscuit Festa Infantil Pronta Entrega')
+        ],
+        combinacoes_longtail: [
+          t('report.lt1', 'Vela personalizada + [Nome da Criança] + [Idade]'),
+          t('report.lt2', 'Topo de bolo biscuit + [Tema] + [Envio Rápido]'),
+          t('report.lt3', 'Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]')
+        ]
+      },
+      {
+        id: 'plataformas_precos',
+        titulo: t('report.tab_platforms', '📊 Comparativo de Marketplaces'),
+        tipo: 'plataformas',
+        resumo: t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
+        itens: stats?.platforms?.length ? stats.platforms : [
+          { nome: 'Mercado Livre', share: 100.0, vendas: 0, receita: 0, vendedores_unicos: 1 }
+        ]
+      }
+    ]
+  }
+})
 
 const effectiveReport = computed(() => {
   let raw = null
@@ -279,30 +389,32 @@ const effectiveReport = computed(() => {
     return raw
   }
 
-  // Consolidação inteligente dos 7 módulos legados nos 4 Macro-Módulos oficiais
-  const topSellers = rawMods.find(m => m.id === 'top_sellers' || m.tipo === 'vendedores')
-  const viralProds = rawMods.find(m => m.id === 'viral_products' || m.tipo === 'produtos')
+  // Consolidação inteligente dos módulos no padrão oficial
+  const topSellers = rawMods.find(m => m.id === 'top_sellers' || m.id === 'vendedores_produtos' || m.tipo === 'vendedores')
   const seo = rawMods.find(m => m.id === 'seo_strategy' || m.id === 'seo' || m.tipo === 'palavras_chave' || m.tipo === 'seo_completo')
   const oceanBlue = rawMods.find(m => m.id === 'ocean_blue' || m.tipo === 'faixas_preco')
-  const platformBattle = rawMods.find(m => m.id === 'platform_battle' || m.tipo === 'plataformas')
+  const platformBattle = rawMods.find(m => m.id === 'platform_battle' || m.id === 'plataformas_precos' || m.tipo === 'plataformas')
   const actions = rawMods.find(m => m.id === 'action_recommendations' || m.tipo === 'recomendacoes')
   const niches = rawMods.find(m => m.id === 'niche_opportunities' || m.tipo === 'oportunidades')
+
+  const stats = dynamicStats.value
 
   const modEstrategia = {
     id: 'estrategia',
     titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
     tipo: 'estrategia_completa',
     resumo: (actions?.resumo || niches?.resumo) || t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
-    recomendacoes: (actions?.itens || actions?.recomendacoes || []),
-    oportunidades_nicho: (niches?.itens || niches?.oportunidades_nicho || [])
+    recomendacoes: (actions?.itens || actions?.recomendacoes || defaultReportData.value.modulos[0].recomendacoes),
+    oportunidades_nicho: (niches?.itens || niches?.oportunidades_nicho || defaultReportData.value.modulos[0].oportunidades_nicho)
   }
 
+  const sellersItens = (topSellers?.itens || topSellers?.vendedores || [])
   const modVendedores = {
     id: 'vendedores_produtos',
     titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
     tipo: 'vendedores',
     resumo: topSellers?.resumo || t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
-    itens: (topSellers?.itens || topSellers?.vendedores || [])
+    itens: sellersItens.length > 0 ? sellersItens : (stats?.topSellers || defaultReportData.value.modulos[1].itens)
   }
 
   const modSeo = {
@@ -310,17 +422,18 @@ const effectiveReport = computed(() => {
     titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
     tipo: 'seo_completo',
     resumo: seo?.resumo || t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
-    palavras_chave: (seo?.palavras_chave || seo?.itens || []),
-    titulos_recomendados: (seo?.titulos_recomendados || []),
-    combinacoes_longtail: (seo?.combinacoes_longtail || [])
+    palavras_chave: (seo?.palavras_chave || seo?.itens || stats?.keywords || defaultReportData.value.modulos[2].palavras_chave),
+    titulos_recomendados: (seo?.titulos_recomendados || defaultReportData.value.modulos[2].titulos_recomendados),
+    combinacoes_longtail: (seo?.combinacoes_longtail || defaultReportData.value.modulos[2].combinacoes_longtail)
   }
 
+  const platformItens = (platformBattle?.itens || platformBattle?.dados || [])
   const modPlataformas = {
     id: 'plataformas_precos',
-    titulo: t('report.tab_platforms', '⚔️ Batalha de Marketplaces'),
+    titulo: t('report.tab_platforms', '📊 Comparativo de Marketplaces'),
     tipo: 'plataformas',
     resumo: (platformBattle?.resumo || oceanBlue?.resumo) || t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
-    itens: (platformBattle?.itens || platformBattle?.dados || []),
+    itens: platformItens.length > 0 ? platformItens : (stats?.platforms || defaultReportData.value.modulos[3].itens),
     faixas_preco: (oceanBlue?.itens || oceanBlue?.faixas || [])
   }
 
@@ -340,7 +453,7 @@ function getModuleTabName(mod) {
   if (id === 'estrategia' || tipo === 'estrategia_completa') return t('report.tab_strategy', '🎯 Estratégia & Nichos')
   if (id === 'vendedores_produtos' || tipo === 'vendedores') return t('report.tab_sellers', '🏆 Top Lojas & Produtos')
   if (id === 'seo' || tipo === 'seo_completo') return t('report.tab_seo', '🏷️ Estratégia de SEO')
-  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', '⚔️ Batalha de Marketplaces')
+  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', '📊 Comparativo de Marketplaces')
   return mod.titulo || t('report.tab_strategy', '🎯 Insights')
 }
 
@@ -381,12 +494,35 @@ function toggleCollapse() {
 function openSellerDetails(sellerItem) {
   if (!sellerItem || !sellerItem.name) return
   
-  const sellerProds = props.products.filter(p => p.vendedor === sellerItem.name)
+  const targetName = (sellerItem.name || '').trim().toLowerCase()
+  let sellerProds = props.products.filter(p => (p.vendedor || '').trim().toLowerCase() === targetName)
+  
+  if (sellerProds.length === 0 && sellerItem.products && sellerItem.products.length > 0) {
+    sellerProds = sellerItem.products
+  }
+
+  if (sellerProds.length === 0) {
+    sellerProds = props.products.filter(p => p.titulo && sellerItem.top_produto && p.titulo.toLowerCase().includes(sellerItem.top_produto.toLowerCase()))
+  }
+
+  const firstProd = sellerProds[0]
+  const plat = sellerItem.plataforma || firstProd?.plataforma || 'meli'
+  const fallbackLink = plat === 'shopee' 
+    ? `https://shopee.com.br/search?keyword=${encodeURIComponent(sellerItem.top_produto || sellerItem.name)}`
+    : `https://lista.mercadolivre.com.br/${encodeURIComponent(sellerItem.top_produto || sellerItem.name)}`
+
   selectedSeller.value = {
     name: sellerItem.name,
-    platform: sellerItem.plataforma || (sellerProds[0]?.plataforma || 'meli'),
+    platform: plat,
     products: sellerProds.length > 0 ? sellerProds : [
-      { id: 'demo-1', titulo: sellerItem.top_produto || 'Anúncio Principal da Loja', preco: 45.0, vendas_totais: sellerItem.vendas || 10, link: '#' }
+      { 
+        id: 'seller-prod-1', 
+        titulo: sellerItem.top_produto || 'Anúncio Principal da Loja', 
+        preco: 45.0, 
+        vendas_totais: sellerItem.vendas || 1, 
+        link: fallbackLink,
+        plataforma: plat
+      }
     ],
     totalSales: sellerItem.vendas || sellerProds.reduce((acc, p) => acc + (p.vendas_totais || 0), 0),
     estimatedRevenue: sellerItem.receita || sellerProds.reduce((acc, p) => acc + ((p.preco || 0) * (p.vendas_totais || 0)), 0)

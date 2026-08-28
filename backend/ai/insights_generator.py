@@ -137,7 +137,7 @@ def gerar_relatorio_insights():
             },
             {
                 "id": "platform_battle",
-                "titulo": "⚔️ Comparativo Mercado Livre vs Shopee",
+                "titulo": "📊 Comparativo Mercado Livre vs Shopee",
                 "tipo": "plataformas",
                 "resumo": f"Mercado Livre representa {round((meli_vendas / (meli_vendas + shopee_vendas or 1)) * 100)}% das vendas e Shopee representa {round((shopee_vendas / (meli_vendas + shopee_vendas or 1)) * 100)}%.",
                 "itens": [

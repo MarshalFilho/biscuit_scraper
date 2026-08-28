@@ -67,8 +67,9 @@
                         📈
                       </button>
                       <a 
-                        :href="p.link" 
+                        :href="getProductLink(p)" 
                         target="_blank" 
+                        rel="noopener noreferrer"
                         class="icon-btn link-btn" 
                         :title="t('table.view_ad_btn', 'Abrir Anúncio')"
                       >
@@ -108,6 +109,18 @@ function close() {
 
 function inspectProduct(product) {
   selectedProduct.value = product
+}
+
+function getProductLink(product) {
+  if (product && product.link && typeof product.link === 'string' && product.link.startsWith('http')) {
+    return product.link
+  }
+  const query = (product && product.titulo) || (props.seller && props.seller.name) || 'biscuit'
+  const plat = (product && product.plataforma) || (props.seller && props.seller.platform) || 'meli'
+  if (plat === 'shopee') {
+    return `https://shopee.com.br/search?keyword=${encodeURIComponent(query)}`
+  }
+  return `https://lista.mercadolivre.com.br/${encodeURIComponent(query)}`
 }
 </script>
 

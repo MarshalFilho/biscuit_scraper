@@ -53,35 +53,37 @@
         :products="processedProducts"
       />
 
-      <!-- Banner da Data e Horário da Última Atualização & Informação de Frequência -->
-      <div class="last-update-banner animate-fade-in">
-        <div class="banner-left">
-          <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
-        </div>
-        <div class="banner-right">
-          <span class="schedule-hint">⏰ {{ t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00') }}</span>
-        </div>
-      </div>
-
-      <!-- Super Filtros Globais (Barra de Controle Elegante) -->
-      <div class="glass-panel filters-panel animate-fade-in" style="animation-delay: 0.1s;">
-        <div class="filters-header">
-          <div class="filters-title-group">
-            <h4>🔍 {{ t('filters.title', 'Filtros Globais do Dashboard') }}</h4>
-            <span class="filters-info">{{ t('filters.subtitle', 'Altera em tempo real todos os KPIs, gráficos e tabelas do painel') }}</span>
-          </div>
-
-          <div class="filters-header-actions">
+      <!-- Super Bloco Unificado de Controle (Abas + Filtros Globais + Linha do Tempo) -->
+      <div class="glass-panel unified-control-panel animate-fade-in">
+        <!-- 1. Linha Superior: Abas de Navegação das Visões & Info de Atualização -->
+        <div class="control-header-row">
+          <div class="view-tabs-group">
             <button 
-              type="button" 
-              class="btn-toggle-histogram" 
-              @click="showPriceHistogram = !showPriceHistogram"
+              :class="['view-tab-btn', { active: activeViewTab === 'overview' }]" 
+              @click="activeViewTab = 'overview'"
             >
-              📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
+              {{ t('tabs.overview', '📊 Visão Geral de Mercado') }}
+            </button>
+            <button 
+              :class="['view-tab-btn', { active: activeViewTab === 'trending' }]" 
+              @click="activeViewTab = 'trending'"
+            >
+              {{ t('tabs.trending', '🚀 Produtos em Alta & Aceleração') }}
+            </button>
+            <button 
+              :class="['view-tab-btn', { active: activeViewTab === 'pricing' }]" 
+              @click="activeViewTab = 'pricing'"
+            >
+              {{ t('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
             </button>
           </div>
+
+          <div class="header-update-badge" :title="t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00')">
+            <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
+          </div>
         </div>
-        
+
+        <!-- 2. Linha Intermediária: Filtros Globais em Tempo Real -->
         <div class="filters-main-row">
           <!-- Plataforma -->
           <div class="filter-item">
@@ -146,6 +148,17 @@
               {{ t('filters.show_hidden', 'Mostrar silenciados') }}
             </label>
           </div>
+
+          <!-- Botão Histograma -->
+          <div class="filter-item">
+            <button 
+              type="button" 
+              class="btn-toggle-histogram" 
+              @click="showPriceHistogram = !showPriceHistogram"
+            >
+              📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
+            </button>
+          </div>
         </div>
         
         <!-- Histograma de Preços Expansível -->
@@ -157,35 +170,14 @@
             />
           </div>
         </transition>
-      </div>
 
-      <!-- Linha do Tempo Interativa de Coletas (Timeline & Date Picker) -->
-      <TimelineScrapeSelector 
-        :rawItems="productsRaw" 
-        @select-date="onTimelineSelectDate"
-        @compare-dates="onTimelineCompareDates"
-      />
-
-      <!-- Barra de Navegação entre Visões de Inteligência de Mercado -->
-      <div class="view-tabs-bar glass-panel animate-fade-in">
-        <button 
-          :class="['tab-btn', { active: activeViewTab === 'overview' }]" 
-          @click="activeViewTab = 'overview'"
-        >
-          {{ t('tabs.overview', '📊 Visão Geral de Mercado') }}
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeViewTab === 'trending' }]" 
-          @click="activeViewTab = 'trending'"
-        >
-          {{ t('tabs.trending', '🚀 Produtos em Alta & Aceleração') }}
-        </button>
-        <button 
-          :class="['tab-btn', { active: activeViewTab === 'pricing' }]" 
-          @click="activeViewTab = 'pricing'"
-        >
-          {{ t('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
-        </button>
+        <!-- 3. Linha Inferior: Linha do Tempo e Comparador de Datas Embutido -->
+        <TimelineScrapeSelector 
+          :rawItems="productsRaw" 
+          :embedded="true"
+          @select-date="onTimelineSelectDate"
+          @compare-dates="onTimelineCompareDates"
+        />
       </div>
 
       <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Gráficos e Tabela) -->
@@ -875,53 +867,77 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   gap: 1.5rem;
 }
 
-.filters-panel {
+.unified-control-panel {
   padding: 1.2rem 1.5rem;
-  margin-bottom: 1.8rem;
+  margin-bottom: 2rem;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 18px;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 }
 
-.filters-header {
+.control-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.8rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
-.filters-title-group h4 {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0f172a;
+.view-tabs-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
-.filters-info {
-  font-size: 0.82rem;
-  color: #64748b;
-}
-
-.btn-toggle-histogram {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  font-size: 0.82rem;
+.view-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #475569;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9px;
   font-weight: 700;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
+  font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.btn-toggle-histogram:hover {
-  background: #e2e8f0;
+.view-tab-btn:hover {
+  background: #ffffff;
   color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.view-tab-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+}
+
+.header-update-badge {
+  font-size: 0.82rem;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 0.45rem 0.9rem;
+  border-radius: 99px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .filters-main-row {
@@ -969,35 +985,27 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   cursor: pointer;
 }
 
-.histogram-expand-wrapper {
-  margin-top: 1.2rem;
-  padding-top: 1rem;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.last-update-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 0.65rem 1.2rem;
-  margin-bottom: 1.2rem;
-  font-size: 0.88rem;
+.btn-toggle-histogram {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
   color: #334155;
-}
-
-.schedule-hint {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #2563eb;
-  background: #eff6ff;
-  padding: 0.25rem 0.6rem;
-  border-radius: 99px;
-  border: 1px solid #bfdbfe;
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-toggle-histogram:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.histogram-expand-wrapper {
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
 }
 
 .empty-account-container {

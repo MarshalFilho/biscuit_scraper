@@ -114,7 +114,7 @@ Gere um relatório executivo bilíngue (Português e Inglês) exatamente na segu
       },
       {
         "id": "plataformas_precos",
-        "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
+        "titulo": "📊 Comparativo de Marketplaces & Faixas de Preço",
         "tipo": "plataformas",
         "resumo": "Comparativo ML vs Shopee e distribuição do volume por zonas de preço",
         "itens": [
@@ -175,7 +175,7 @@ Gere um relatório executivo bilíngue (Português e Inglês) exatamente na segu
       },
       {
         "id": "plataformas_precos",
-        "titulo": "⚔️ Marketplace Battle & Price Tiers",
+        "titulo": "📊 Marketplace Comparison & Price Tiers",
         "tipo": "plataformas",
         "resumo": "Market share breakdown between Mercado Livre and Shopee across price brackets.",
         "itens": [
@@ -372,7 +372,7 @@ def gerar_relatorio_ia_executivo(user_id=None):
             },
             {
                 "id": "plataformas_precos",
-                "titulo": "⚔️ Batalha de Marketplaces & Faixas de Preço",
+                "titulo": "📊 Comparativo de Marketplaces & Faixas de Preço",
                 "tipo": "plataformas",
                 "resumo": "Participação entre Mercado Livre e Shopee, e volume por zona de preço.",
                 "itens": plataformas_list
@@ -424,7 +424,7 @@ def gerar_relatorio_ia_executivo(user_id=None):
             },
             {
                 "id": "plataformas_precos",
-                "titulo": "⚔️ Marketplace Battle & Price Tiers",
+                "titulo": "📊 Marketplace Comparison & Price Tiers",
                 "tipo": "plataformas",
                 "resumo": "Market share breakdown between Mercado Livre and Shopee across price brackets.",
                 "itens": plataformas_list

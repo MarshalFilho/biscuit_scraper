@@ -51,7 +51,7 @@ graph TD
      - 🎯 *Recomendações Estratégicas & Oportunidades de Nicho*
      - 🏆 *Top Vendedores & Lojas Líderes*
      - 🏷️ *Estratégias de SEO, Palavras-chave e Títulos de Alta Conversão*
-     - ⚔️ *Batalha de Marketplaces (Mercado Livre vs Shopee) e Faixas de Preço*
+     - 📊 *Comparativo de Marketplaces (Mercado Livre vs Shopee) e Faixas de Preço*
 
 4. **📊 Dashboard Analítico Ultra-Fluido (Nuxt 3 + Vue 3):**
    - **Hierarquia Visual em 4 Macro-Módulos Temáticos**
