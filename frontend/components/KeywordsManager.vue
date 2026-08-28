@@ -68,9 +68,20 @@
           <!-- Termos Ativos para Raspagem -->
           <div class="form-section">
             <div class="section-header-flex">
-              <label class="section-label">
-                🔎 {{ t('keywords.active_terms_label', 'Termos de Busca Ativos (Monitorados):') }}
-              </label>
+              <div class="header-left-flex">
+                <label class="section-label">
+                  🔎 {{ t('keywords.active_terms_label', 'Termos de Busca Ativos (Monitorados):') }}
+                </label>
+                <button 
+                  v-if="terms.length > 0" 
+                  type="button" 
+                  class="btn-clear-inline" 
+                  @click="clearAllTerms"
+                  title="Remover todos os termos ativos"
+                >
+                  🗑️ {{ t('keywords.clear_terms', 'Limpar Todos') }}
+                </button>
+              </div>
               <div class="term-limit-counter" :class="{ 'limit-warn': terms.length >= 12, 'limit-danger': terms.length >= MAX_TERMS }">
                 <span>{{ terms.length }} / {{ MAX_TERMS }} termos</span>
                 <div class="progress-bar-bg">
@@ -90,7 +101,7 @@
                 <button type="button" class="btn-remove-tag" @click="removeTerm(idx)">×</button>
               </span>
               <span v-if="terms.length === 0" class="empty-tags-hint">
-                Nenhum termo cadastrado. Adicione termos abaixo para iniciar o monitoramento.
+                Nenhum termo cadastrado. Digite termos abaixo ou use a IA acima para preencher.
               </span>
             </div>
 
@@ -120,10 +131,21 @@
 
           <!-- Blacklist / Palavras Negativas -->
           <div class="form-section">
-            <label class="section-label">
-              🚫 {{ t('keywords.blacklist_label', 'Palavras Negativas / Blacklist (Filtro de Descarte):') }}
-              <span class="label-hint">{{ t('keywords.blacklist_hint', 'Anúncios contendo estas palavras serão automaticamente ignorados.') }}</span>
-            </label>
+            <div class="section-header-flex">
+              <label class="section-label">
+                🚫 {{ t('keywords.blacklist_label', 'Palavras Negativas / Blacklist (Filtro de Descarte):') }}
+                <span class="label-hint">{{ t('keywords.blacklist_hint', 'Anúncios contendo estas palavras serão automaticamente ignorados.') }}</span>
+              </label>
+              <button 
+                v-if="blacklist.length > 0" 
+                type="button" 
+                class="btn-clear-inline btn-clear-danger" 
+                @click="clearAllBlacklist"
+                title="Remover todas as palavras negativas"
+              >
+                🗑️ {{ t('keywords.clear_blacklist', 'Limpar Blacklist') }}
+              </button>
+            </div>
 
             <!-- Tags Blacklist -->
             <div class="tags-container blacklist-container">
@@ -223,15 +245,14 @@ async function loadUserKeywords() {
 
     const { data, error } = await supabase
       .from('configuracoes_scraper')
-      .select('termos_busca, blacklist, nicho_mercado')
+      .select('termos_busca, blacklist')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle()
 
-    if (data) {
+    if (data && (data.termos_busca || data.blacklist)) {
       terms.value = Array.isArray(data.termos_busca) ? [...data.termos_busca] : []
       blacklist.value = Array.isArray(data.blacklist) ? [...data.blacklist] : []
-      niche.value = data.nicho_mercado || ''
     } else {
       // Usuário novo: inicia completamente limpo
       terms.value = []
@@ -240,6 +261,9 @@ async function loadUserKeywords() {
     }
   } catch (e) {
     console.warn('Erro ao carregar termos do usuário:', e)
+    terms.value = []
+    blacklist.value = []
+    niche.value = ''
   }
 }
 
@@ -258,6 +282,18 @@ onMounted(() => {
 
 function close() {
   emit('close')
+}
+
+function clearAllTerms() {
+  if (confirm('Deseja realmente remover todos os termos de busca da lista?')) {
+    terms.value = []
+  }
+}
+
+function clearAllBlacklist() {
+  if (confirm('Deseja realmente limpar toda a lista de palavras negativas?')) {
+    blacklist.value = []
+  }
 }
 
 function addTerm() {
@@ -307,7 +343,7 @@ async function generateAiSuggestions() {
     const res = await $fetch('/api/ai-keywords', {
       method: 'POST',
       body: {
-        niche: niche.value,
+        niche: niche.value || 'Geral',
         currentTerms: terms.value,
         blacklist: blacklist.value,
         maxSuggestions: Math.min(8, remainingSlots)
@@ -340,7 +376,6 @@ async function saveConfigurations() {
     const updatePayload = {
       termos_busca: terms.value,
       blacklist: blacklist.value,
-      nicho_mercado: niche.value,
       status_scraper: '⚙️ Configurações de termos atualizadas pelo usuário.'
     }
 
@@ -474,6 +509,36 @@ async function saveConfigurations() {
   margin-bottom: 0.8rem;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.header-left-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.btn-clear-inline {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 0.4rem;
+}
+
+.btn-clear-inline:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.btn-clear-danger {
+  margin-bottom: 0;
 }
 
 .section-label {
