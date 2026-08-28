@@ -191,10 +191,26 @@ def fase_bronze():
             "timezone_id": "America/Sao_Paulo",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         }
-        if chrome_installed:
-            launch_args["channel"] = "chrome"
-
-        context = p.chromium.launch_persistent_context(**launch_args)
+        try:
+            context = p.chromium.launch_persistent_context(**launch_args)
+        except Exception as lock_err:
+            print(f"⚠️ Perfil do Chrome ocupado ({lock_err}). Iniciando navegador limpo isolado...", flush=True)
+            clean_launch_args = {
+                "headless": is_headless,
+                "args": [
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage"
+                ]
+            }
+            browser = p.chromium.launch(**clean_launch_args)
+            context = browser.new_context(
+                viewport={"width": 1366, "height": 768},
+                locale="pt-BR",
+                timezone_id="America/Sao_Paulo",
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            )
         
         # Injeta cookies de sessão autenticados APENAS se o usuário estiver no modo logado
         if config.get_modo_paginacao() == "logado":

@@ -189,7 +189,7 @@ Gere um relatório executivo bilíngue (Português e Inglês) exatamente na segu
 Retorne EXCLUSIVAMENTE o JSON valido.
 """
 
-        modelos_para_testar = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
+        modelos_para_testar = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.7-flash"]
         for m_name in modelos_para_testar:
             try:
                 print(f"🤖 [Módulo IA] Conectando à API do Google Gemini ({m_name})...")
