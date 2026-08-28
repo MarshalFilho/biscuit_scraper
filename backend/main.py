@@ -31,16 +31,23 @@ def sincronizar_sessao_nuvem(user_id):
             auth_json = row.get("auth_state_meli")
             modo = row.get("modo_paginacao", "anonimo")
             
-            if auth_json:
-                os.makedirs(config.AUTH_DIR, exist_ok=True)
-                auth_path = os.path.join(config.AUTH_DIR, "auth.json")
-                with open(auth_path, "w", encoding="utf-8") as f:
-                    json.dump(auth_json, f, indent=2)
-                print("🔑 [Nuvem] Sessão de login 'auth.json' baixada do Supabase com sucesso!")
-            
             if modo == "anonimo":
-                logger.info("auth_sync", status="success", mode="anonimo", msg="Modo Anônimo ativado (Limites: 1 página por busca).")
+                auth_path = os.path.join(config.AUTH_DIR, "auth.json")
+                if os.path.exists(auth_path):
+                    try: os.remove(auth_path)
+                    except: pass
+                auth_meli_path = os.path.join(config.AUTH_DIR, "auth_meli.json")
+                if os.path.exists(auth_meli_path):
+                    try: os.remove(auth_meli_path)
+                    except: pass
+                logger.info("auth_sync", status="success", mode="anonimo", msg="Modo Anônimo Limpo ativado (Cookies limpos para evitar WAF).")
             else:
+                if auth_json:
+                    os.makedirs(config.AUTH_DIR, exist_ok=True)
+                    auth_path = os.path.join(config.AUTH_DIR, "auth.json")
+                    with open(auth_path, "w", encoding="utf-8") as f:
+                        json.dump(auth_json, f, indent=2)
+                    print("🔑 [Nuvem] Sessão de login 'auth.json' baixada do Supabase com sucesso!")
                 logger.info("auth_sync", status="success", mode="logado", msg="Modo Logado ativado (Múltiplas páginas ativadas).")
     except Exception as e:
         logger.error("auth_sync_error", error=str(e))
