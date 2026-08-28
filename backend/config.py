@@ -54,31 +54,32 @@ config_atual = DEFAULT_CONFIG.copy()
 def recarregar_config():
     """
     Conecta ao Supabase e baixa as configurações ativas da Nuvem.
-    Chamado a cada ciclo do daemon antes de iniciar o scrape.
+    Chamado a cada ciclo antes de iniciar o scrape.
     """
     global config_atual
-    user_id = os.environ.get("SUPABASE_USER_ID")
+    user_id = os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
     
     if not user_id:
-        print("⚠️ AVISO: Variável SUPABASE_USER_ID ausente no .env. Executando com configurações locais de teste.")
+        print("⚠️ AVISO: Variável SUPABASE_USER_ID / CURRENT_USER_ID ausente. Executando com configurações locais.")
         return config_atual
         
     try:
         from utils.supabase_client import conectar_supabase
         supabase = conectar_supabase()
-        response = supabase.table("configuracoes_scraper").select("termos_busca, blacklist, regras_categoria, modo_paginacao, max_paginas, nicho_mercado").eq("user_id", user_id).execute()
+        response = supabase.table("configuracoes_scraper").select("termos_busca, blacklist, regras_categoria, modo_paginacao").eq("user_id", user_id).limit(1).execute()
         
         if response.data and len(response.data) > 0:
-            data = response.data[0]
-            config_atual["termos_busca"] = data.get("termos_busca", DEFAULT_CONFIG["termos_busca"])
-            config_atual["blacklist"] = data.get("blacklist", DEFAULT_CONFIG["blacklist"])
-            config_atual["modo_paginacao"] = data.get("modo_paginacao", "anonimo")
-            config_atual["max_paginas"] = data.get("max_paginas", 1)
-            config_atual["nicho_atual"] = data.get("nicho_mercado", "biscuit")
-            print("✅ Configurações dinâmicas injetadas com sucesso a partir do Supabase.")
-        else:
-            print("⚠️ AVISO: Nenhuma linha encontrada na tabela configuracoes_scraper para o seu user_id.")
+            dados = response.data[0]
+            termos = dados.get("termos_busca") or []
+            blacklist = dados.get("blacklist") or []
             
+            if termos:
+                config_atual["termos_busca"] = termos
+            if blacklist:
+                config_atual["blacklist"] = blacklist
+            
+            config_atual["modo_paginacao"] = dados.get("modo_paginacao", "anonimo")
+            print(f"✅ Configurações dinâmicas injetadas com sucesso a partir do Supabase ({len(config_atual['termos_busca'])} termos).")
     except Exception as e:
         print(f"❌ Erro ao baixar configurações do Supabase: {e}")
         
