@@ -178,18 +178,11 @@ def fase_bronze():
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=is_headless,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage"
-            ]
+            args=["--disable-blink-features=AutomationControlled"]
         )
         context = browser.new_context(
             viewport={"width": 1366, "height": 768},
-            locale="pt-BR",
-            timezone_id="America/Sao_Paulo",
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+            locale="pt-BR"
         )
         
         # Injeta cookies de sessão autenticados APENAS se o usuário estiver no modo logado
