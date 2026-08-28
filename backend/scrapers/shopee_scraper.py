@@ -146,8 +146,15 @@ def fase_bronze():
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                time.sleep(random.uniform(2.0, 4.0))
+                time.sleep(random.uniform(2.0, 3.5))
                 
+                # Se cair em verificação por causa dos cookies de outro IP, limpa e tenta anônimo
+                if "verify/captcha" in page.url or "anti_bot_tracking_id" in page.url:
+                    print("⚠️ [Shopee] Sessão com cookies gerou verificação (IP de nuvem). Limpando cookies e tentando modo público...", flush=True)
+                    context.clear_cookies()
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    time.sleep(3)
+
                 # VERIFICAÇÃO RIGOROSA ANTI-ROBÔ / CAPTCHA
                 from utils.bot_detector import (
                     notificar_e_interromper_bloqueio,
@@ -158,7 +165,6 @@ def fase_bronze():
                 try:
                     page.wait_for_selector('a[href*="-i."], [data-sqe="item"], .shopee-search-item-result__item', timeout=12000)
                 except Exception:
-                    # Checa novamente se o motivo do timeout foi um captcha
                     verificar_bloqueio_shopee(page)
 
             except Exception as e:

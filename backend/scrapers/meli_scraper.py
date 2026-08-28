@@ -211,14 +211,6 @@ def fase_bronze():
             window.chrome = { runtime: {} };
         """)
 
-        # Inicializa a sessão navegando pela página principal do Mercado Livre
-        try:
-            print("🌐 Inicializando sessão de navegação no Mercado Livre...", flush=True)
-            page.goto("https://www.mercadolivre.com.br", wait_until="domcontentloaded", timeout=30000)
-            time.sleep(2)
-        except Exception as e:
-            print(f"⚠️ Aviso ao carregar página principal: {e}", flush=True)
- 
         for termo in config.get_termos_busca():
             nome_arquivo_base = termo.replace(" ", "_")
             print(f"\n🔎 Termo de busca: '{termo}'")
@@ -230,6 +222,14 @@ def fase_bronze():
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                
+                # Se cair em captcha/wall/logged por causa dos cookies de outro IP, limpa os cookies e retenta como público
+                if "/captcha/" in page.url or "captcha" in page.title().lower() or "wall/logged" in page.url:
+                    print("⚠️ [Mercado Livre] Sessão com cookies gerou checagem de segurança (IP de nuvem). Limpando cookies e tentando como visitante limpo...", flush=True)
+                    context.clear_cookies()
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    time.sleep(2)
+
                 try:
                     page.wait_for_selector(".ui-search-results, .poly-card, .ui-search-layout, .ui-search-item", timeout=15000)
                 except Exception:
