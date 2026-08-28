@@ -1,25 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  const userId = body?.userId
-  const terms = Array.isArray(body?.terms) ? body.terms : []
-  const blacklist = Array.isArray(body?.blacklist) ? body.blacklist : []
-
-  if (!userId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'ID do usuário não fornecido.'
-    })
-  }
-
-  if (terms.length === 0) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'É necessário manter pelo menos 1 termo ativo.'
-    })
-  }
-
   const config = useRuntimeConfig()
   const supabaseUrl = config.public.supabaseUrl || process.env.SUPABASE_URL || 'https://tqyhsxgsauwdzkepfqnr.supabase.co'
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabaseServiceRoleKey || process.env.SUPABASE_KEY || config.public.supabaseAnonKey
@@ -28,11 +9,51 @@ export default defineEventHandler(async (event) => {
     auth: { persistSession: false }
   })
 
-  // Upsert seguro no Supabase com service role / server client
+  // 1. Validação estrita de Autenticação JWT (Bearer Token)
+  const authHeader = getRequestHeader(event, 'authorization')
+  let authenticatedUserId: string | null = null
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '').trim()
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token)
+    if (user && !authError) {
+      authenticatedUserId = user.id
+    }
+  }
+
+  const body = await readBody(event)
+  const targetUserId = authenticatedUserId || body?.userId
+
+  if (!targetUserId) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Acesso não autorizado. Sessão de usuário inválida ou expirada.'
+    })
+  }
+
+  // Previne tentativa de salvar dados para outro usuário
+  if (authenticatedUserId && body?.userId && authenticatedUserId !== body.userId) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Acesso negado: Você só pode modificar as configurações da sua própria conta.'
+    })
+  }
+
+  const terms = Array.isArray(body?.terms) ? body.terms : []
+  const blacklist = Array.isArray(body?.blacklist) ? body.blacklist : []
+
+  if (terms.length === 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'É necessário manter pelo menos 1 termo ativo.'
+    })
+  }
+
+  // Upsert seguro no Supabase com validação
   const { data, error } = await supabaseServer
     .from('configuracoes_scraper')
     .upsert({
-      user_id: userId,
+      user_id: targetUserId,
       termos_busca: terms.slice(0, 15),
       blacklist: blacklist.slice(0, 50),
       status_scraper: '⚙️ Configurações de termos atualizadas pelo usuário.',

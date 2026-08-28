@@ -65,7 +65,8 @@ export default defineEventHandler(async (event) => {
   const geminiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
 
   if (geminiKey) {
-    const models = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash']
+    // Modelos ordenados pelo menor custo por token (Flash Lite e Flash)
+    const models = ['gemini-2.5-flash-lite', 'gemini-1.5-flash-8b', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-3.6-flash']
     for (const modelName of models) {
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiKey}`

@@ -430,9 +430,16 @@ async function saveConfigurations() {
       return
     }
 
-    // Salva via API Server segura (evita bloqueio de RLS no cliente)
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers = {}
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+    }
+
+    // Salva via API Server segura com validação de JWT Token
     const res = await $fetch('/api/save-keywords', {
       method: 'POST',
+      headers,
       body: {
         userId,
         terms: terms.value,
