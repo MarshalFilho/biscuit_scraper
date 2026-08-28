@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
 
   const now = Date.now()
   let userHistory: number[] = []
+  let existingPendingRequest: any = null
 
   // 3. Consulta histórico de uso da IA no Banco de Dados (Supabase)
   if (targetUserId) {
@@ -47,11 +48,18 @@ export default defineEventHandler(async (event) => {
       .limit(1)
       .maybeSingle()
 
-    if (userConfig && Array.isArray(userConfig.regras_categoria)) {
-      // Filtra timestamps dentro da janela de 24 horas
-      userHistory = userConfig.regras_categoria
+    const rawCategory = userConfig?.regras_categoria
+
+    if (Array.isArray(rawCategory)) {
+      userHistory = rawCategory
         .map((item: any) => typeof item === 'number' ? item : item?.timestamp)
         .filter((ts: any) => typeof ts === 'number' && (now - ts) < RATE_LIMIT_WINDOW_MS)
+    } else if (rawCategory && typeof rawCategory === 'object') {
+      const arr = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
+      userHistory = arr
+        .map((item: any) => typeof item === 'number' ? item : item?.timestamp)
+        .filter((ts: any) => typeof ts === 'number' && (now - ts) < RATE_LIMIT_WINDOW_MS)
+      existingPendingRequest = rawCategory.solicitacao_pendente || null
     }
 
     // Checagem de Cooldown (última chamada)
@@ -168,11 +176,15 @@ Retorne EXCLUSIVAMENTE um JSON válido no formato exato:
   // 3. Registra a requisição no Banco de Dados (Supabase) para o usuário
   if (targetUserId) {
     userHistory.push(now)
+    const toSave = {
+      rate_limit: userHistory,
+      solicitacao_pendente: existingPendingRequest
+    }
     await supabaseServer
       .from('configuracoes_scraper')
       .upsert({
         user_id: targetUserId,
-        regras_categoria: userHistory,
+        regras_categoria: toSave,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
   }

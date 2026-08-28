@@ -401,25 +401,36 @@ async function approveAdminRequest(req) {
     const targetId = req.target_user_id || authUser.value?.id
     const { data: cfg } = await supabase
       .from('configuracoes_scraper')
-      .select('termos_busca, solicitacoes_termos')
+      .select('termos_busca, regras_categoria')
       .eq('user_id', targetId)
       .limit(1)
       .maybeSingle()
 
     const currentTerms = Array.isArray(cfg?.termos_busca) ? [...cfg.termos_busca] : []
-    let currentReqs = Array.isArray(cfg?.solicitacoes_termos) ? [...cfg.solicitacoes_termos] : []
+    let rawCategory = cfg?.regras_categoria || {}
+    let rateLimit = []
+
+    if (Array.isArray(rawCategory)) {
+      rateLimit = rawCategory
+    } else if (rawCategory && typeof rawCategory === 'object') {
+      rateLimit = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
+    }
 
     if (!currentTerms.includes(req.termo)) {
       currentTerms.push(req.termo)
     }
-    currentReqs = currentReqs.filter(r => r.id !== req.id)
+
+    const updatedCategory = {
+      rate_limit: rateLimit,
+      solicitacao_pendente: null
+    }
 
     await supabase
       .from('configuracoes_scraper')
       .upsert({
         user_id: targetId,
         termos_busca: currentTerms,
-        solicitacoes_termos: currentReqs,
+        regras_categoria: updatedCategory,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
 
@@ -435,19 +446,30 @@ async function rejectAdminRequest(req) {
     const targetId = req.target_user_id || authUser.value?.id
     const { data: cfg } = await supabase
       .from('configuracoes_scraper')
-      .select('solicitacoes_termos')
+      .select('regras_categoria')
       .eq('user_id', targetId)
       .limit(1)
       .maybeSingle()
 
-    let currentReqs = Array.isArray(cfg?.solicitacoes_termos) ? [...cfg.solicitacoes_termos] : []
-    currentReqs = currentReqs.filter(r => r.id !== req.id)
+    let rawCategory = cfg?.regras_categoria || {}
+    let rateLimit = []
+
+    if (Array.isArray(rawCategory)) {
+      rateLimit = rawCategory
+    } else if (rawCategory && typeof rawCategory === 'object') {
+      rateLimit = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
+    }
+
+    const updatedCategory = {
+      rate_limit: rateLimit,
+      solicitacao_pendente: null
+    }
 
     await supabase
       .from('configuracoes_scraper')
       .upsert({
         user_id: targetId,
-        solicitacoes_termos: currentReqs,
+        regras_categoria: updatedCategory,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
 
@@ -721,15 +743,14 @@ async function loadDashboardData() {
       try {
         const { data: allCfgs } = await supabase
           .from('configuracoes_scraper')
-          .select('user_id, termos_busca, solicitacoes_termos')
+          .select('user_id, termos_busca, regras_categoria')
 
         if (allCfgs) {
           const pending = []
           for (const cfg of allCfgs) {
-            if (Array.isArray(cfg.solicitacoes_termos)) {
-              for (const req of cfg.solicitacoes_termos) {
-                pending.push({ ...req, target_user_id: cfg.user_id })
-              }
+            const rawCat = cfg.regras_categoria
+            if (rawCat && typeof rawCat === 'object' && rawCat.solicitacao_pendente) {
+              pending.push({ ...rawCat.solicitacao_pendente, target_user_id: cfg.user_id })
             }
           }
           adminPendingRequests.value = pending

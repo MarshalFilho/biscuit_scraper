@@ -4,13 +4,18 @@
       <!-- Header do Modal -->
       <div class="modal-header">
         <div class="header-left">
-          <div class="icon-badge">💡</div>
+          <div class="icon-badge">{{ existingRequest ? '✏️' : '💡' }}</div>
           <div>
-            <h3>{{ t('request_term.title', 'Solicitar Novo Termo / Nicho') }}</h3>
-            <p class="subtitle">{{ t('request_term.subtitle', 'Peça ao administrador para incluir novos termos ou produtos no monitoramento do robô.') }}</p>
+            <h3>{{ existingRequest ? t('request_term.title_edit', 'Editar Solicitação de Termo') : t('request_term.title', 'Solicitar Novo Termo / Nicho') }}</h3>
+            <p class="subtitle">{{ existingRequest ? t('request_term.subtitle_edit', 'Você já possui uma solicitação enviada. Você pode editar os detalhes ou cancelar seu pedido.') : t('request_term.subtitle', 'Peça ao administrador para incluir novos termos ou produtos no monitoramento do robô.') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('close')" title="Fechar">✕</button>
+      </div>
+
+      <!-- Banner de Solicitação Existente -->
+      <div v-if="existingRequest" class="pending-notice-banner">
+        <span>🕒 <strong>Status:</strong> Aguardando análise do Administrador (enviada em {{ formatDate(existingRequest.data_solicitacao) }})</span>
       </div>
 
       <!-- Formulário de Solicitação -->
@@ -64,12 +69,24 @@
 
         <!-- Ações -->
         <div class="modal-footer">
-          <button type="button" class="btn-cancel" @click="$emit('close')">
-            {{ t('request_term.cancel', 'Cancelar') }}
+          <button 
+            v-if="existingRequest" 
+            type="button" 
+            class="btn-delete-request" 
+            :disabled="isCancelling || isSubmitting"
+            @click="cancelRequest"
+          >
+            <span v-if="isCancelling">⏳ Cancelando...</span>
+            <span v-else>🗑️ Cancelar Pedido</span>
           </button>
-          <button type="submit" class="btn-submit" :disabled="isSubmitting || !term.trim()">
+          
+          <button type="button" class="btn-cancel" @click="$emit('close')">
+            {{ t('request_term.cancel', 'Fechar') }}
+          </button>
+          
+          <button type="submit" class="btn-submit" :disabled="isSubmitting || isCancelling || !term.trim()">
             <span v-if="isSubmitting">⏳ {{ t('request_term.sending', 'Enviando...') }}</span>
-            <span v-else>🚀 {{ t('request_term.send', 'Enviar Solicitação') }}</span>
+            <span v-else>{{ existingRequest ? '💾 Atualizar Solicitação' : '🚀 ' + t('request_term.send', 'Enviar Solicitação') }}</span>
           </button>
         </div>
       </form>
@@ -78,11 +95,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppI18n } from '~/composables/useAppI18n'
 import { useSupabase } from '~/composables/useSupabase'
 
-const { t } = useAppI18n()
+const { t, locale } = useAppI18n()
 const supabase = useSupabase()
 
 const props = defineProps({
@@ -94,7 +111,38 @@ const emit = defineEmits(['close', 'toast'])
 const term = ref('')
 const niche = ref('')
 const reason = ref('')
+const existingRequest = ref(null)
 const isSubmitting = ref(false)
+const isCancelling = ref(false)
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+async function loadExistingRequest() {
+  const userId = props.user?.id
+  if (!userId) return
+
+  try {
+    const { data: cfg } = await supabase
+      .from('configuracoes_scraper')
+      .select('regras_categoria')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle()
+
+    if (cfg?.regras_categoria && typeof cfg.regras_categoria === 'object' && cfg.regras_categoria.solicitacao_pendente) {
+      const req = cfg.regras_categoria.solicitacao_pendente
+      existingRequest.value = req
+      term.value = req.termo || ''
+      niche.value = req.nicho || ''
+      reason.value = req.motivo || ''
+    }
+  } catch (e) {
+    console.warn('Erro ao verificar solicitacao existente:', e)
+  }
+}
 
 async function submitRequest() {
   if (!term.value.trim() || isSubmitting.value) return
@@ -123,7 +171,7 @@ async function submitRequest() {
     emit('toast', {
       type: 'success',
       title: t('request_term.toast_success_title', 'Solicitação Enviada!'),
-      message: t('request_term.toast_success_msg', 'Seu pedido de novo termo foi enviado com sucesso ao administrador.')
+      message: res?.message || t('request_term.toast_success_msg', 'Seu pedido de novo termo foi enviado com sucesso ao administrador.')
     })
     emit('close')
   } catch (err) {
@@ -136,6 +184,49 @@ async function submitRequest() {
     isSubmitting.value = false
   }
 }
+
+async function cancelRequest() {
+  if (!confirm('Deseja realmente cancelar sua solicitação de termo?') || isCancelling.value) return
+
+  isCancelling.value = true
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token || ''
+
+    const headers = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    await $fetch('/api/request-term', {
+      method: 'POST',
+      headers,
+      body: {
+        userId: props.user?.id,
+        action: 'cancel'
+      }
+    })
+
+    emit('toast', {
+      type: 'info',
+      title: 'Solicitação Cancelada',
+      message: 'Seu pedido de novo termo foi cancelado.'
+    })
+    emit('close')
+  } catch (err) {
+    emit('toast', {
+      type: 'error',
+      title: 'Erro',
+      message: err?.data?.statusMessage || err?.message || 'Falha ao cancelar solicitação.'
+    })
+  } finally {
+    isCancelling.value = false
+  }
+}
+
+onMounted(() => {
+  loadExistingRequest()
+})
 </script>
 
 <style scoped>
@@ -329,6 +420,33 @@ async function submitRequest() {
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.pending-notice-banner {
+  background: #fef3c7;
+  border-bottom: 1px solid #fde68a;
+  padding: 0.6rem 1.5rem;
+  font-size: 0.82rem;
+  color: #92400e;
+}
+
+.btn-delete-request {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: auto;
+}
+
+.btn-delete-request:hover:not(:disabled) {
+  background: #ffe4e6;
+  border-color: #fda4af;
+  color: #be123c;
 }
 
 @keyframes scaleUp {

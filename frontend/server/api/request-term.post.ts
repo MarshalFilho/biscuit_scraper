@@ -21,6 +21,61 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 2. Carrega configuração atual do usuário
+  const { data: configData, error: fetchErr } = await supabaseServer
+    .from('configuracoes_scraper')
+    .select('regras_categoria, termos_busca')
+    .eq('user_id', targetUserId)
+    .limit(1)
+    .maybeSingle()
+
+  if (fetchErr) {
+    console.error('Erro ao buscar configuracoes do usuario:', fetchErr)
+  }
+
+  // Parse seguro de regras_categoria (pode ser array antigo de timestamps ou objeto)
+  let rawCategoryRules = configData?.regras_categoria
+  let rateLimit: any[] = []
+  let currentPendingRequest: any = null
+
+  if (Array.isArray(rawCategoryRules)) {
+    rateLimit = rawCategoryRules
+  } else if (rawCategoryRules && typeof rawCategoryRules === 'object') {
+    rateLimit = Array.isArray(rawCategoryRules.rate_limit) ? rawCategoryRules.rate_limit : []
+    currentPendingRequest = rawCategoryRules.solicitacao_pendente || null
+  }
+
+  // 3. Ação: CANCELAR / EXCLUIR SOLICITAÇÃO EXISTENTE
+  if (body?.action === 'cancel') {
+    const updatedCategoryRules = {
+      rate_limit: rateLimit,
+      solicitacao_pendente: null
+    }
+
+    const { error: cancelErr } = await supabaseServer
+      .from('configuracoes_scraper')
+      .upsert({
+        user_id: targetUserId,
+        regras_categoria: updatedCategoryRules,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
+
+    if (cancelErr) {
+      console.error('Erro ao cancelar solicitação:', cancelErr)
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Erro ao cancelar solicitação no banco de dados.'
+      })
+    }
+
+    return {
+      success: true,
+      message: 'Solicitação cancelada com sucesso.',
+      solicitacao: null
+    }
+  }
+
+  // 4. Ação: CRIAR OU EDITAR SOLICITAÇÃO
   const termo = String(body?.termo || '').trim()
   const motivo = String(body?.motivo || '').trim()
   const nicho = String(body?.nicho || '').trim()
@@ -32,57 +87,51 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 2. Busca lista atual de solicitações na tabela de configurações
-  const { data: configData } = await supabaseServer
-    .from('configuracoes_scraper')
-    .select('solicitacoes_termos, termos_busca')
-    .eq('user_id', targetUserId)
-    .limit(1)
-    .maybeSingle()
-
-  const currentRequests: any[] = Array.isArray(configData?.solicitacoes_termos) ? configData.solicitacoes_termos : []
   const currentTerms: string[] = Array.isArray(configData?.termos_busca) ? configData.termos_busca : []
-
   if (currentTerms.map(t => t.toLowerCase()).includes(termo.toLowerCase())) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Este termo já está sendo monitorado ativamente no robô.'
+      statusMessage: 'Este termo já está cadastrado e monitorado no robô.'
     })
   }
 
-  const newRequest = {
-    id: `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+  const newOrUpdatedRequest = {
+    id: currentPendingRequest?.id || `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     termo,
     motivo: motivo || 'Solicitação de novo produto/termo pelo cliente',
     nicho: nicho || '',
     solicitante_email: user?.email || 'cliente@plataforma.com',
     solicitante_id: targetUserId,
-    data_solicitacao: new Date().toISOString(),
+    data_solicitacao: currentPendingRequest?.data_solicitacao || new Date().toISOString(),
+    data_atualizacao: new Date().toISOString(),
     status: 'pendente'
   }
 
-  const updatedRequests = [newRequest, ...currentRequests.slice(0, 49)]
+  const updatedCategoryRules = {
+    rate_limit: rateLimit,
+    solicitacao_pendente: newOrUpdatedRequest
+  }
 
-  // 3. Salva a nova solicitação no Supabase
-  const { error } = await supabaseServer
+  // 5. Salva no Supabase
+  const { error: saveErr } = await supabaseServer
     .from('configuracoes_scraper')
     .upsert({
       user_id: targetUserId,
-      solicitacoes_termos: updatedRequests,
+      regras_categoria: updatedCategoryRules,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
 
-  if (error) {
-    console.error('Erro ao salvar solicitação:', error)
+  if (saveErr) {
+    console.error('Erro ao salvar solicitação:', saveErr)
     throw createError({
       statusCode: 500,
-      statusMessage: 'Erro ao registrar solicitação no banco de dados.'
+      statusMessage: 'Erro ao registrar solicitação no banco de dados: ' + saveErr.message
     })
   }
 
   return {
     success: true,
-    message: 'Solicitação de novo termo enviada com sucesso ao administrador!',
-    solicitacao: newRequest
+    message: currentPendingRequest ? 'Solicitação atualizada com sucesso!' : 'Solicitação enviada com sucesso ao administrador!',
+    solicitacao: newOrUpdatedRequest
   }
 })
