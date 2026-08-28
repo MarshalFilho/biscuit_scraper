@@ -379,7 +379,10 @@ def fase_ouro():
         # Tenta carregar o mapeamento de avaliações do JSON-LD a partir dos arquivos BRONZE deste termo (onde os scripts estão intactos)
         reviews_map = {}
         for p in range(1, config.get_max_paginas() + 1):
-            bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{p}.html")
+            bronze_path = os.path.join(BRONZE_DIR, f"bronze_{termo_slug}_p{p}.html")
+            if not os.path.exists(bronze_path):
+                nome_legado = termo.replace(" ", "_")
+                bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_legado}_p{p}.html")
             if os.path.exists(bronze_path):
                 try:
                     with open(bronze_path, "r", encoding="utf-8") as bf:
