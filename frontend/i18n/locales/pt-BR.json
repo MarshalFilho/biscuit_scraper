@@ -31,15 +31,28 @@
     "title": "Super Filtros Globais",
     "subtitle": "Altera em tempo real todos os KPIs, gráficos e tabelas do painel",
     "platform": "Plataforma:",
-    "both": "🌐 Ambas",
+    "both": "Ambas",
     "category": "Categoria:",
     "all_categories": "Todas as Categorias",
     "min_sales": "Vendas Mínimas:",
     "hide_zero": "Ocultar produtos com 0 vendas",
     "show_hidden": "Mostrar anúncios silenciados",
     "price_range": "Faixa de Preço:",
+    "hide_price_range": "Ocultar Faixa de Preços",
+    "filter_price_range": "Filtrar Faixa de Preços",
     "timeline_title": "Linha do Tempo de Coletas",
     "latest_scrape": "Última atualização:"
+  },
+  "timeline": {
+    "single_date_mode": "📅 Data Única",
+    "compare_dates_mode": "📊 Comparar 2 Datas",
+    "click_date_hint": "👉 Clique em uma data para ver o estado do mercado naquele dia:",
+    "latest": "Última",
+    "items": "itens",
+    "no_history": "Nenhuma data histórica registrada ainda.",
+    "base_date_label": "📍 Data Base (Ponto A - Passado):",
+    "compare_date_label": "🎯 Data de Comparação (Ponto B - Mais Recente):",
+    "analyzing_growth": "📊 Analisando crescimento e oscilação de preços entre {dateA} e {dateB}"
   },
   "tabs": {
     "overview": "📊 Visão Geral de Mercado",
@@ -56,7 +69,7 @@
     "title": "Base de Produtos Coletada",
     "subtitle": "Visualização individual dos anúncios com cálculo de velocidade e variação",
     "search_placeholder": "Buscar por título ou loja...",
-    "export_csv": "Exportar CSV ⬇",
+    "export_csv": "Exportar CSV",
     "col_platform": "Plataforma",
     "col_category": "Categoria",
     "col_product": "Título Anúncio",
@@ -73,6 +86,9 @@
     "top_sellers": "🏆 Ranking de Vendedores Líderes por Faturamento",
     "top_products": "🔥 Top 10 Produtos Mais Vendidos no Nicho",
     "category_share": "🥧 Share de Volume de Vendas por Categoria",
-    "price_vs_sales": "🎯 Distribuição de Vendas por Faixa de Preço"
+    "price_vs_sales": "🎯 Distribuição de Vendas por Faixa de Preço",
+    "items": "itens",
+    "up_to": "Até",
+    "above": "Acima de"
   }
 }

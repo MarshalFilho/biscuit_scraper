@@ -29,7 +29,7 @@
     <!-- MODO 1: Retrato do Dia (1 Data) -->
     <div v-if="!compareMode" class="timeline-content">
       <div class="pills-label-row">
-        <small class="text-muted">👉 Clique em uma data para ver o estado do mercado naquele dia:</small>
+        <small class="text-muted">{{ t('timeline.click_date_hint', '👉 Clique em uma data para ver o estado do mercado naquele dia:') }}</small>
       </div>
       <div class="timeline-scroll-wrapper">
         <div v-if="isLoading" class="timeline-pills">
@@ -44,11 +44,11 @@
           >
             <span class="pill-dot"></span>
             <span class="pill-date">{{ d.label }}</span>
-            <span class="pill-count">{{ d.count }} itens</span>
+            <span class="pill-count">{{ d.count }} {{ t('timeline.items', 'itens') }}</span>
           </button>
         </div>
         <div v-else class="text-muted text-sm py-2">
-          Nenhuma data histórica registrada ainda.
+          {{ t('timeline.no_history', 'Nenhuma data histórica registrada ainda.') }}
         </div>
       </div>
     </div>
@@ -58,10 +58,10 @@
       <div class="compare-selectors-grid">
         <!-- Ponto A: Data Base (Mais antiga) -->
         <div class="compare-box box-a">
-          <label>📍 Data Base (Ponto A - Passado):</label>
+          <label>{{ t('timeline.base_date_label', '📍 Data Base (Ponto A - Passado):') }}</label>
           <select v-model="compareDateA" @change="onDateAChange" class="glass-select">
             <option v-for="d in datesForPointA" :key="'a-'+d.dateStr" :value="d.dateStr">
-              {{ d.label }} ({{ d.count }} itens)
+              {{ d.label }} ({{ d.count }} {{ t('timeline.items', 'itens') }})
             </option>
           </select>
         </div>
@@ -72,17 +72,17 @@
 
         <!-- Ponto B: Data Atual (Mais recente) -->
         <div class="compare-box box-b">
-          <label>🎯 Data de Comparação (Ponto B - Mais Recente):</label>
+          <label>{{ t('timeline.compare_date_label', '🎯 Data de Comparação (Ponto B - Mais Recente):') }}</label>
           <select v-model="compareDateB" @change="onDateBChange" class="glass-select">
             <option v-for="d in datesForPointB" :key="'b-'+d.dateStr" :value="d.dateStr">
-              {{ d.label }} ({{ d.count }} itens)
+              {{ d.label }} ({{ d.count }} {{ t('timeline.items', 'itens') }})
             </option>
           </select>
         </div>
       </div>
 
       <div v-if="compareDateA && compareDateB" class="compare-status-pill">
-        <span>📊 Analisando crescimento e oscilação de preços entre <strong>{{ formatDateLabel(compareDateA) }}</strong> e <strong>{{ formatDateLabel(compareDateB) }}</strong></span>
+        <span>{{ t('timeline.analyzing_growth', '📊 Analisando crescimento e oscilação de preços entre {dateA} e {dateB}').replace('{dateA}', formatDateLabel(compareDateA)).replace('{dateB}', formatDateLabel(compareDateB)) }}</span>
       </div>
     </div>
   </div>
@@ -132,10 +132,11 @@ const availableDates = computed(() => {
     const isToday = index === 0
     const dObj = new Date(d.dateStr + 'T00:00:00')
     const formatted = dObj.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })
+    const latestText = t('timeline.latest', 'Última')
     return {
       dateStr: d.dateStr,
       count: d.count,
-      label: isToday ? `${formatted} (Última)` : formatted
+      label: isToday ? `${formatted} (${latestText})` : formatted
     }
   })
 })

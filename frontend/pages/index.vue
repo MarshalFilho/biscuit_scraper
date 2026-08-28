@@ -129,7 +129,7 @@
                 class="btn-toggle-histogram" 
                 @click="showPriceHistogram = !showPriceHistogram"
               >
-                📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
+                📊 {{ showPriceHistogram ? t('filters.hide_price_range', 'Ocultar Faixa de Preços') : t('filters.filter_price_range', 'Filtrar Faixa de Preços') }}
               </button>
             </div>
           </div>
@@ -292,7 +292,7 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
-const nomeProjeto = ref('PulseMarket AI')
+const nomeProjeto = ref('MarketRadar AI')
 const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard

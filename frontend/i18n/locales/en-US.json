@@ -31,15 +31,28 @@
     "title": "Global Super Filters",
     "subtitle": "Updates all dashboard KPIs, charts, and tables in real-time",
     "platform": "Platform:",
-    "both": "🌐 Both",
+    "both": "Both",
     "category": "Category:",
     "all_categories": "All Categories",
     "min_sales": "Minimum Sales:",
     "hide_zero": "Hide zero-sales items",
     "show_hidden": "Show silenced ads",
     "price_range": "Price Range:",
+    "hide_price_range": "Hide Price Range",
+    "filter_price_range": "Filter Price Range",
     "timeline_title": "Scrape Timeline",
     "latest_scrape": "Last updated:"
+  },
+  "timeline": {
+    "single_date_mode": "📅 Single Date",
+    "compare_dates_mode": "📊 Compare 2 Dates",
+    "click_date_hint": "👉 Click a date to view the market status on that day:",
+    "latest": "Latest",
+    "items": "items",
+    "no_history": "No historical data recorded yet.",
+    "base_date_label": "📍 Base Date (Point A - Past):",
+    "compare_date_label": "🎯 Comparison Date (Point B - Most Recent):",
+    "analyzing_growth": "📊 Analyzing growth and price oscillation between {dateA} and {dateB}"
   },
   "tabs": {
     "overview": "📊 Market Overview",
@@ -56,7 +69,7 @@
     "title": "Raw Products Database",
     "subtitle": "Individual item tracking with speed metrics and price variation history",
     "search_placeholder": "Search title or store...",
-    "export_csv": "Export CSV ⬇",
+    "export_csv": "Export CSV",
     "col_platform": "Platform",
     "col_category": "Category",
     "col_product": "Product Title",
@@ -73,6 +86,9 @@
     "top_sellers": "🏆 Top Selling Stores by Revenue",
     "top_products": "🔥 Top 10 Best Selling Products in Niche",
     "category_share": "🥧 Sales Volume Share by Category",
-    "price_vs_sales": "🎯 Sales Volume Distribution by Price Range"
+    "price_vs_sales": "🎯 Sales Distribution by Price Range",
+    "items": "items",
+    "up_to": "Up to",
+    "above": "Above"
   }
 }

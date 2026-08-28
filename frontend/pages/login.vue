@@ -3,8 +3,18 @@
     <!-- Barra Superior com Alternador de Idioma -->
     <header class="login-header">
       <div class="brand">
-        <span class="logo-icon">📈</span>
-        <span class="logo-text">PulseMarket AI</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="7" fill="url(#login-grad)"/>
+          <path d="M5 16.5L9.5 11.5L13.5 14.5L19 8" stroke="#FFFFFF" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="19" cy="8" r="2" fill="#93C5FD"/>
+          <defs>
+            <linearGradient id="login-grad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#2563EB"/>
+              <stop offset="1" stop-color="#7C3AED"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">MarketRadar AI</span>
       </div>
       <button @click="toggleLanguage" class="lang-toggle-btn" :title="t('navbar.toggle_tooltip')">
         {{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}

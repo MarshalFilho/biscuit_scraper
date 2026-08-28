@@ -169,7 +169,7 @@ def main():
         from utils.supabase_client import atualizar_status_scraper, conectar_supabase, listar_tenants_ativos
         
         print("\n" + "=" * 70)
-        print("🎧 [PulseMarket AI] Worker Local Ativo & Monitorando em Segundo Plano")
+        print("🎧 [MarketRadar AI] Worker Local Ativo & Monitorando em Segundo Plano")
         print("=" * 70)
         print("⚡ Resposta Imediata: Escutando cliques de 'Disparar Raspagem' da Vercel")
         print("⏰ Agendamento Diário: Coleta automática programada para todos os dias às 22:00")
