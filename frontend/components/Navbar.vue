@@ -7,6 +7,12 @@
       </div>
 
       <div class="header-right">
+        <!-- Indicador Informativo de Frequência Diária -->
+        <div class="schedule-pill" :title="t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00')">
+          <span class="pulse-dot"></span>
+          <span class="schedule-text">{{ t('navbar.daily_schedule', '⏰ Coleta Diária às 22h00') }}</span>
+        </div>
+
         <!-- Botão de Gerenciar Termos e Palavras-Chave -->
         <button 
           type="button"
@@ -15,17 +21,6 @@
           title="Configurar Palavras-chave, Blacklist e Sugestões da IA"
         >
           🎯 {{ t('keywords.badge', 'Termos & IA') }}
-        </button>
-
-        <!-- Botão de Disparo Imediato ao Worker Local -->
-        <button 
-          @click="triggerScrape" 
-          :disabled="isTriggering"
-          class="btn-trigger-scrape"
-          :title="t('navbar.trigger_scrape_tooltip', 'Solicitar coleta imediata ao Worker Local')"
-        >
-          <span v-if="!isTriggering">⚡ {{ t('navbar.trigger_scrape', 'Disparar Nova Raspagem') }}</span>
-          <span v-else class="loading-spin">⏳ {{ t('navbar.triggering', 'Solicitando ao Worker...') }}</span>
         </button>
 
         <button 
@@ -51,7 +46,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppI18n } from '~/composables/useAppI18n'
 import { useSupabase } from '~/composables/useSupabase'
@@ -66,43 +60,6 @@ const emit = defineEmits(['auth-change', 'open-keywords'])
 const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
 const supabase = useSupabase()
-
-const isTriggering = ref(false)
-
-async function triggerScrape() {
-  isTriggering.value = true
-  try {
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    const userId = currentUser?.id || props.user?.id
-
-    if (userId) {
-      const { error } = await supabase.table('configuracoes_scraper').update({
-        disparo_pendente: true,
-        status_scraper: '⚡ Disparo solicitado pelo Dashboard! Aguardando o Worker Local...'
-      }).eq('user_id', userId)
-
-      if (!error) {
-        alert('🚀 Disparo solicitado com sucesso!\n\nSe o seu Worker Local (iniciar_worker.bat) estiver ligado, ele iniciará a coleta em poucos segundos.')
-      } else {
-        alert('⚠️ Aviso ao enviar comando: ' + error.message)
-      }
-    } else {
-      // Caso não haja usuário autenticado
-      await supabase.table('configuracoes_scraper').update({
-        disparo_pendente: true,
-        status_scraper: '⚡ Disparo solicitado!'
-      }).neq('user_id', '00000000-0000-0000-0000-000000000000')
-      alert('🚀 Disparo solicitado com sucesso!')
-    }
-  } catch (e) {
-    console.error(e)
-    alert('Erro ao comunicar com o banco de dados: ' + e.message)
-  } finally {
-    setTimeout(() => {
-      isTriggering.value = false
-    }, 4000)
-  }
-}
 
 async function logout() {
   await supabase.auth.signOut()
@@ -186,31 +143,46 @@ async function logout() {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
-.btn-trigger-scrape {
+.schedule-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #ffffff;
-  border: none;
-  padding: 0.45rem 1rem;
+  gap: 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 0.9rem;
   border-radius: 99px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-  transition: all 0.2s ease;
+  color: #334155;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.btn-trigger-scrape:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
 }
 
-.btn-trigger-scrape:disabled {
-  opacity: 0.75;
-  cursor: not-allowed;
+@keyframes pulse-green {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.schedule-text {
+  letter-spacing: -0.01em;
 }
 
 .lang-btn {

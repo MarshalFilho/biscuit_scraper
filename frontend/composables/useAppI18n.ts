@@ -6,6 +6,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
   pt: {
     navbar: {
       badge: 'Inteligência Ativa',
+      daily_schedule: '⏰ Coleta Diária às 22h00',
       login: 'Entrar',
       logout: 'Sair',
       toggle_tooltip: 'Mudar para Inglês'
@@ -39,7 +40,8 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       show_hidden: 'Mostrar anúncios silenciados',
       price_range: 'Faixa de Preço:',
       timeline_title: 'Linha do Tempo de Coletas',
-      latest_scrape: 'Última atualização:'
+      latest_scrape: 'Última atualização:',
+      daily_info: 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00'
     },
     tabs: {
       overview: '📊 Visão Geral de Mercado',
@@ -331,6 +333,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
   en: {
     navbar: {
       badge: 'Active Intelligence',
+      daily_schedule: '⏰ Daily Scrape at 22:00 BRT',
       login: 'Sign In',
       logout: 'Sign Out',
       toggle_tooltip: 'Switch to Portuguese'
@@ -364,7 +367,8 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       show_hidden: 'Show silenced ads',
       price_range: 'Price Range:',
       timeline_title: 'Scrape Timeline',
-      latest_scrape: 'Last updated:'
+      latest_scrape: 'Last updated:',
+      daily_info: 'Automated scraping runs once a day at 22:00 BRT'
     },
     tabs: {
       overview: '📊 Market Overview',

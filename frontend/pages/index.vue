@@ -34,9 +34,14 @@
         :products="processedProducts"
       />
 
-      <!-- Banner da Data e Horário da Última Atualização -->
+      <!-- Banner da Data e Horário da Última Atualização & Informação de Frequência -->
       <div class="last-update-banner animate-fade-in">
-        <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
+        <div class="banner-left">
+          <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
+        </div>
+        <div class="banner-right">
+          <span class="schedule-hint">⏰ {{ t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00') }}</span>
+        </div>
       </div>
 
       <!-- Super Filtros Globais (Barra de Controle Elegante) -->
@@ -951,5 +956,30 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   margin-top: 1.2rem;
   padding-top: 1rem;
   border-top: 1px dashed #e2e8f0;
+}
+
+.last-update-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.65rem 1.2rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.schedule-hint {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 99px;
+  border: 1px solid #bfdbfe;
 }
 </style>
