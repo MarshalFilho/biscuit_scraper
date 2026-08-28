@@ -155,12 +155,19 @@ def extrair_vendas_texto(produto):
                 return texto
     return ""
 
+def normalizar_termo_busca(termo: str) -> str:
+    """Remove acentos e converte para slug com hífens (ex: 'coração biscuit' -> 'coracao-biscuit')."""
+    nfkd = unicodedata.normalize('NFKD', termo)
+    sem_acento = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    slug = re.sub(r'[^a-zA-Z0-9]+', '-', sem_acento.strip().lower()).strip('-')
+    return slug
+
 def fase_bronze():
     """
-    Fase Bronze: Abre o navegador, acessa o Mercado Livre e salva a página HTML bruta
+    Etapa Bronze do Mercado Livre: navega e salva o HTML bruto
     de cada termo de busca na pasta data/mercado_livre/bronze/ (coleta até N páginas).
     """
-    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...", flush=True)
+    print(f"\n🚀 [Etapa Bronze] Iniciando raspagem da web (até {config.get_max_paginas()} páginas por termo)...")
     
     auth_dir = AUTH_DIR
     profile_dir = os.path.join(auth_dir, "chrome_profile_meli")
@@ -212,21 +219,22 @@ def fase_bronze():
         """)
 
         for termo in config.get_termos_busca():
-            nome_arquivo_base = termo.replace(" ", "_")
+            nome_arquivo_base = re.sub(r'[^a-zA-Z0-9_]+', '_', termo).strip('_')
             print(f"\n🔎 Termo de busca: '{termo}'")
             
-            termo_url = termo.replace(' ', '-')
-            url = f"https://lista.mercadolivre.com.br/{termo_url}"
+            termo_slug = normalizar_termo_busca(termo)
+            url = f"https://lista.mercadolivre.com.br/{termo_slug}"
             
             # Acessa a primeira página
             print(f"   Acessando página 1: {url}")
             try:
                 page.goto(url, wait_until="domcontentloaded", timeout=60000)
                 
-                # Se cair em captcha/wall/logged por causa dos cookies de outro IP, limpa os cookies e retenta como público
-                if "/captcha/" in page.url or "captcha" in page.title().lower() or "wall/logged" in page.url:
+                # Se cair em checkpoint por conta de cookies de outro IP, limpa os cookies e retenta
+                if any(chk in page.url for chk in ["/captcha/", "wall/logged", "account-verification", "gz/"]) or "captcha" in page.title().lower():
                     print("⚠️ [Mercado Livre] Sessão com cookies gerou checagem de segurança (IP de nuvem). Limpando cookies e tentando como visitante limpo...", flush=True)
                     context.clear_cookies()
+                    time.sleep(1)
                     page.goto(url, wait_until="domcontentloaded", timeout=60000)
                     time.sleep(2)
 
