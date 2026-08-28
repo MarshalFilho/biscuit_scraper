@@ -1,8 +1,21 @@
 <template>
   <div class="container">
-    <Navbar :projectName="nomeProjeto" :user="authUser" @auth-change="handleAuthChange" />
+    <Navbar 
+      :projectName="nomeProjeto" 
+      :user="authUser" 
+      @auth-change="handleAuthChange" 
+      @open-keywords="isKeywordsModalOpen = true"
+    />
 
     <AntiBotAlert :alerta="statusAlerta" />
+
+    <!-- Modal de Gerenciamento de Palavras-Chave & IA -->
+    <KeywordsManager 
+      :isOpen="isKeywordsModalOpen" 
+      :user="authUser" 
+      @close="isKeywordsModalOpen = false" 
+      @saved="onKeywordsSaved" 
+    />
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
@@ -243,10 +256,19 @@ import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
 import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
+import KeywordsManager from '~/components/KeywordsManager.vue'
 
 const supabase = useSupabase()
 
 const { t, locale } = useAppI18n()
+
+const isKeywordsModalOpen = ref(false)
+
+function onKeywordsSaved(payload) {
+  if (payload?.blacklist) {
+    blacklist.value = payload.blacklist
+  }
+}
 
 const productsRaw = ref([])
 const loading = ref(true)

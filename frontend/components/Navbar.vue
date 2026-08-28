@@ -7,6 +7,16 @@
       </div>
 
       <div class="header-right">
+        <!-- Botão de Gerenciar Termos e Palavras-Chave -->
+        <button 
+          type="button"
+          class="btn-keywords"
+          @click="$emit('open-keywords')"
+          title="Configurar Palavras-chave, Blacklist e Sugestões da IA"
+        >
+          🎯 {{ t('keywords.badge', 'Termos & IA') }}
+        </button>
+
         <!-- Botão de Disparo Imediato ao Worker Local -->
         <button 
           @click="triggerScrape" 
@@ -51,7 +61,7 @@ const props = defineProps({
   user: { type: Object, default: null }
 })
 
-const emit = defineEmits(['auth-change'])
+const emit = defineEmits(['auth-change', 'open-keywords'])
 
 const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
@@ -150,6 +160,30 @@ async function logout() {
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
+}
+
+.btn-keywords {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  color: #4f46e5;
+  border: 1.5px solid #c7d2fe;
+  padding: 0.45rem 0.9rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-keywords:hover {
+  background: #eef2ff;
+  border-color: #818cf8;
+  color: #4338ca;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .btn-trigger-scrape {

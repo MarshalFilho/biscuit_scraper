@@ -66,7 +66,7 @@ def recarregar_config():
     try:
         from utils.supabase_client import conectar_supabase
         supabase = conectar_supabase()
-        response = supabase.table("configuracoes_scraper").select("termos_busca, blacklist, regras_categoria").eq("user_id", user_id).execute()
+        response = supabase.table("configuracoes_scraper").select("termos_busca, blacklist, regras_categoria, modo_paginacao, max_paginas, nicho_mercado").eq("user_id", user_id).execute()
         
         if response.data and len(response.data) > 0:
             data = response.data[0]
@@ -74,6 +74,7 @@ def recarregar_config():
             config_atual["blacklist"] = data.get("blacklist", DEFAULT_CONFIG["blacklist"])
             config_atual["modo_paginacao"] = data.get("modo_paginacao", "anonimo")
             config_atual["max_paginas"] = data.get("max_paginas", 1)
+            config_atual["nicho_atual"] = data.get("nicho_mercado", "biscuit")
             print("✅ Configurações dinâmicas injetadas com sucesso a partir do Supabase.")
         else:
             print("⚠️ AVISO: Nenhuma linha encontrada na tabela configuracoes_scraper para o seu user_id.")

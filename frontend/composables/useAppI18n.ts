@@ -307,6 +307,25 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       anti_bot_title: 'Alerta de Coleta Automática',
       anti_bot_desc: 'O robô de coleta encontrou uma verificação de segurança (Anti-bot/Captcha) na última execução. Os dados históricos anteriores continuam disponíveis.',
       dismiss: 'Entendido'
+    },
+    keywords: {
+      badge: 'Configurações de Extração',
+      title: 'Gerenciador de Palavras-Chave & Blacklist',
+      subtitle: 'Defina quais termos o robô deve monitorar e quais palavras deve descartar automaticamente.',
+      niche_label: 'Seu Nicho de Mercado / Segmento:',
+      niche_placeholder: 'Ex: Biscuit, Topo de Bolo, Artesanato...',
+      btn_ai_suggest: 'Gerar Termos com IA',
+      btn_ai_loading: 'Consultando Gemini...',
+      ai_suggestions_title: 'Sugestões Estratégicas do Gemini 3.6',
+      active_terms_label: 'Termos de Busca Ativos (Monitorados):',
+      new_term_placeholder: 'Digite um novo termo e pressione Enter...',
+      btn_add_term: 'Adicionar',
+      blacklist_label: 'Palavras Negativas / Blacklist (Filtro de Descarte):',
+      blacklist_hint: 'Anúncios contendo estas palavras serão automaticamente ignorados.',
+      new_blacklist_placeholder: 'Ex: racao, molde, silicone, papel...',
+      btn_add_blacklist: 'Bloquear Palavra',
+      btn_save: 'Salvar Configurações no Banco',
+      btn_saving: 'Salvando...'
     }
   },
   en: {
@@ -613,6 +632,25 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       anti_bot_title: 'Automated Collection Alert',
       anti_bot_desc: 'The automated scraper encountered a security challenge (Anti-bot/Captcha) on its last run. Previous historical data remains available.',
       dismiss: 'Dismiss'
+    },
+    keywords: {
+      badge: 'Scraping Configurations',
+      title: 'Keyword Manager & Blacklist',
+      subtitle: 'Define which search terms the scraper should monitor and which words to automatically ignore.',
+      niche_label: 'Your Market Niche / Business Segment:',
+      niche_placeholder: 'Ex: Biscuit, Cake Toppers, Handicrafts...',
+      btn_ai_suggest: 'Generate Terms with AI',
+      btn_ai_loading: 'Consulting Gemini...',
+      ai_suggestions_title: 'Strategic Suggestions from Gemini 3.6',
+      active_terms_label: 'Active Search Terms (Monitored):',
+      new_term_placeholder: 'Type a new search term and press Enter...',
+      btn_add_term: 'Add',
+      blacklist_label: 'Negative Keywords / Blacklist (Filter out):',
+      blacklist_hint: 'Listings containing these words will be automatically ignored.',
+      new_blacklist_placeholder: 'Ex: pet food, molds, silicone, paper...',
+      btn_add_blacklist: 'Block Word',
+      btn_save: 'Save Configurations to Database',
+      btn_saving: 'Saving...'
     }
   }
 }
