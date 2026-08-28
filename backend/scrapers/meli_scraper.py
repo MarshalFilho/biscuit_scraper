@@ -238,10 +238,9 @@ def fase_bronze():
         """)
 
         for termo in config.get_termos_busca():
-            nome_arquivo_base = re.sub(r'[^a-zA-Z0-9_]+', '_', termo).strip('_')
+            termo_slug = normalizar_termo_busca(termo)
             print(f"\n🔎 Termo de busca: '{termo}'")
             
-            termo_slug = normalizar_termo_busca(termo)
             url = f"https://lista.mercadolivre.com.br/{termo_slug}"
             
             # Acessa a primeira página
@@ -291,7 +290,7 @@ def fase_bronze():
                 verificar_bloqueio_meli(page, html_content=html_renderizado)
 
                 # Salva o arquivo Bronze localmente
-                bronze_path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{pagina}.html")
+                bronze_path = os.path.join(BRONZE_DIR, f"bronze_{termo_slug}_p{pagina}.html")
                 with open(bronze_path, "w", encoding="utf-8") as f:
                     f.write(html_renderizado)
                 print(f"   🥉 BRONZE: Arquivo '{bronze_path}' salvo com sucesso.")
@@ -331,19 +330,20 @@ def fase_prata():
     print("\n🚀 [Etapa Prata] Iniciando processamento e mesclagem de estrutura (Bronze -> Prata)...")
     
     for termo in config.get_termos_busca():
-        nome_arquivo_base = termo.replace(" ", "_")
-        prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
+        termo_slug = normalizar_termo_busca(termo)
+        prata_path = os.path.join(PRATA_DIR, f"prata_{termo_slug}.html")
         
         # Procura arquivos paginados (_p1, _p2...) correspondentes a este termo
         arquivos_para_processar = []
         for p in range(1, config.get_max_paginas() + 1):
-            path = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}_p{p}.html")
+            path = os.path.join(BRONZE_DIR, f"bronze_{termo_slug}_p{p}.html")
             if os.path.exists(path):
                 arquivos_para_processar.append(path)
                 
-        # Fallback para o arquivo antigo caso o scraper antigo tenha sido rodado antes
+        # Fallback para nomes legados
         if not arquivos_para_processar:
-            path_antigo = os.path.join(BRONZE_DIR, f"bronze_{nome_arquivo_base}.html")
+            nome_legado = termo.replace(" ", "_")
+            path_antigo = os.path.join(BRONZE_DIR, f"bronze_{nome_legado}_p1.html")
             if os.path.exists(path_antigo):
                 arquivos_para_processar.append(path_antigo)
                 
@@ -392,12 +392,17 @@ def fase_ouro():
     titulos_processados = set()
     
     for termo in config.get_termos_busca():
-        nome_arquivo_base = termo.replace(" ", "_")
-        prata_path = os.path.join(PRATA_DIR, f"prata_{nome_arquivo_base}.html")
+        termo_slug = normalizar_termo_busca(termo)
+        prata_path = os.path.join(PRATA_DIR, f"prata_{termo_slug}.html")
         
         if not os.path.exists(prata_path):
-            print(f"⚠️ [Ouro] Arquivo estruturado não encontrado: '{prata_path}'. Pulando...")
-            continue
+            nome_legado = termo.replace(" ", "_")
+            prata_path_legado = os.path.join(PRATA_DIR, f"prata_{nome_legado}.html")
+            if os.path.exists(prata_path_legado):
+                prata_path = prata_path_legado
+            else:
+                print(f"⚠️ [Ouro] Arquivo estruturado não encontrado: '{prata_path}'. Pulando...")
+                continue
             
         with open(prata_path, "r", encoding="utf-8") as f:
             html_content = f.read()
