@@ -210,7 +210,7 @@ Retorne EXCLUSIVAMENTE o JSON valido.
         print(f"⚠️ Erro geral no Gemini: {general_err}")
     return None
 
-def gerar_relatorio_ia_executivo():
+def gerar_relatorio_ia_executivo(user_id=None):
     """
     Gera o Relatório de Inteligência Executiva de Mercado.
     Tenta primeiro o Gemini-1.5-Flash (se GEMINI_API_KEY estiver configurado).
@@ -218,12 +218,16 @@ def gerar_relatorio_ia_executivo():
     """
     print("\n🧠 [Módulo IA] Gerando Relatório de Inteligência Executiva de Mercado...")
     supabase = conectar_supabase()
+    effective_user_id = user_id or os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
 
-    res = supabase.table("produtos").select("id, plataforma, titulo, link, vendedor, historico_coletas(preco, vendas_totais, data_coleta)").execute()
+    query = supabase.table("produtos").select("id, plataforma, titulo, link, vendedor, historico_coletas(preco, vendas_totais, data_coleta)")
+    if effective_user_id:
+        query = query.eq("user_id", effective_user_id)
+    res = query.execute()
     produtos_raw = res.data or []
 
     if not produtos_raw:
-        print("⚠️ [Módulo IA] Nenhum produto encontrado no banco para gerar o relatório.")
+        print(f"⚠️ [Módulo IA] Nenhum produto encontrado no banco para o usuário ({effective_user_id}).")
         return None
 
     # Payload minimalista enxuto para otimização de tokens (INPUT MINIMALISTA)
@@ -454,11 +458,10 @@ def gerar_relatorio_ia_executivo():
 
     # Sincroniza com Supabase
     try:
-        user_id = os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
-        if user_id:
+        if effective_user_id:
             supabase.table("configuracoes_scraper").update({
                 "relatorio_insights": relatorio_payload
-            }).eq("user_id", user_id).execute()
+            }).eq("user_id", effective_user_id).execute()
             print("☁️ [Módulo IA] Relatório sincronizado no Supabase com sucesso!")
     except Exception as e:
         print(f"⚠️ [Módulo IA] Erro ao sincronizar com Supabase: {e}")

@@ -69,7 +69,7 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
             fase_prata()
             
             atualizar_status_scraper(user_id, "🛒 Mercado Livre [3/3]: Extraindo produtos e enviando ao Supabase...")
-            fase_ouro()
+            fase_ouro(user_id=user_id)
         except BotDetectionError as e:
             print(f"🚨 [Anti-Bot] Bloqueio detectado no Mercado Livre: {e.mensagem}")
             registrar_alerta_antibot(user_id, "meli", e.mensagem)
@@ -87,7 +87,7 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
             fase_prata()
             
             atualizar_status_scraper(user_id, "🧡 Shopee [3/3]: Extraindo produtos e enviando ao Supabase...")
-            fase_ouro()
+            fase_ouro(user_id=user_id)
         except BotDetectionError as e:
             print(f"🚨 [Anti-Bot] Bloqueio detectado na Shopee: {e.mensagem}")
             registrar_alerta_antibot(user_id, "shopee", e.mensagem)
@@ -105,7 +105,7 @@ def executar_scrapers(plataforma, user_id, rodar_ia=True):
 
         try:
             from utils.ai_engine import gerar_relatorio_ia_executivo
-            gerar_relatorio_ia_executivo()
+            gerar_relatorio_ia_executivo(user_id=user_id)
             atualizar_status_scraper(user_id, f"✅ Coleta diária finalizada com sucesso em {agora_str}")
         except Exception as e:
             logger.warning("ai_report_error", error=str(e))

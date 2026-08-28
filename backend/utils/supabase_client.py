@@ -74,9 +74,11 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     Verifica se o produto existe para aquele user_id. Se não, insere.
     Retorna o UUID do produto no banco.
     """
+    effective_user_id = user_id or os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
+    
     query = supabase.table("produtos").select("id").eq("plataforma", plataforma)
-    if user_id:
-        query = query.eq("user_id", user_id)
+    if effective_user_id:
+        query = query.eq("user_id", effective_user_id)
         
     # 1. Verifica se já existe por id_externo
     response = query.eq("id_externo", id_externo).execute()
@@ -84,8 +86,8 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     # 2. Fallback por título se for um link de clique patrocinado
     if (not response.data or len(response.data) == 0) and titulo:
         query_title = supabase.table("produtos").select("id").eq("plataforma", plataforma)
-        if user_id:
-            query_title = query_title.eq("user_id", user_id)
+        if effective_user_id:
+            query_title = query_title.eq("user_id", effective_user_id)
         response = query_title.eq("titulo", titulo).execute()
 
     if response.data and len(response.data) > 0:
@@ -103,8 +105,8 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
         "criado_em": datetime.utcnow().isoformat()
     }
     
-    if user_id:
-        novo_produto["user_id"] = user_id
+    if effective_user_id:
+        novo_produto["user_id"] = effective_user_id
     
     res_insert = supabase.table("produtos").insert(novo_produto).execute()
     return res_insert.data[0]["id"]

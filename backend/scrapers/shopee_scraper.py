@@ -300,7 +300,7 @@ def fase_prata():
 
 
 
-def fase_ouro():
+def fase_ouro(user_id=None):
     print("\n🚀 [Etapa Ouro] Extração e deduplicação Shopee (Prata -> Ouro)...")
     todos_dados_ouro = []
     urls_processadas = set()
@@ -434,7 +434,8 @@ def fase_ouro():
                     id_externo=id_externo,
                     titulo=item["titulo"],
                     link=item["url_anuncio"],
-                    vendedor=item.get("vendedor")
+                    vendedor=item.get("vendedor"),
+                    user_id=user_id
                 )
                 registrar_historico(
                     supabase=supabase,

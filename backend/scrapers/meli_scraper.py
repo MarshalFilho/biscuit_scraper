@@ -341,7 +341,7 @@ def fase_prata():
             
     print("✅ [Etapa Prata] Concluída!")
 
-def fase_ouro():
+def fase_ouro(user_id=None):
     """
     Fase Ouro: Lê os HTMLs estruturados da pasta data/mercado_livre/prata/, extrai as informações dos cards de produtos
     e grava a lista final em formato JSON consolidado em data/mercado_livre/ouro/dados_meli.json.
@@ -520,7 +520,8 @@ def fase_ouro():
                     id_externo=item["url_anuncio"].split("-")[1] if "-" in item["url_anuncio"] else item["titulo"][:20],
                     titulo=item["titulo"],
                     link=item["url_anuncio"],
-                    vendedor=item.get("vendedor")
+                    vendedor=item.get("vendedor"),
+                    user_id=user_id
                 )
                 registrar_historico(
                     supabase=supabase,
