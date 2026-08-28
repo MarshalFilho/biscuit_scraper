@@ -51,7 +51,19 @@
           <div v-if="aiSuggestions.length > 0" class="ai-suggestions-box animate-fade-in">
             <div class="ai-header">
               <span class="ai-badge">🤖 {{ t('keywords.ai_suggestions_title', 'Sugestões Estratégicas do Gemini 3.6') }}</span>
-              <button class="btn-clear-suggestions" @click="aiSuggestions = []">{{ t('keywords.clear_suggestions', 'Limpar sugestões') }}</button>
+              <div class="ai-header-actions">
+                <button 
+                  type="button" 
+                  class="btn-add-all-sug" 
+                  :disabled="terms.length >= MAX_TERMS" 
+                  @click="addAllSuggestions"
+                >
+                  {{ t('keywords.btn_add_all', '+ Adicionar Todas') }}
+                </button>
+                <button type="button" class="btn-clear-suggestions" @click="aiSuggestions = []">
+                  {{ t('keywords.clear_suggestions', 'Limpar sugestões') }}
+                </button>
+              </div>
             </div>
             <div class="suggestions-grid">
               <div 
@@ -315,27 +327,27 @@ function close() {
 
 async function clearAllTerms() {
   const ok = await askConfirm({
-    title: 'Limpar todos os termos?',
-    message: 'Deseja realmente remover todos os termos de busca da sua lista de monitoramento?',
-    confirmText: 'Sim, limpar todos',
+    title: t('keywords.confirm_clear_terms_title', 'Limpar todos os termos?'),
+    message: t('keywords.confirm_clear_terms_msg', 'Deseja realmente remover todos os termos de busca da sua lista de monitoramento?'),
+    confirmText: t('keywords.confirm_clear_terms_btn', 'Sim, limpar todos'),
     danger: true
   })
   if (ok) {
     terms.value = []
-    toast.info('Lista de termos de busca esvaziada.')
+    toast.info(t('keywords.toast_terms_cleared', 'Lista de termos de busca esvaziada.'))
   }
 }
 
 async function clearAllBlacklist() {
   const ok = await askConfirm({
-    title: 'Limpar palavras negativas?',
-    message: 'Deseja realmente remover todas as palavras da sua blacklist?',
-    confirmText: 'Sim, limpar blacklist',
+    title: t('keywords.confirm_clear_bl_title', 'Limpar palavras negativas?'),
+    message: t('keywords.confirm_clear_bl_msg', 'Deseja realmente remover todas as palavras da sua blacklist?'),
+    confirmText: t('keywords.confirm_clear_bl_btn', 'Sim, limpar blacklist'),
     danger: true
   })
   if (ok) {
     blacklist.value = []
-    toast.info('Blacklist esvaziada.')
+    toast.info(t('keywords.toast_blacklist_cleared', 'Blacklist esvaziada.'))
   }
 }
 
@@ -343,7 +355,7 @@ function addTerm() {
   const val = newTermInput.value.trim().toLowerCase()
   if (!val) return
   if (terms.value.length >= MAX_TERMS) {
-    toast.warning(`Limite máximo de ${MAX_TERMS} termos atingido para proteção de recursos!`, 'Limite Atingido')
+    toast.warning(t('keywords.limit_error', '⚠️ Limite de segurança de {max} termos atingido.').replace('{max}', MAX_TERMS), t('keywords.limit_reached', 'Limite Atingido'))
     return
   }
   if (!terms.value.includes(val)) {
@@ -371,12 +383,30 @@ function removeBlacklist(idx) {
 
 function addSuggestedTerm(termo) {
   if (terms.value.length >= MAX_TERMS) {
-    toast.warning(`Limite máximo de ${MAX_TERMS} termos atingido! Remova um termo existente antes de adicionar novos.`, 'Limite Atingido')
+    toast.warning(t('keywords.limit_error', '⚠️ Limite de segurança de {max} termos atingido.').replace('{max}', MAX_TERMS), t('keywords.limit_reached', 'Limite Atingido'))
     return
   }
   if (!terms.value.includes(termo)) {
     terms.value.push(termo)
-    toast.success(`Termo "${termo}" adicionado ao monitoramento!`)
+    toast.success(t('keywords.toast_term_added', 'Termo "{term}" adicionado ao monitoramento!').replace('{term}', termo))
+  }
+}
+
+function addAllSuggestions() {
+  if (terms.value.length >= MAX_TERMS) {
+    toast.warning(t('keywords.limit_error', '⚠️ Limite de segurança de {max} termos atingido.').replace('{max}', MAX_TERMS), t('keywords.limit_reached', 'Limite Atingido'))
+    return
+  }
+  let addedCount = 0
+  for (const sug of aiSuggestions.value) {
+    if (terms.value.length >= MAX_TERMS) break
+    if (!terms.value.includes(sug.termo)) {
+      terms.value.push(sug.termo)
+      addedCount++
+    }
+  }
+  if (addedCount > 0) {
+    toast.success(t('keywords.toast_all_added', '{count} sugestões foram adicionadas!').replace('{count}', addedCount), t('keywords.toast_saved_title', 'Sucesso'))
   }
 }
 
@@ -385,8 +415,15 @@ async function generateAiSuggestions() {
   isLoadingAi.value = true
   try {
     const remainingSlots = Math.max(1, MAX_TERMS - terms.value.length)
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers = {}
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+    }
+
     const res = await $fetch('/api/ai-keywords', {
       method: 'POST',
+      headers,
       body: {
         niche: niche.value || 'Geral',
         currentTerms: terms.value,
@@ -402,14 +439,22 @@ async function generateAiSuggestions() {
     if (res?.sugestoes && Array.isArray(res.sugestoes)) {
       aiSuggestions.value = res.sugestoes
       startCooldown(20)
-      toast.success(`${res.sugestoes.length} sugestões estratégicas geradas pelo Gemini 3.6!`, 'Sugestões Prontas')
+      toast.success(t('keywords.toast_all_added', '{count} sugestões geradas!').replace('{count}', res.sugestoes.length), t('keywords.ai_suggestions_title', 'IA'))
     } else {
-      toast.info('Nenhuma nova sugestão retornada para os critérios atuais.')
+      toast.info(t('keywords.empty_terms_hint', 'Nenhuma nova sugestão retornada.'))
     }
   } catch (e) {
     console.error(e)
-    const errorMsg = e?.data?.statusMessage || e?.message || 'Erro ao consultar IA'
-    toast.warning(errorMsg, 'Cota de IA')
+    const statusMsg = e?.data?.statusMessage || e?.message || ''
+    if (statusMsg.startsWith('COOLDOWN:')) {
+      const sec = statusMsg.split(':')[1]
+      toast.warning(t('keywords.toast_cooldown_msg', 'Aguarde {sec}s').replace('{sec}', sec), t('keywords.toast_quota_title', 'Cota de IA'))
+    } else if (statusMsg.startsWith('RATE_LIMIT:')) {
+      const time = statusMsg.split(':')[1]
+      toast.warning(t('keywords.toast_rate_limit_msg', 'Limite de segurança de IA atingido.').replace('{time}', time), t('keywords.toast_quota_title', 'Cota de IA'))
+    } else {
+      toast.warning(statusMsg || 'Erro ao consultar IA', t('keywords.toast_quota_title', 'Cota de IA'))
+    }
   } finally {
     isLoadingAi.value = false
   }
@@ -417,7 +462,7 @@ async function generateAiSuggestions() {
 
 async function saveConfigurations() {
   if (terms.value.length === 0) {
-    toast.warning('Por favor, mantenha pelo menos 1 termo de busca ativo.', 'Atenção')
+    toast.warning(t('keywords.empty_terms_hint', 'Por favor, mantenha pelo menos 1 termo ativo.'), t('keywords.limit_reached', 'Atenção'))
     return
   }
   isSaving.value = true
@@ -451,7 +496,7 @@ async function saveConfigurations() {
       throw new Error('Falha na resposta do servidor.')
     }
 
-    toast.success('Seus novos termos de busca e regras de descarte foram salvos com sucesso e serão usados na próxima raspagem!', 'Configurações Salvas')
+    toast.success(t('keywords.toast_saved_success', 'Configurações salvas com sucesso!'), t('keywords.toast_saved_title', 'Configurações Salvas'))
     emit('saved', { terms: terms.value, blacklist: blacklist.value, niche: niche.value })
     close()
   } catch (e) {
@@ -838,6 +883,33 @@ async function saveConfigurations() {
   font-size: 0.85rem;
   font-weight: 700;
   color: #6b21a8;
+}
+
+.ai-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-add-all-sug {
+  background: #7c3aed;
+  color: #ffffff;
+  border: none;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-all-sug:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.btn-add-all-sug:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-clear-suggestions {

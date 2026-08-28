@@ -305,17 +305,17 @@ async function confirmDelete(item) {
   const isHidden = item._isHidden
   if (isHidden) {
     emit('delete-product', item)
-    toast.success('Anúncio restaurado com sucesso!')
+    toast.success(t('keywords.toast_restored', 'Anúncio restaurado com sucesso!'))
   } else {
     const ok = await askConfirm({
-      title: 'Ocultar / Silenciar Anúncio?',
-      message: `Deseja silenciar o anúncio:\n\n"${item.titulo}"\n\nVocê pode visualizá-lo e restaurá-lo a qualquer momento ativando o filtro "Mostrar anúncios silenciados".`,
-      confirmText: 'Sim, silenciar',
+      title: t('keywords.confirm_silence_title', 'Ocultar / Silenciar Anúncio?'),
+      message: t('keywords.confirm_silence_msg', 'Deseja silenciar o anúncio:\n\n"{title}"\n\nVocê pode visualizá-lo e restaurá-lo a qualquer momento ativando o filtro "Mostrar anúncios silenciados".').replace('{title}', item.titulo),
+      confirmText: t('keywords.confirm_silence_btn', 'Sim, silenciar'),
       danger: true
     })
     if (ok) {
       emit('delete-product', item)
-      toast.info('Anúncio silenciado do dashboard.')
+      toast.info(t('keywords.toast_silenced', 'Anúncio silenciado do dashboard.'))
     }
   }
 }
