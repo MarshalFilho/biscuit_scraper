@@ -120,10 +120,15 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       open_store_title: 'Abrir anúncio original na loja',
       silence_ad_title: 'Ocultar / Silenciar este anúncio',
       restore_ad_title: 'Restaurar produto',
-      confirm_hide: 'Deseja silenciar/ocultar o anúncio:\n\n"{title}"\n\nVocê pode desfazer isso depois.',
       empty: 'Nenhum produto encontrado com os filtros aplicados.',
       loading_more: 'Carregando mais produtos...',
       btn_load_more: 'Carregar mais produtos ↓',
+      status_active: 'Ativos',
+      status_all: 'Todos',
+      status_hidden: 'Ocultos',
+      status_active_tooltip: 'Mostrar apenas anúncios ativos',
+      status_all_tooltip: 'Mostrar todos os anúncios',
+      status_hidden_tooltip: 'Mostrar apenas anúncios ocultados/silenciados',
       csv_headers: ['Plataforma', 'Categoria', 'Título', 'Preço Atual (R$)', 'Vendas Totais', 'Crescimento de Vendas', 'Variação Preço (R$)', 'Data Criação', 'Link']
     },
     charts: {
@@ -486,18 +491,6 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       table_title: '🔍 Complete Product Catalog',
       table_subtitle: 'Breakdown of each scraped ad with price, seller, and official links.'
     },
-    timeline: {
-      badge: 'SCRAPE TIMELINE',
-      title: 'Explore Historical Market Evolution',
-      subtitle: 'Select a specific date to view the Market Snapshot for that day, or enable date comparison',
-      mode_single: 'Single Mode',
-      mode_compare: 'Compare Dates Mode',
-      compare_tooltip: 'Compare two past scrapes side by side',
-      records: 'records',
-      point_a: 'Point A (Base):',
-      point_b: 'Point B (Current):',
-      latest: 'Latest'
-    },
     table: {
       title: 'Monitored Products Database',
       subtitle: 'Click column headers to sort ascending / descending (▲ / ▼)',
@@ -523,6 +516,12 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       empty: 'No products found matching the applied filters.',
       loading_more: 'Loading more products...',
       btn_load_more: 'Load more products ↓',
+      status_active: 'Active',
+      status_all: 'All',
+      status_hidden: 'Hidden',
+      status_active_tooltip: 'Show only active listings',
+      status_all_tooltip: 'Show all listings (active and silenced)',
+      status_hidden_tooltip: 'Show only silenced/hidden listings',
       csv_headers: ['Platform', 'Category', 'Title', 'Current Price (R$)', 'Total Sales', 'Sales Growth', 'Price Variation (R$)', 'Creation Date', 'Link']
     },
     charts: {

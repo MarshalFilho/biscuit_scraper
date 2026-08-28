@@ -69,6 +69,34 @@
           </select>
         </div>
 
+        <!-- Filtro de Visibilidade (Ativos, Todos, Ocultos) -->
+        <div class="visibility-pills">
+          <button 
+            type="button" 
+            :class="['vis-pill', { active: localVisibility === 'active' }]"
+            @click="localVisibility = 'active'"
+            :title="t('table.status_active_tooltip', 'Mostrar apenas anúncios ativos')"
+          >
+            🟢 {{ t('table.status_active', 'Ativos') }}
+          </button>
+          <button 
+            type="button" 
+            :class="['vis-pill', { active: localVisibility === 'all' }]"
+            @click="localVisibility = 'all'"
+            :title="t('table.status_all_tooltip', 'Mostrar todos os anúncios')"
+          >
+            👁️ {{ t('table.status_all', 'Todos') }}
+          </button>
+          <button 
+            type="button" 
+            :class="['vis-pill', { active: localVisibility === 'hidden' }]"
+            @click="localVisibility = 'hidden'"
+            :title="t('table.status_hidden_tooltip', 'Mostrar apenas anúncios ocultados/silenciados')"
+          >
+            🚫 {{ t('table.status_hidden', 'Ocultos') }}
+          </button>
+        </div>
+
         <!-- Contador de Registros -->
         <div class="table-counter-badge">
           <span>📊 <strong>{{ filteredData.length }}</strong> produtos</span>
@@ -265,6 +293,7 @@ const emit = defineEmits(['delete-product'])
 const search = ref('')
 const localPlatform = ref('Todas')
 const localCategory = ref('Todas')
+const localVisibility = ref('active') // 'active', 'all', 'hidden'
 const selectedProduct = ref(null)
 
 // Paginação
@@ -293,7 +322,7 @@ function sortBy(key) {
 }
 
 // Zera a página quando busca ou filtra
-watch([search, localPlatform, localCategory, sortKey, sortOrder, itemsPerPage], () => {
+watch([search, localPlatform, localCategory, localVisibility, sortKey, sortOrder, itemsPerPage], () => {
   currentPage.value = 1
 })
 
@@ -329,6 +358,12 @@ const filteredData = computed(() => {
 
   if (localCategory.value !== 'Todas') {
     result = result.filter(item => item.categoria === localCategory.value)
+  }
+
+  if (localVisibility.value === 'active') {
+    result = result.filter(item => !item._isHidden)
+  } else if (localVisibility.value === 'hidden') {
+    result = result.filter(item => item._isHidden)
   }
 
   if (search.value) {
@@ -555,6 +590,38 @@ function exportToCSV() {
   font-weight: 600;
   color: #334155;
   outline: none;
+}
+
+.visibility-pills {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+  gap: 0.25rem;
+  border: 1px solid #e2e8f0;
+}
+
+.vis-pill {
+  border: none;
+  background: none;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.vis-pill:hover {
+  color: #0f172a;
+}
+
+.vis-pill.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .table-counter-badge {

@@ -43,7 +43,7 @@
               </button>
             </div>
             <div class="quota-info-row">
-              <small>⚡ {{ t('keywords.ai_security_limit', 'Limite da IA (Admin): 10 consultas por dia (restantes: {count})').replace('{count}', quotaRemaining ?? 10) }}</small>
+              <small>⚡ {{ t('keywords.ai_security_limit', 'Limite da IA: {max} consultas por dia (restantes: {count})').replace('{max}', maxQuota).replace('{count}', quotaRemaining ?? maxQuota) }}</small>
             </div>
           </div>
 
@@ -294,6 +294,17 @@ const clientRequests = ref([])
 const newTermInput = ref('')
 const newBlacklistInput = ref('')
 const aiSuggestions = ref([])
+
+const userRole = computed(() => {
+  if (!props.user) return 'pro'
+  const appRole = String(props.user.app_metadata?.role || '').toLowerCase()
+  const userRole = String(props.user.user_metadata?.role || '').toLowerCase()
+  if (appRole === 'admin' || userRole === 'admin') return 'admin'
+  if (appRole === 'light' || userRole === 'light') return 'light'
+  return 'pro'
+})
+
+const maxQuota = computed(() => userRole.value === 'admin' ? 10 : 5)
 
 const isLoadingAi = ref(false)
 const isSaving = ref(false)

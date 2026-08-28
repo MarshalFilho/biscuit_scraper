@@ -25,11 +25,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 2. Validação de Cargo no Backend (Apenas Admin)
-  if (user && !checkIsAdmin(user)) {
+  const maxQuotaForUser = user ? getAiDailyQuota(user) : 5
+
+  // 2. Validação de Cargo no Backend (Admin e Pro permitidos; Light bloqueado)
+  if (maxQuotaForUser <= 0) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Acesso negado: Apenas administradores têm permissão para utilizar o gerador de termos por IA.'
+      statusMessage: 'Acesso negado: Usuários do plano Light não possuem acesso ao gerador de termos por IA. Atualize para o plano Pro ou solicite ao administrador.'
     })
   }
 
@@ -65,8 +67,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Checagem de Cota Máxima no Banco (10 por dia)
-    if (userHistory.length >= MAX_REQUESTS_PER_WINDOW) {
+    // Checagem de Cota Máxima no Banco (10 para Admin, 5 para Pro)
+    if (userHistory.length >= maxQuotaForUser) {
       const oldestCall = Math.min(...userHistory)
       const resetTime = oldestCall + RATE_LIMIT_WINDOW_MS
       const minutesLeft = Math.max(1, Math.ceil((resetTime - now) / 60000))
@@ -177,6 +179,7 @@ Retorne EXCLUSIVAMENTE um JSON válido no formato exato:
 
   return {
     sugestoes: generatedSuggestions,
-    remainingQuota: Math.max(0, MAX_REQUESTS_PER_WINDOW - (userHistory.length || 1))
+    remainingQuota: Math.max(0, maxQuotaForUser - (userHistory.length || 1)),
+    maxQuota: maxQuotaForUser
   }
 })

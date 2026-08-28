@@ -119,15 +119,41 @@
               <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
             </div>
 
-            <!-- Checkboxes Rápidos -->
+            <!-- Filtro de Visibilidade (Ativos, Todos, Ocultos) -->
+            <div class="filter-item">
+              <div class="toggle-group-small">
+                <button 
+                  type="button" 
+                  :class="['tog-btn-sm', { active: visibilityStatus === 'active' }]"
+                  @click="visibilityStatus = 'active'"
+                  :title="t('table.status_active_tooltip', 'Mostrar apenas anúncios ativos')"
+                >
+                  🟢 {{ t('table.status_active', 'Ativos') }}
+                </button>
+                <button 
+                  type="button" 
+                  :class="['tog-btn-sm', { active: visibilityStatus === 'all' }]"
+                  @click="visibilityStatus = 'all'"
+                  :title="t('table.status_all_tooltip', 'Mostrar todos')"
+                >
+                  👁️ {{ t('table.status_all', 'Todos') }}
+                </button>
+                <button 
+                  type="button" 
+                  :class="['tog-btn-sm', { active: visibilityStatus === 'hidden' }]"
+                  @click="visibilityStatus = 'hidden'"
+                  :title="t('table.status_hidden_tooltip', 'Mostrar apenas ocultados')"
+                >
+                  🚫 {{ t('table.status_hidden', 'Ocultos') }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Checkbox Rápido 0 vendas -->
             <div class="filter-item checkboxes-item">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="hideZeroSales" />
                 {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
-              </label>
-              <label class="checkbox-label text-muted">
-                <input type="checkbox" v-model="showHiddenProducts" />
-                {{ t('filters.show_hidden', 'Mostrar silenciados') }}
               </label>
             </div>
 
@@ -390,7 +416,7 @@ const minPrice = ref(null)
 const maxPrice = ref(null)
 const minSales = ref(null)
 const hideZeroSales = ref(false)
-const showHiddenProducts = ref(false)
+const visibilityStatus = ref('active') // 'active', 'all', 'hidden'
 const showPriceHistogram = ref(false)
 
 const defaultCategoryRules = [
@@ -674,7 +700,6 @@ const processedProducts = computed(() => {
     })
     .filter(p => {
       if (p._hiddenByTimeline) return false
-      if (p._isHidden && !showHiddenProducts.value) return false
       
       const t = p.titulo.toLowerCase()
       if (blacklist.value.some(word => t.includes(word))) return false
@@ -687,6 +712,12 @@ const processedProducts = computed(() => {
 // Aplica os Super Filtros Globais
 const filteredProducts = computed(() => {
   let result = processedProducts.value
+
+  if (visibilityStatus.value === 'active') {
+    result = result.filter(p => !p._isHidden)
+  } else if (visibilityStatus.value === 'hidden') {
+    result = result.filter(p => p._isHidden)
+  }
 
   if (selectedCategory.value !== 'Todas') {
     result = result.filter(p => p.categoria === selectedCategory.value)
@@ -819,20 +850,20 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .overview-layout {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.25rem;
 }
 
 .dashboard-section {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
+  padding: 1.25rem;
+  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
 }
 
 .section-header {
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -845,14 +876,14 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 
 .section-title-box h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 .section-subtitle {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #64748b;
 }
 
@@ -886,19 +917,51 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .charts-container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .unified-control-panel {
-  padding: 1.2rem 1.5rem;
-  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 18px;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
+}
+
+.toggle-group-small {
+  display: flex;
+  background: #f1f5f9;
+  padding: 0.2rem;
+  border-radius: 8px;
+  gap: 0.2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.tog-btn-sm {
+  border: none;
+  background: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tog-btn-sm:hover {
+  color: #0f172a;
+}
+
+.tog-btn-sm.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .control-header-row {

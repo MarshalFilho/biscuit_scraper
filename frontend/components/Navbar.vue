@@ -26,18 +26,18 @@
           <span class="schedule-text">{{ t('navbar.daily_schedule', '⏰ Coleta Diária às 22h00') }}</span>
         </div>
 
-        <!-- 1. Botão EXCLUSIVO para ADMIN: Gerenciar Termos e Palavras-Chave -->
+        <!-- 1. Botão para ADMIN e PRO: Gerenciar Termos e Palavras-Chave -->
         <button 
-          v-if="isAdmin"
+          v-if="canManageDirectly"
           type="button"
           class="btn-keywords"
           @click="$emit('open-keywords')"
-          :title="t('keywords.admin_btn_title', 'Painel Admin: Configurar Palavras-chave, Blacklist e IA')"
+          :title="isAdmin ? t('keywords.admin_btn_title', 'Painel Admin: Configurar Palavras-chave, Blacklist e IA') : t('keywords.pro_btn_title', 'Painel Pro: Gerenciar seus termos e IA')"
         >
-          🎯 {{ t('keywords.badge', 'Termos & IA') }}
+          🎯 {{ isAdmin ? t('keywords.badge', 'Termos & IA') : t('keywords.badge_pro', 'Meus Termos & IA') }}
         </button>
 
-        <!-- 2. Botão EXCLUSIVO para CLIENTE: Solicitar Novo Termo -->
+        <!-- 2. Botão para LIGHT: Solicitar Novo Termo -->
         <button 
           v-else
           type="button"
@@ -61,8 +61,8 @@
             <span class="user-avatar">👤</span>
             <div class="user-details">
               <span class="user-email" :title="user.email">{{ user.email }}</span>
-              <span :class="['role-pill', isAdmin ? 'role-admin' : 'role-client']">
-                {{ isAdmin ? 'ADMIN' : 'CLIENTE' }}
+              <span :class="['role-pill', `role-${currentRole}`]">
+                {{ currentRole.toUpperCase() }}
               </span>
             </div>
             <button @click="logout" class="btn-logout" :title="t('auth.logout', 'Sair')">
@@ -92,16 +92,19 @@ const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
 const supabase = useSupabase()
 
-const isAdmin = computed(() => {
-  if (!props.user) return true
-  const appRole = props.user.app_metadata?.role
-  const userRole = props.user.user_metadata?.role
-  const directRole = props.user.role
-  if (appRole === 'cliente' || userRole === 'cliente' || directRole === 'cliente') {
-    return false
-  }
-  return true
+const currentRole = computed(() => {
+  if (!props.user) return 'pro'
+  const appRole = String(props.user.app_metadata?.role || '').toLowerCase()
+  const userRole = String(props.user.user_metadata?.role || '').toLowerCase()
+  const directRole = String(props.user.role || '').toLowerCase()
+
+  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin') return 'admin'
+  if (appRole === 'light' || userRole === 'light' || directRole === 'light' || appRole === 'cliente') return 'light'
+  return 'pro'
 })
+
+const isAdmin = computed(() => currentRole.value === 'admin')
+const canManageDirectly = computed(() => currentRole.value === 'admin' || currentRole.value === 'pro')
 
 async function logout() {
   await supabase.auth.signOut()
@@ -112,8 +115,8 @@ async function logout() {
 
 <style scoped>
 .app-header {
-  padding: 1rem 1.5rem;
-  margin-bottom: 2rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -325,7 +328,13 @@ async function logout() {
   border: 1px solid #fde68a;
 }
 
-.role-client {
+.role-pro {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+
+.role-light, .role-client {
   background: #e0f2fe;
   color: #0369a1;
   border: 1px solid #bae6fd;

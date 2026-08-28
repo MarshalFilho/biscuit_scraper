@@ -80,7 +80,13 @@
     "col_actions": "Actions",
     "empty": "No products found matching the applied filters.",
     "loading_more": "Loading more products...",
-    "btn_load_more": "Load more products ↓"
+    "btn_load_more": "Load more products ↓",
+    "status_active": "Active",
+    "status_all": "All",
+    "status_hidden": "Hidden",
+    "status_active_tooltip": "Show only active listings",
+    "status_all_tooltip": "Show all listings (active and silenced)",
+    "status_hidden_tooltip": "Show only silenced/hidden listings"
   },
   "charts": {
     "top_sellers": "🏆 Top Selling Stores by Revenue",

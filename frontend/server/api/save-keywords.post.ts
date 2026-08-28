@@ -21,11 +21,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // 2. Validação de Cargo no Backend (Apenas Admin)
-  if (user && !checkIsAdmin(user)) {
+  // 2. Validação de Cargo no Backend (Admin e Pro permitidos; Light bloqueado)
+  if (user && !checkCanManageKeywords(user)) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Acesso negado: Apenas administradores têm permissão para alterar as palavras-chave e configurações de extração do robô.'
+      statusMessage: 'Acesso negado: Usuários do plano Light não têm permissão para alterar termos diretamente. Por favor, envie uma solicitação ao administrador.'
     })
   }
 

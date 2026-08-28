@@ -1,11 +1,22 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.3s;">
     <div class="chart-header-box">
-      <h3>{{ t('charts.price_vs_sales', '🎯 Distribuição de Vendas por Faixa de Preço') }}</h3>
-      <p class="chart-subtitle">{{ t('charts.price_vs_sales_desc', 'Descubra em qual faixa de preço o mercado mais vende') }}</p>
+      <div class="header-title-flex">
+        <div>
+          <h3>{{ t('charts.price_vs_sales', '🎯 Distribuição de Vendas por Faixa de Preço') }}</h3>
+          <p class="chart-subtitle">{{ t('charts.price_vs_sales_desc', 'Volume total de unidades vendidas agrupadas por faixa de valor.') }}</p>
+        </div>
+        <span class="chart-badge">📊 Volume</span>
+      </div>
     </div>
     <div class="chart-wrapper">
-      <apexchart v-if="isMounted" type="bar" height="210" :options="chartOptions" :series="series"></apexchart>
+      <apexchart 
+        v-if="isMounted" 
+        type="bar" 
+        height="260" 
+        :options="chartOptions" 
+        :series="series"
+      ></apexchart>
     </div>
   </div>
 </template>
@@ -23,7 +34,7 @@ const props = defineProps({
 const isMounted = ref(false)
 onMounted(() => { isMounted.value = true })
 
-// Calcula faixas de preço dinâmicas e inteligentes baseadas no nicho monitorado
+// Calcula faixas de preço limpas, inteligentes e perfeitamente arredondadas
 const priceRanges = computed(() => {
   const validPrices = props.items
     .map(i => i.preco)
@@ -32,40 +43,31 @@ const priceRanges = computed(() => {
 
   if (validPrices.length === 0) {
     return [
-      { label: t('charts.up_to', 'Até') + ' R$ 25', min: 0, max: 25 },
-      { label: 'R$ 25 - R$ 50', min: 25.01, max: 50 },
-      { label: 'R$ 50 - R$ 100', min: 50.01, max: 100 },
+      { label: t('charts.up_to', 'Até') + ' R$ 30', min: 0, max: 30 },
+      { label: 'R$ 30 - R$ 60', min: 30.01, max: 60 },
+      { label: 'R$ 60 - R$ 100', min: 60.01, max: 100 },
       { label: 'R$ 100 - R$ 200', min: 100.01, max: 200 },
       { label: t('charts.above', 'Acima') + ' R$ 200', min: 200.01, max: Infinity }
     ]
   }
 
-  const minP = validPrices[0]
-  // 95º percentil para evitar que um item fora da curva distorça o gráfico
   const p95Index = Math.min(Math.floor(validPrices.length * 0.95), validPrices.length - 1)
-  const maxP = Math.max(validPrices[p95Index], minP + 10)
+  const maxP = Math.max(validPrices[p95Index], 100)
 
-  const rawStep = (maxP - minP) / 4
-  let niceStep = 10
-  if (rawStep <= 15) niceStep = 10
-  else if (rawStep <= 35) niceStep = 25
-  else if (rawStep <= 75) niceStep = 50
-  else if (rawStep <= 150) niceStep = 100
-  else if (rawStep <= 300) niceStep = 200
-  else niceStep = Math.ceil(rawStep / 100) * 100
-
-  const baseMin = Math.floor(minP / niceStep) * niceStep
-  const b1 = baseMin + niceStep
-  const b2 = b1 + niceStep
-  const b3 = b2 + niceStep
-  const b4 = b3 + niceStep
+  // Arredonda degraus de preço de forma harmoniosa para e-commerce
+  let s1 = 30, s2 = 60, s3 = 100, s4 = 200
+  if (maxP <= 80) {
+    s1 = 15; s2 = 30; s3 = 50; s4 = 80
+  } else if (maxP > 300) {
+    s1 = 50; s2 = 100; s3 = 200; s4 = 400
+  }
 
   return [
-    { label: t('charts.up_to', 'Até') + ` R$ ${b1}`, min: 0, max: b1 },
-    { label: `R$ ${b1} - R$ ${b2}`, min: b1 + 0.01, max: b2 },
-    { label: `R$ ${b2} - R$ ${b3}`, min: b2 + 0.01, max: b3 },
-    { label: `R$ ${b3} - R$ ${b4}`, min: b3 + 0.01, max: b4 },
-    { label: t('charts.above', 'Acima') + ` R$ ${b4}`, min: b4 + 0.01, max: Infinity }
+    { label: `${t('charts.up_to', 'Até')} R$ ${s1}`, min: 0, max: s1 },
+    { label: `R$ ${s1} - R$ ${s2}`, min: s1 + 0.01, max: s2 },
+    { label: `R$ ${s2} - R$ ${s3}`, min: s2 + 0.01, max: s3 },
+    { label: `R$ ${s3} - R$ ${s4}`, min: s3 + 0.01, max: s4 },
+    { label: `${t('charts.above', 'Acima')} R$ ${s4}`, min: s4 + 0.01, max: Infinity }
   ]
 })
 
@@ -93,44 +95,106 @@ const chartOptions = computed(() => ({
     type: 'bar',
     toolbar: { show: false },
     background: 'transparent',
-    fontFamily: 'Inter, sans-serif'
+    fontFamily: 'Inter, -apple-system, sans-serif'
   },
-  colors: ['#ca8a04', '#ea580c'],
+  colors: ['#F59E0B', '#EE4D2D'],
   plotOptions: {
     bar: {
       horizontal: false,
-      columnWidth: '50%',
-      borderRadius: 4
+      columnWidth: '55%',
+      borderRadius: 6,
+      borderRadiusApplication: 'end'
     }
   },
   dataLabels: {
-    enabled: true,
-    formatter: (val) => val > 0 ? (val > 999 ? (val / 1000).toFixed(1) + 'k' : val.toString()) : '',
-    style: { fontSize: '10px', fontWeight: 'bold', colors: ['#ffffff'] }
+    enabled: false
   },
   stroke: { show: true, width: 2, colors: ['transparent'] },
   xaxis: {
     categories: priceRanges.value.map(r => r.label),
-    labels: { style: { colors: '#475569', fontWeight: 600, fontSize: '11px' } }
+    labels: { 
+      style: { colors: '#475569', fontWeight: 700, fontSize: '11px' } 
+    },
+    axisBorder: { show: false },
+    axisTicks: { show: false }
   },
   yaxis: {
-    title: { text: t('charts.units_short', 'un'), style: { color: '#64748b', fontSize: '11px' } },
-    labels: { style: { colors: '#64748b', fontSize: '10px' } }
+    title: { 
+      text: t('charts.units_short', 'Unidades Vendidas'), 
+      style: { color: '#64748b', fontSize: '11px', fontWeight: 600 } 
+    },
+    labels: { 
+      style: { colors: '#64748b', fontSize: '11px' },
+      formatter: (val) => val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val.toString()
+    }
   },
-  legend: { position: 'top', labels: { colors: '#0f172a' }, fontSize: '11px' },
-  grid: { borderColor: '#e2e8f0', strokeDashArray: 3 },
+  legend: { 
+    position: 'top', 
+    horizontalAlign: 'right',
+    labels: { colors: '#1e293b' }, 
+    fontSize: '12px',
+    fontWeight: 700,
+    markers: { radius: 4 }
+  },
+  grid: { 
+    borderColor: '#f1f5f9', 
+    strokeDashArray: 4,
+    xaxis: { lines: { show: false } }
+  },
   theme: { mode: 'light' },
   tooltip: {
     theme: 'light',
-    y: { formatter: (val) => val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + " " + t('report.sales_units', 'vendas') }
+    y: { 
+      formatter: (val) => `${val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US')} ${t('report.sales_units', 'vendas')}` 
+    }
   }
 }))
 </script>
 
 <style scoped>
-.chart-container { padding: 1rem 1.2rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; }
-.chart-header-box { margin-bottom: 0.4rem; }
-.chart-header-box h3 { margin: 0 0 0.15rem 0; color: #0f172a; font-size: 1.05rem; }
-.chart-subtitle { color: #64748b; font-size: 0.8rem; margin: 0; }
-.chart-wrapper { min-height: 210px; }
+.chart-container { 
+  padding: 1.25rem 1.4rem; 
+  background: #ffffff; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
+}
+
+.chart-header-box { 
+  margin-bottom: 0.8rem; 
+}
+
+.header-title-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.chart-header-box h3 { 
+  margin: 0 0 0.2rem 0; 
+  color: #0f172a; 
+  font-size: 1.05rem; 
+  font-weight: 800;
+}
+
+.chart-subtitle { 
+  color: #64748b; 
+  font-size: 0.82rem; 
+  margin: 0; 
+}
+
+.chart-badge {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-wrapper { 
+  min-height: 260px; 
+}
 </style>

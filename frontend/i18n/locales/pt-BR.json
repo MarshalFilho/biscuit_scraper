@@ -80,7 +80,13 @@
     "col_actions": "Ações",
     "empty": "Nenhum produto encontrado com os filtros aplicados.",
     "loading_more": "Carregando mais produtos...",
-    "btn_load_more": "Carregar mais produtos ↓"
+    "btn_load_more": "Carregar mais produtos ↓",
+    "status_active": "Ativos",
+    "status_all": "Todos",
+    "status_hidden": "Ocultos",
+    "status_active_tooltip": "Mostrar apenas anúncios ativos",
+    "status_all_tooltip": "Mostrar todos os anúncios",
+    "status_hidden_tooltip": "Mostrar apenas anúncios ocultados/silenciados"
   },
   "charts": {
     "top_sellers": "🏆 Ranking de Vendedores Líderes por Faturamento",
