@@ -166,7 +166,7 @@ def fase_bronze():
     profile_dir = os.path.join(auth_dir, "chrome_profile_meli")
     os.makedirs(profile_dir, exist_ok=True)
     
-    is_headless = os.environ.get("HEADLESS", "false").lower() == "true"
+    is_headless = os.environ.get("HEADLESS", "true").lower() == "true"
     
     with sync_playwright() as p:
         chrome_installed = os.path.exists(r"C:\Program Files\Google\Chrome\Application\chrome.exe")

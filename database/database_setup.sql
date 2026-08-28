@@ -50,6 +50,9 @@ ALTER TABLE public.configuracoes_scraper
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
 
 ALTER TABLE public.configuracoes_scraper 
+ADD COLUMN IF NOT EXISTS nicho_mercado TEXT DEFAULT 'Geral';
+
+ALTER TABLE public.configuracoes_scraper 
 ADD COLUMN IF NOT EXISTS status_alerta JSONB;
 
 ALTER TABLE public.configuracoes_scraper 

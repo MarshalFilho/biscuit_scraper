@@ -188,10 +188,11 @@ Gere um relatório executivo bilíngue (Português e Inglês) exatamente na segu
 Retorne EXCLUSIVAMENTE o JSON valido.
 """
 
-        modelos_para_testar = ["gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-1.5-flash"]
+        modelos_para_testar = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
         for m_name in modelos_para_testar:
             try:
                 print(f"🤖 [Módulo IA] Conectando à API do Google Gemini ({m_name})...")
+                time.sleep(2)
                 model = genai.GenerativeModel(m_name)
                 response = model.generate_content(
                     prompt,
@@ -203,6 +204,7 @@ Retorne EXCLUSIVAMENTE o JSON valido.
                     return res_json
             except Exception as e:
                 print(f"⚠️ [Módulo IA] Erro ao chamar {m_name}: {e}")
+                time.sleep(3)
     except Exception as general_err:
         print(f"⚠️ Erro geral no Gemini: {general_err}")
     return None
@@ -449,17 +451,16 @@ def gerar_relatorio_ia_executivo():
     except Exception as e:
         print(f"⚠️ [Módulo IA] Erro ao salvar arquivo local: {e}")
 
-    # Sincroniza com Supabase se a coluna existir
+    # Sincroniza com Supabase
     try:
-        user_id = os.environ.get("SUPABASE_USER_ID", "693b19e1-936e-4322-ac9a-79467d143566")
-        res_cfg = supabase.table("configuracoes_scraper").select("id").eq("user_id", user_id).execute()
-        if res_cfg.data and len(res_cfg.data) > 0:
+        user_id = os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
+        if user_id:
             supabase.table("configuracoes_scraper").update({
                 "relatorio_insights": relatorio_payload
             }).eq("user_id", user_id).execute()
             print("☁️ [Módulo IA] Relatório sincronizado no Supabase com sucesso!")
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"⚠️ [Módulo IA] Erro ao sincronizar com Supabase: {e}")
 
     return relatorio_payload
 

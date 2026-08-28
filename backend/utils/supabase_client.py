@@ -31,14 +31,19 @@ def atualizar_status_scraper(user_id, status_mensagem, status_alerta=None):
 def listar_tenants_ativos(supabase: Client = None):
     """
     Retorna lista de todos os tenants/usuários cadastrados com configurações no Supabase.
+    Possui fallback seguro caso a coluna nicho_mercado ainda não exista.
     """
+    client = supabase or conectar_supabase()
     try:
-        client = supabase or conectar_supabase()
         res = client.table("configuracoes_scraper").select("user_id, nome_projeto, nicho_mercado, termos_busca, blacklist, modo_paginacao").execute()
         return res.data or []
-    except Exception as e:
-        print(f"⚠️ Erro ao listar tenants ativos no Supabase: {e}")
-        return []
+    except Exception:
+        try:
+            res = client.table("configuracoes_scraper").select("user_id, nome_projeto, termos_busca, blacklist, modo_paginacao").execute()
+            return res.data or []
+        except Exception as e2:
+            print(f"⚠️ Erro ao listar tenants ativos no Supabase: {e2}")
+            return []
 
 def registrar_alerta_antibot(user_id: str, plataforma: str, mensagem: str, screenshot_path: str = None, supabase: Client = None):
     """
