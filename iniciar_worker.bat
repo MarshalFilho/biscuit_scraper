@@ -1,8 +1,8 @@
 @echo off
-title MarketRadar AI - Worker Daemon Local
+title SmartDashboard AI - Worker Daemon Local
 color 0A
 echo =======================================================================
-echo   📈 MarketRadar AI - Worker Daemon Local (Monitoramento & IA)
+echo   📈 SmartDashboard AI - Worker Daemon Local (Monitoramento & IA)
 echo =======================================================================
 echo.
 echo   [*] Conectando ao Supabase e iniciando escuta de comandos...

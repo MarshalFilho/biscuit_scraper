@@ -82,7 +82,7 @@ import { useAppI18n } from '~/composables/useAppI18n'
 import { useSupabase } from '~/composables/useSupabase'
 
 const props = defineProps({
-  projectName: { type: String, default: 'MarketRadar AI' },
+  projectName: { type: String, default: 'SmartDashboard AI' },
   user: { type: Object, default: null }
 })
 

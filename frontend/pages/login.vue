@@ -14,7 +14,7 @@
             </linearGradient>
           </defs>
         </svg>
-        <span class="logo-text">MarketRadar AI</span>
+        <span class="logo-text">SmartDashboard AI</span>
       </div>
       <button @click="toggleLanguage" class="lang-toggle-btn" :title="t('navbar.toggle_tooltip')">
         {{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}

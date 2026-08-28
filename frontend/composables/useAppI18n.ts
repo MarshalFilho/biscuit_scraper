@@ -46,8 +46,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       daily_info: 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00'
     },
     timeline: {
-      single_date_mode: '📅 Data Única',
-      compare_dates_mode: '📊 Comparar 2 Datas',
+      badge: 'LINHA DO TEMPO DE COLETAS',
+      title: 'Evolução Histórica e Comparação de Datas',
+      subtitle: 'Selecione uma data para ver o retrato daquele dia ou compare duas datas para ver o crescimento real de vendas e preços.',
+      mode_single: 'Retrato do Dia',
+      mode_compare: 'Comparar 2 Datas',
       click_date_hint: '👉 Clique em uma data para ver o estado do mercado naquele dia:',
       latest: 'Última',
       items: 'itens',
@@ -317,7 +320,10 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       dismiss: 'Entendido'
     },
     keywords: {
-      badge: 'Configurações de Extração',
+      badge: 'Termos & IA',
+      badge_pro: 'Meus Termos & IA',
+      admin_btn_title: 'Painel Admin: Configurar Palavras-chave, Blacklist e IA',
+      pro_btn_title: 'Painel Pro: Gerenciar seus termos e IA',
       title: 'Gerenciador de Palavras-Chave & Blacklist',
       subtitle: 'Defina quais termos o robô deve monitorar e quais palavras deve descartar automaticamente.',
       niche_label: 'Seu Nicho de Mercado / Segmento:',
@@ -438,8 +444,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       daily_info: 'Automated scraping runs once a day at 22:00 BRT'
     },
     timeline: {
-      single_date_mode: '📅 Single Date',
-      compare_dates_mode: '📊 Compare 2 Dates',
+      badge: 'SCRAPE TIMELINE',
+      title: 'Historical Evolution & Date Comparison',
+      subtitle: 'Select a date to view that day\'s snapshot or compare two dates to analyze sales growth and price variations.',
+      mode_single: 'Daily Snapshot',
+      mode_compare: 'Compare 2 Dates',
       click_date_hint: '👉 Click a date to view the market status on that day:',
       latest: 'Latest',
       items: 'items',
@@ -710,7 +719,10 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       dismiss: 'Dismiss'
     },
     keywords: {
-      badge: 'Scraping Configurations',
+      badge: 'Keywords & AI',
+      badge_pro: 'My Keywords & AI',
+      admin_btn_title: 'Admin Panel: Configure Keywords, Blacklist and AI',
+      pro_btn_title: 'Pro Panel: Manage your keywords and AI',
       title: 'Keyword Manager & Blacklist',
       subtitle: 'Define which search terms the scraper should monitor and which words to automatically ignore.',
       niche_label: 'Your Market Niche / Business Segment:',

@@ -44,8 +44,11 @@
     "latest_scrape": "Last updated:"
   },
   "timeline": {
-    "single_date_mode": "📅 Single Date",
-    "compare_dates_mode": "📊 Compare 2 Dates",
+    "badge": "SCRAPE TIMELINE",
+    "title": "Historical Evolution & Date Comparison",
+    "subtitle": "Select a date to view that day's snapshot or compare two dates to analyze sales growth and price variations.",
+    "mode_single": "Daily Snapshot",
+    "mode_compare": "Compare 2 Dates",
     "click_date_hint": "👉 Click a date to view the market status on that day:",
     "latest": "Latest",
     "items": "items",
@@ -53,6 +56,12 @@
     "base_date_label": "📍 Base Date (Point A - Past):",
     "compare_date_label": "🎯 Comparison Date (Point B - Most Recent):",
     "analyzing_growth": "📊 Analyzing growth and price oscillation between {dateA} and {dateB}"
+  },
+  "keywords": {
+    "badge": "Keywords & AI",
+    "badge_pro": "My Keywords & AI",
+    "admin_btn_title": "Admin Panel: Configure Keywords, Blacklist and AI",
+    "pro_btn_title": "Pro Panel: Manage your keywords and AI"
   },
   "tabs": {
     "overview": "📊 Market Overview",

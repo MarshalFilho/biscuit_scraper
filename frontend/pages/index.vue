@@ -338,7 +338,7 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
-const nomeProjeto = ref('MarketRadar AI')
+const nomeProjeto = ref('SmartDashboard AI')
 const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard

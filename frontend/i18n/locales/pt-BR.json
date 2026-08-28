@@ -44,8 +44,11 @@
     "latest_scrape": "Última atualização:"
   },
   "timeline": {
-    "single_date_mode": "📅 Data Única",
-    "compare_dates_mode": "📊 Comparar 2 Datas",
+    "badge": "LINHA DO TEMPO DE COLETAS",
+    "title": "Evolução Histórica e Comparação de Datas",
+    "subtitle": "Selecione uma data para ver o retrato daquele dia ou compare duas datas para ver o crescimento real de vendas e preços.",
+    "mode_single": "Retrato do Dia",
+    "mode_compare": "Comparar 2 Datas",
     "click_date_hint": "👉 Clique em uma data para ver o estado do mercado naquele dia:",
     "latest": "Última",
     "items": "itens",
@@ -53,6 +56,12 @@
     "base_date_label": "📍 Data Base (Ponto A - Passado):",
     "compare_date_label": "🎯 Data de Comparação (Ponto B - Mais Recente):",
     "analyzing_growth": "📊 Analisando crescimento e oscilação de preços entre {dateA} e {dateB}"
+  },
+  "keywords": {
+    "badge": "Termos & IA",
+    "badge_pro": "Meus Termos & IA",
+    "admin_btn_title": "Painel Admin: Configurar Palavras-chave, Blacklist e IA",
+    "pro_btn_title": "Painel Pro: Gerenciar seus termos e IA"
   },
   "tabs": {
     "overview": "📊 Visão Geral de Mercado",
