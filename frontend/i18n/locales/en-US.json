@@ -90,5 +90,25 @@
     "items": "items",
     "up_to": "Up to",
     "above": "Above"
+  },
+  "request_term": {
+    "btn_label": "Request Term",
+    "client_btn_title": "Request the administrator to monitor a new search term or niche",
+    "title": "Request New Term / Niche",
+    "subtitle": "Ask the administrator to include new products or search terms in automated monitoring.",
+    "term_label": "Desired Keyword or Product:",
+    "term_placeholder": "Ex: medicine graduation cake topper",
+    "term_hint": "Term that will be queried on Mercado Livre and Shopee.",
+    "niche_label": "Niche / Category (Optional):",
+    "niche_placeholder": "Ex: Cold Porcelain, Party Favors...",
+    "reason_label": "Reason / Note (Optional):",
+    "reason_placeholder": "Ex: We are seeing high customer demand for this theme...",
+    "info_note": "Your request will be reviewed by the administrator. Once approved, listings will begin monitoring daily.",
+    "cancel": "Cancel",
+    "send": "Send Request",
+    "sending": "Sending...",
+    "toast_success_title": "Request Sent!",
+    "toast_success_msg": "Your request for a new term has been sent to the administrator.",
+    "toast_error_title": "Request Failed"
   }
 }

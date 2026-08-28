@@ -90,5 +90,25 @@
     "items": "itens",
     "up_to": "Até",
     "above": "Acima de"
+  },
+  "request_term": {
+    "btn_label": "Solicitar Termo",
+    "client_btn_title": "Solicitar ao administrador a inclusão de um novo termo/nicho",
+    "title": "Solicitar Novo Termo / Nicho",
+    "subtitle": "Peça ao administrador para incluir novos termos ou produtos no monitoramento do robô.",
+    "term_label": "Palavra-chave ou Produto Desejado:",
+    "term_placeholder": "Ex: topo de bolo formatura medicina",
+    "term_hint": "Termo que será buscado no Mercado Livre e Shopee.",
+    "niche_label": "Nicho / Categoria (Opcional):",
+    "niche_placeholder": "Ex: Biscuit, Velas, Lembrancinhas...",
+    "reason_label": "Motivo ou Observação (Opcional):",
+    "reason_placeholder": "Ex: Estamos notando alta demanda de clientes para esse tema...",
+    "info_note": "Sua solicitação será analisada pelo administrador. Assim que aprovada, os anúncios começarão a ser monitorados diariamente.",
+    "cancel": "Cancelar",
+    "send": "Enviar Solicitação",
+    "sending": "Enviando...",
+    "toast_success_title": "Solicitação Enviada!",
+    "toast_success_msg": "Seu pedido de novo termo foi enviado com sucesso ao administrador.",
+    "toast_error_title": "Erro ao Solicitar"
   }
 }

@@ -10,19 +10,9 @@ export default defineEventHandler(async (event) => {
   })
 
   // 1. Validação estrita de Autenticação JWT (Bearer Token)
-  const authHeader = getRequestHeader(event, 'authorization')
-  let authenticatedUserId: string | null = null
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.replace('Bearer ', '').trim()
-    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token)
-    if (user && !authError) {
-      authenticatedUserId = user.id
-    }
-  }
-
+  const user = await getAuthenticatedUser(event, supabaseServer)
   const body = await readBody(event)
-  const targetUserId = authenticatedUserId || body?.userId
+  const targetUserId = user?.id || body?.userId
 
   if (!targetUserId) {
     throw createError({
@@ -31,8 +21,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // 2. Validação de Cargo no Backend (Apenas Admin)
+  if (user && !checkIsAdmin(user)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Acesso negado: Apenas administradores têm permissão para alterar as palavras-chave e configurações de extração do robô.'
+    })
+  }
+
   // Previne tentativa de salvar dados para outro usuário
-  if (authenticatedUserId && body?.userId && authenticatedUserId !== body.userId) {
+  if (user && body?.userId && user.id !== body.userId) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Acesso negado: Você só pode modificar as configurações da sua própria conta.'
@@ -41,6 +39,7 @@ export default defineEventHandler(async (event) => {
 
   const terms = Array.isArray(body?.terms) ? body.terms : []
   const blacklist = Array.isArray(body?.blacklist) ? body.blacklist : []
+  const solicitacoes = Array.isArray(body?.solicitacoes_termos) ? body.solicitacoes_termos : undefined
 
   if (terms.length === 0) {
     throw createError({
@@ -49,16 +48,22 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const payloadToSave: any = {
+    user_id: targetUserId,
+    termos_busca: terms.slice(0, 15),
+    blacklist: blacklist.slice(0, 50),
+    status_scraper: '⚙️ Configurações de termos atualizadas pelo administrador.',
+    updated_at: new Date().toISOString()
+  }
+
+  if (solicitacoes !== undefined) {
+    payloadToSave.solicitacoes_termos = solicitacoes.slice(0, 50)
+  }
+
   // Upsert seguro no Supabase com validação
   const { data, error } = await supabaseServer
     .from('configuracoes_scraper')
-    .upsert({
-      user_id: targetUserId,
-      termos_busca: terms.slice(0, 15),
-      blacklist: blacklist.slice(0, 50),
-      status_scraper: '⚙️ Configurações de termos atualizadas pelo usuário.',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'user_id' })
+    .upsert(payloadToSave, { onConflict: 'user_id' })
     .select()
 
   if (error) {

@@ -43,7 +43,48 @@
               </button>
             </div>
             <div class="quota-info-row">
-              <small>⚡ {{ t('keywords.ai_security_limit', 'Limite de segurança da IA: 2 consultas a cada 3 horas (restantes: {count})').replace('{count}', quotaRemaining ?? 2) }}</small>
+              <small>⚡ {{ t('keywords.ai_security_limit', 'Limite da IA (Admin): 10 consultas por dia (restantes: {count})').replace('{count}', quotaRemaining ?? 10) }}</small>
+            </div>
+          </div>
+
+          <!-- Solicitações de Novos Termos Enviadas por Clientes (Se houver) -->
+          <div v-if="clientRequests.length > 0" class="client-requests-box animate-fade-in">
+            <div class="requests-header">
+              <div class="header-badge-row">
+                <span class="requests-badge">📬 Solicitações de Clientes ({{ clientRequests.length }})</span>
+                <small class="requests-sub">Termos pedidos pelos clientes para você aprovar e incluir no robô:</small>
+              </div>
+            </div>
+            <div class="requests-grid">
+              <div v-for="req in clientRequests" :key="req.id" class="request-item-card">
+                <div class="req-left">
+                  <div class="req-title-row">
+                    <strong class="req-term">🔍 {{ req.termo }}</strong>
+                    <span v-if="req.nicho" class="req-nicho-tag">{{ req.nicho }}</span>
+                  </div>
+                  <p class="req-reason" v-if="req.motivo">"{{ req.motivo }}"</p>
+                  <small class="req-meta">👤 {{ req.solicitante_email || 'Cliente' }}</small>
+                </div>
+                <div class="req-actions">
+                  <button 
+                    type="button" 
+                    class="btn-req-approve" 
+                    :disabled="terms.length >= MAX_TERMS"
+                    @click="approveClientRequest(req)" 
+                    title="Aprovar e adicionar aos termos ativos"
+                  >
+                    ✓ Aprovar
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn-req-reject" 
+                    @click="rejectClientRequest(req)" 
+                    title="Recusar solicitação"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -249,6 +290,7 @@ const MAX_TERMS = 15
 const niche = ref('')
 const terms = ref([])
 const blacklist = ref([])
+const clientRequests = ref([])
 const newTermInput = ref('')
 const newBlacklistInput = ref('')
 const aiSuggestions = ref([])
@@ -259,7 +301,7 @@ const aiCooldown = ref(0)
 const quotaRemaining = ref(null)
 let cooldownTimer = null
 
-function startCooldown(seconds = 20) {
+function startCooldown(seconds = 10) {
   aiCooldown.value = seconds
   if (cooldownTimer) clearInterval(cooldownTimer)
   cooldownTimer = setInterval(() => {
@@ -280,32 +322,53 @@ async function loadUserKeywords() {
     if (!userId) {
       terms.value = []
       blacklist.value = []
+      clientRequests.value = []
       niche.value = ''
       return
     }
 
     const { data, error } = await supabase
       .from('configuracoes_scraper')
-      .select('termos_busca, blacklist')
+      .select('termos_busca, blacklist, solicitacoes_termos')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle()
 
-    if (data && (data.termos_busca || data.blacklist)) {
+    if (data && (data.termos_busca || data.blacklist || data.solicitacoes_termos)) {
       terms.value = Array.isArray(data.termos_busca) ? [...data.termos_busca] : []
       blacklist.value = Array.isArray(data.blacklist) ? [...data.blacklist] : []
+      clientRequests.value = Array.isArray(data.solicitacoes_termos) ? [...data.solicitacoes_termos] : []
     } else {
       // Usuário novo: inicia completamente limpo
       terms.value = []
       blacklist.value = []
+      clientRequests.value = []
       niche.value = ''
     }
   } catch (e) {
     console.warn('Erro ao carregar termos do usuário:', e)
     terms.value = []
     blacklist.value = []
+    clientRequests.value = []
     niche.value = ''
   }
+}
+
+function approveClientRequest(req) {
+  if (terms.value.length >= MAX_TERMS) {
+    toast.warning(t('keywords.limit_error', '⚠️ Limite de segurança de {max} termos atingido.').replace('{max}', MAX_TERMS), t('keywords.limit_reached', 'Limite Atingido'))
+    return
+  }
+  if (!terms.value.includes(req.termo)) {
+    terms.value.push(req.termo)
+  }
+  clientRequests.value = clientRequests.value.filter(r => r.id !== req.id)
+  toast.success(`Termo "${req.termo}" aprovado e adicionado à lista! Clique em Salvar para persistir.`)
+}
+
+function rejectClientRequest(req) {
+  clientRequests.value = clientRequests.value.filter(r => r.id !== req.id)
+  toast.info(`Solicitação do termo "${req.termo}" removida.`)
 }
 
 watch(() => props.isOpen, (newVal) => {
@@ -488,7 +551,9 @@ async function saveConfigurations() {
       body: {
         userId,
         terms: terms.value,
-        blacklist: blacklist.value
+        blacklist: blacklist.value,
+        niche: niche.value,
+        solicitacoes_termos: clientRequests.value
       }
     })
 
@@ -496,8 +561,8 @@ async function saveConfigurations() {
       throw new Error('Falha na resposta do servidor.')
     }
 
-    toast.success(t('keywords.toast_saved_success', 'Configurações salvas com sucesso!'), t('keywords.toast_saved_title', 'Configurações Salvas'))
-    emit('saved', { terms: terms.value, blacklist: blacklist.value, niche: niche.value })
+    toast.success(t('keywords.toast_saved_success', 'Configurações e termos foram salvos com sucesso!'), t('keywords.toast_saved_title', 'Configurações Salvas'))
+    emit('saved', { terms: terms.value, blacklist: blacklist.value, niche: niche.value, solicitacoes_termos: clientRequests.value })
     close()
   } catch (e) {
     console.error(e)
@@ -1023,6 +1088,135 @@ async function saveConfigurations() {
 .btn-primary-save:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.client-requests-box {
+  background: #fdf4ff;
+  border: 1px solid #f0abfc;
+  border-radius: 12px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.header-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.requests-badge {
+  background: #fae8ff;
+  color: #a21caf;
+  font-weight: 800;
+  font-size: 0.82rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 99px;
+  border: 1px solid #f5d0fe;
+}
+
+.requests-sub {
+  color: #701a75;
+  font-size: 0.8rem;
+}
+
+.requests-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.request-item-card {
+  background: #ffffff;
+  border: 1px solid #f5d0fe;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 5px rgba(162, 28, 175, 0.05);
+}
+
+.req-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.req-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.req-term {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.req-nicho-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.req-reason {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #475569;
+  font-style: italic;
+}
+
+.req-meta {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.req-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-req-approve {
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-req-approve:hover:not(:disabled) {
+  background: #047857;
+}
+
+.btn-req-reject {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-req-reject:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 .animate-scale { animation: scaleIn 0.25s ease-out; }

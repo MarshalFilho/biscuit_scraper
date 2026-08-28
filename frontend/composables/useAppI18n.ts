@@ -380,6 +380,26 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       welcome_title: 'Sua conta está pronta para o monitoramento!',
       welcome_desc: 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.',
       schedule_info: 'Rotina Agendada:'
+    },
+    request_term: {
+      btn_label: 'Solicitar Termo',
+      client_btn_title: 'Solicitar ao administrador a inclusão de um novo termo/nicho',
+      title: 'Solicitar Novo Termo / Nicho',
+      subtitle: 'Peça ao administrador para incluir novos termos ou produtos no monitoramento do robô.',
+      term_label: 'Palavra-chave ou Produto Desejado:',
+      term_placeholder: 'Ex: topo de bolo formatura medicina',
+      term_hint: 'Termo que será buscado no Mercado Livre e Shopee.',
+      niche_label: 'Nicho / Categoria (Opcional):',
+      niche_placeholder: 'Ex: Biscuit, Velas, Lembrancinhas...',
+      reason_label: 'Motivo ou Observação (Opcional):',
+      reason_placeholder: 'Ex: Estamos notando alta demanda de clientes para esse tema...',
+      info_note: 'Sua solicitação será analisada pelo administrador. Assim que aprovada, os anúncios começarão a ser monitorados diariamente.',
+      cancel: 'Cancelar',
+      send: 'Enviar Solicitação',
+      sending: 'Enviando...',
+      toast_success_title: 'Solicitação Enviada!',
+      toast_success_msg: 'Seu pedido de novo termo foi enviado com sucesso ao administrador.',
+      toast_error_title: 'Erro ao Solicitar'
     }
   },
   en: {
@@ -759,6 +779,26 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       welcome_title: 'Your account is ready for monitoring!',
       welcome_desc: 'No products have been collected for your user yet. Configure your niche and search terms by clicking the button below.',
       schedule_info: 'Scheduled Scrape:'
+    },
+    request_term: {
+      btn_label: 'Request Term',
+      client_btn_title: 'Request the administrator to monitor a new search term or niche',
+      title: 'Request New Term / Niche',
+      subtitle: 'Ask the administrator to include new products or search terms in automated monitoring.',
+      term_label: 'Desired Keyword or Product:',
+      term_placeholder: 'Ex: medicine graduation cake topper',
+      term_hint: 'Term that will be queried on Mercado Livre and Shopee.',
+      niche_label: 'Niche / Category (Optional):',
+      niche_placeholder: 'Ex: Cold Porcelain, Party Favors...',
+      reason_label: 'Reason / Note (Optional):',
+      reason_placeholder: 'Ex: We are seeing high customer demand for this theme...',
+      info_note: 'Your request will be reviewed by the administrator. Once approved, listings will begin monitoring daily.',
+      cancel: 'Cancel',
+      send: 'Send Request',
+      sending: 'Sending...',
+      toast_success_title: 'Request Sent!',
+      toast_success_msg: 'Your request for a new term has been sent to the administrator.',
+      toast_error_title: 'Request Failed'
     }
   }
 }

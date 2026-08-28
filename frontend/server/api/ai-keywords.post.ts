@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const RATE_LIMIT_WINDOW_MS = 3 * 60 * 60 * 1000 // 3 horas
-const MAX_REQUESTS_PER_WINDOW = 2 // Máximo de 2 chamadas a cada 3 horas por conta
-const COOLDOWN_SECONDS = 20 // Cooldown de 20s entre chamadas
+const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000 // 24 horas (diário)
+const MAX_REQUESTS_PER_WINDOW = 10 // Máximo de 10 chamadas por dia para o Admin
+const COOLDOWN_SECONDS = 10 // Cooldown de 10s entre chamadas
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -13,25 +13,30 @@ export default defineEventHandler(async (event) => {
     auth: { persistSession: false }
   })
 
-  // 1. Identifica usuário autenticado via JWT Bearer Token ou body
-  const authHeader = getRequestHeader(event, 'authorization')
-  let authenticatedUserId: string | null = null
+  // 1. Identifica usuário autenticado via JWT Bearer Token
+  const user = await getAuthenticatedUser(event, supabaseServer)
+  const body = await readBody(event)
+  const targetUserId = user?.id || body?.userId
 
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.replace('Bearer ', '').trim()
-    const { data: { user } } = await supabaseServer.auth.getUser(token)
-    if (user) {
-      authenticatedUserId = user.id
-    }
+  if (!targetUserId) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Acesso não autorizado. Sessão de usuário inválida ou expirada.'
+    })
   }
 
-  const body = await readBody(event)
-  const targetUserId = authenticatedUserId || body?.userId
+  // 2. Validação de Cargo no Backend (Apenas Admin)
+  if (user && !checkIsAdmin(user)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Acesso negado: Apenas administradores têm permissão para utilizar o gerador de termos por IA.'
+    })
+  }
 
   const now = Date.now()
   let userHistory: number[] = []
 
-  // 2. Consulta histórico de uso da IA no Banco de Dados (Supabase)
+  // 3. Consulta histórico de uso da IA no Banco de Dados (Supabase)
   if (targetUserId) {
     const { data: userConfig } = await supabaseServer
       .from('configuracoes_scraper')
@@ -41,7 +46,7 @@ export default defineEventHandler(async (event) => {
       .maybeSingle()
 
     if (userConfig && Array.isArray(userConfig.regras_categoria)) {
-      // Filtra timestamps dentro da janela de 3 horas
+      // Filtra timestamps dentro da janela de 24 horas
       userHistory = userConfig.regras_categoria
         .map((item: any) => typeof item === 'number' ? item : item?.timestamp)
         .filter((ts: any) => typeof ts === 'number' && (now - ts) < RATE_LIMIT_WINDOW_MS)
@@ -60,7 +65,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Checagem de Cota Máxima no Banco (2 a cada 3 horas)
+    // Checagem de Cota Máxima no Banco (10 por dia)
     if (userHistory.length >= MAX_REQUESTS_PER_WINDOW) {
       const oldestCall = Math.min(...userHistory)
       const resetTime = oldestCall + RATE_LIMIT_WINDOW_MS

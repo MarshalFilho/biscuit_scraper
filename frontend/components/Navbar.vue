@@ -26,14 +26,26 @@
           <span class="schedule-text">{{ t('navbar.daily_schedule', '⏰ Coleta Diária às 22h00') }}</span>
         </div>
 
-        <!-- Botão de Gerenciar Termos e Palavras-Chave -->
+        <!-- 1. Botão EXCLUSIVO para ADMIN: Gerenciar Termos e Palavras-Chave -->
         <button 
+          v-if="isAdmin"
           type="button"
           class="btn-keywords"
           @click="$emit('open-keywords')"
-          title="Configurar Palavras-chave, Blacklist e Sugestões da IA"
+          :title="t('keywords.admin_btn_title', 'Painel Admin: Configurar Palavras-chave, Blacklist e IA')"
         >
           🎯 {{ t('keywords.badge', 'Termos & IA') }}
+        </button>
+
+        <!-- 2. Botão EXCLUSIVO para CLIENTE: Solicitar Novo Termo -->
+        <button 
+          v-else
+          type="button"
+          class="btn-request-term"
+          @click="$emit('open-request-term')"
+          :title="t('request_term.client_btn_title', 'Solicitar ao administrador a inclusão de um novo termo/nicho')"
+        >
+          💡 {{ t('request_term.btn_label', 'Solicitar Termo') }}
         </button>
 
         <button 
@@ -47,7 +59,12 @@
         <div class="user-box" v-if="user">
           <div class="user-pill">
             <span class="user-avatar">👤</span>
-            <span class="user-email" :title="user.email">{{ user.email }}</span>
+            <div class="user-details">
+              <span class="user-email" :title="user.email">{{ user.email }}</span>
+              <span :class="['role-pill', isAdmin ? 'role-admin' : 'role-client']">
+                {{ isAdmin ? 'ADMIN' : 'CLIENTE' }}
+              </span>
+            </div>
             <button @click="logout" class="btn-logout" :title="t('auth.logout', 'Sair')">
               🚪 {{ t('auth.logout', 'Sair') }}
             </button>
@@ -59,6 +76,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppI18n } from '~/composables/useAppI18n'
 import { useSupabase } from '~/composables/useSupabase'
@@ -68,11 +86,22 @@ const props = defineProps({
   user: { type: Object, default: null }
 })
 
-const emit = defineEmits(['auth-change', 'open-keywords'])
+const emit = defineEmits(['auth-change', 'open-keywords', 'open-request-term'])
 
 const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
 const supabase = useSupabase()
+
+const isAdmin = computed(() => {
+  if (!props.user) return true
+  const appRole = props.user.app_metadata?.role
+  const userRole = props.user.user_metadata?.role
+  const directRole = props.user.role
+  if (appRole === 'cliente' || userRole === 'cliente' || directRole === 'cliente') {
+    return false
+  }
+  return true
+})
 
 async function logout() {
   await supabase.auth.signOut()
@@ -252,32 +281,83 @@ async function logout() {
   font-size: 0.85rem;
 }
 
+.btn-request-term {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  padding: 0.45rem 0.9rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-request-term:hover {
+  background: #f0f9ff;
+  border-color: #38bdf8;
+  color: #0369a1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.role-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+.role-admin {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.role-client {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
 .user-avatar {
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .user-email {
   font-weight: 600;
   color: #334155;
-  max-width: 150px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .btn-logout {
-  background: none;
+  background: transparent;
   border: none;
-  color: #ef4444;
-  font-size: 0.8rem;
+  color: #64748b;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   padding: 0.2rem 0.4rem;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.2s ease;
 }
 
 .btn-logout:hover {
   background: #fee2e2;
+  color: #ef4444;
 }
 </style>
