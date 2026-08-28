@@ -327,7 +327,20 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       new_blacklist_placeholder: 'Ex: racao, molde, silicone, papel...',
       btn_add_blacklist: 'Bloquear Palavra',
       btn_save: 'Salvar Configurações no Banco',
-      btn_saving: 'Salvando...'
+      btn_saving: 'Salvando...',
+      characters: 'caracteres',
+      ai_security_limit: 'Limite de segurança da IA: 2 consultas a cada 3 horas (restantes: {count})',
+      clear_suggestions: 'Limpar sugestões',
+      already_added: '✓ Já Adicionado',
+      add: '+ Adicionar',
+      clear_terms: 'Limpar Todos',
+      terms_unit: 'termos',
+      empty_terms_hint: 'Nenhum termo cadastrado. Digite termos abaixo ou use a IA acima para preencher.',
+      limit_error: '⚠️ Limite de segurança de {max} termos atingido. Remova um termo para adicionar novos.',
+      clear_blacklist: 'Limpar Blacklist',
+      empty_blacklist_hint: 'Nenhuma palavra negativa cadastrada.',
+      cancel: 'Cancelar',
+      cooldown_wait: '⏳ Aguarde {sec}s'
     },
     onboarding: {
       welcome_title: 'Sua conta está pronta para o monitoramento!',
@@ -659,7 +672,20 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       new_blacklist_placeholder: 'Ex: pet food, molds, silicone, paper...',
       btn_add_blacklist: 'Block Word',
       btn_save: 'Save Configurations to Database',
-      btn_saving: 'Saving...'
+      btn_saving: 'Saving...',
+      characters: 'characters',
+      ai_security_limit: 'AI security limit: 2 requests every 3 hours (remaining: {count})',
+      clear_suggestions: 'Clear suggestions',
+      already_added: '✓ Added',
+      add: '+ Add',
+      clear_terms: 'Clear All',
+      terms_unit: 'terms',
+      empty_terms_hint: 'No search terms registered. Enter terms below or use AI above to generate suggestions.',
+      limit_error: '⚠️ Safety limit of {max} terms reached. Remove a term to add new ones.',
+      clear_blacklist: 'Clear Blacklist',
+      empty_blacklist_hint: 'No negative keywords registered.',
+      cancel: 'Cancel',
+      cooldown_wait: '⏳ Wait {sec}s'
     },
     onboarding: {
       welcome_title: 'Your account is ready for monitoring!',

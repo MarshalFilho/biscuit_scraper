@@ -20,7 +20,7 @@
                 🏷️ {{ t('keywords.niche_label', 'Seu Nicho de Mercado / Segmento:') }}
               </label>
               <span class="char-counter" :class="{ 'char-warn': niche.length >= 50 }">
-                {{ niche.length }} / 60 caracteres
+                {{ niche.length }} / 60 {{ t('keywords.characters', 'caracteres') }}
               </span>
             </div>
             <div class="input-row">
@@ -38,12 +38,12 @@
                 @click="generateAiSuggestions"
               >
                 <span v-if="isLoadingAi" class="loading-spin">⏳ {{ t('keywords.btn_ai_loading', 'Consultando Gemini...') }}</span>
-                <span v-else-if="aiCooldown > 0">⏳ Aguarde {{ aiCooldown }}s</span>
+                <span v-else-if="aiCooldown > 0">{{ t('keywords.cooldown_wait', '⏳ Aguarde {sec}s').replace('{sec}', aiCooldown) }}</span>
                 <span v-else>✨ {{ t('keywords.btn_ai_suggest', 'Gerar Termos com IA') }}</span>
               </button>
             </div>
             <div class="quota-info-row">
-              <small>⚡ Limite de segurança da IA: <strong>2 consultas a cada 3 horas</strong> (restantes: {{ quotaRemaining ?? 2 }})</small>
+              <small>⚡ {{ t('keywords.ai_security_limit', 'Limite de segurança da IA: 2 consultas a cada 3 horas (restantes: {count})').replace('{count}', quotaRemaining ?? 2) }}</small>
             </div>
           </div>
 
@@ -51,7 +51,7 @@
           <div v-if="aiSuggestions.length > 0" class="ai-suggestions-box animate-fade-in">
             <div class="ai-header">
               <span class="ai-badge">🤖 {{ t('keywords.ai_suggestions_title', 'Sugestões Estratégicas do Gemini 3.6') }}</span>
-              <button class="btn-clear-suggestions" @click="aiSuggestions = []">Limpar sugestões</button>
+              <button class="btn-clear-suggestions" @click="aiSuggestions = []">{{ t('keywords.clear_suggestions', 'Limpar sugestões') }}</button>
             </div>
             <div class="suggestions-grid">
               <div 
@@ -69,7 +69,7 @@
                   :disabled="terms.length >= MAX_TERMS || terms.includes(sug.termo)"
                   @click="addSuggestedTerm(sug.termo)"
                 >
-                  {{ terms.includes(sug.termo) ? '✓ Já Adicionado' : '+ Adicionar' }}
+                  {{ terms.includes(sug.termo) ? t('keywords.already_added', '✓ Já Adicionado') : t('keywords.add', '+ Adicionar') }}
                 </button>
               </div>
             </div>
@@ -93,7 +93,7 @@
                 </button>
               </div>
               <div class="term-limit-counter" :class="{ 'limit-warn': terms.length >= 12, 'limit-danger': terms.length >= MAX_TERMS }">
-                <span>{{ terms.length }} / {{ MAX_TERMS }} termos</span>
+                <span>{{ terms.length }} / {{ MAX_TERMS }} {{ t('keywords.terms_unit', 'termos') }}</span>
                 <div class="progress-bar-bg">
                   <div class="progress-bar-fill" :style="{ width: `${(terms.length / MAX_TERMS) * 100}%` }"></div>
                 </div>
@@ -111,7 +111,7 @@
                 <button type="button" class="btn-remove-tag" @click="removeTerm(idx)">×</button>
               </span>
               <span v-if="terms.length === 0" class="empty-tags-hint">
-                Nenhum termo cadastrado. Digite termos abaixo ou use a IA acima para preencher.
+                {{ t('keywords.empty_terms_hint', 'Nenhum termo cadastrado. Digite termos abaixo ou use a IA acima para preencher.') }}
               </span>
             </div>
 
@@ -135,7 +135,7 @@
               </button>
             </div>
             <small v-if="terms.length >= MAX_TERMS" class="limit-error-msg">
-              ⚠️ Limite de segurança de {{ MAX_TERMS }} termos atingido. Remova um termo para adicionar novos.
+              {{ t('keywords.limit_error', '⚠️ Limite de segurança de {max} termos atingido. Remova um termo para adicionar novos.').replace('{max}', MAX_TERMS) }}
             </small>
           </div>
 
@@ -168,7 +168,7 @@
                 <button type="button" class="btn-remove-tag" @click="removeBlacklist(idx)">×</button>
               </span>
               <span v-if="blacklist.length === 0" class="empty-tags-hint">
-                Nenhuma palavra negativa cadastrada.
+                {{ t('keywords.empty_blacklist_hint', 'Nenhuma palavra negativa cadastrada.') }}
               </span>
             </div>
 
@@ -196,7 +196,7 @@
         <!-- Footer com Botão Salvar -->
         <div class="modal-footer">
           <button type="button" class="btn-secondary" @click="close">
-            {{ t('global.cancel', 'Cancelar') }}
+            {{ t('keywords.cancel', 'Cancelar') }}
           </button>
           <button 
             type="button" 
