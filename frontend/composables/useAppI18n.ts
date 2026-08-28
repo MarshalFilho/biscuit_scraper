@@ -328,6 +328,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       btn_add_blacklist: 'Bloquear Palavra',
       btn_save: 'Salvar Configurações no Banco',
       btn_saving: 'Salvando...'
+    },
+    onboarding: {
+      welcome_title: 'Sua conta está pronta para o monitoramento!',
+      welcome_desc: 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.',
+      schedule_info: 'Rotina Agendada:'
     }
   },
   en: {
@@ -655,6 +660,11 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       btn_add_blacklist: 'Block Word',
       btn_save: 'Save Configurations to Database',
       btn_saving: 'Saving...'
+    },
+    onboarding: {
+      welcome_title: 'Your account is ready for monitoring!',
+      welcome_desc: 'No products have been collected for your user yet. Configure your niche and search terms by clicking the button below.',
+      schedule_info: 'Scheduled Scrape:'
     }
   }
 }

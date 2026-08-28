@@ -26,6 +26,25 @@
       <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
     </div>
 
+    <!-- Estado Vazio para Novos Usuários Sem Produtos Raspados -->
+    <div v-else-if="productsRaw.length === 0" class="empty-account-container animate-fade-in">
+      <div class="empty-account-card glass-panel">
+        <div class="empty-icon-circle">📊</div>
+        <h2>{{ t('onboarding.welcome_title', 'Sua conta está pronta para o monitoramento!') }}</h2>
+        <p class="empty-description">
+          {{ t('onboarding.welcome_desc', 'Ainda não foram coletados produtos para o seu usuário. Configure seu nicho e termos de busca clicando no botão abaixo.') }}
+        </p>
+        <div class="empty-actions">
+          <button type="button" class="btn-configure-terms" @click="isKeywordsModalOpen = true">
+            🎯 {{ t('keywords.badge', 'Configurar Termos & IA') }}
+          </button>
+        </div>
+        <div class="empty-schedule-box">
+          <span>⏰ <strong>{{ t('onboarding.schedule_info', 'Rotina Agendada:') }}</strong> {{ t('filters.daily_info', 'A raspagem automática é executada diariamente às 22h00 para todos os seus termos.') }}</span>
+        </div>
+      </div>
+    </div>
+
     <div v-else>
       <!-- Relatório de Inteligência Executiva por IA (Fase 4) -->
       <AiExecutiveReport 
@@ -463,30 +482,28 @@ async function loadDashboardData() {
     try {
       let cfgQuery = supabase.from('configuracoes_scraper').select('blocked_products, relatorio_insights, nome_projeto, status_alerta')
       if (authUser.value) {
-        cfgQuery = cfgQuery.or(`user_id.eq.${authUser.value.id},user_id.is.null`)
+        cfgQuery = cfgQuery.eq('user_id', authUser.value.id)
       }
       const { data: cfg } = await cfgQuery.limit(1).maybeSingle()
       
       if (cfg) {
-        if (cfg.status_alerta) {
-          statusAlerta.value = cfg.status_alerta
-        }
-        if (cfg.relatorio_insights) {
-          aiReportData.value = cfg.relatorio_insights
-        }
-        if (cfg.nome_projeto) {
-          nomeProjeto.value = cfg.nome_projeto
-        }
+        if (cfg.status_alerta) statusAlerta.value = cfg.status_alerta
+        if (cfg.relatorio_insights) aiReportData.value = cfg.relatorio_insights
+        else aiReportData.value = null
+        if (cfg.nome_projeto) nomeProjeto.value = cfg.nome_projeto
         if (cfg.blocked_products && Array.isArray(cfg.blocked_products)) {
           blockedProducts.value = cfg.blocked_products
           localStorage.setItem('scraper_blocked_products', JSON.stringify(cfg.blocked_products))
         }
+      } else {
+        aiReportData.value = null
+        blockedProducts.value = []
       }
     } catch (e) {
       console.warn("Nao foi possivel carregar configuracoes do Supabase:", e)
     }
 
-    // 3. Carrega produtos do usuário ou legados (user_id is null)
+    // 3. Carrega produtos exclusivos do usuário
     let prodQuery = supabase
       .from('produtos')
       .select(`
@@ -495,7 +512,7 @@ async function loadDashboardData() {
       `)
 
     if (authUser.value) {
-      prodQuery = prodQuery.or(`user_id.eq.${authUser.value.id},user_id.is.null`)
+      prodQuery = prodQuery.eq('user_id', authUser.value.id)
     }
       
     const { data: prodData, error: prodErr } = await prodQuery
@@ -981,5 +998,78 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   padding: 0.25rem 0.6rem;
   border-radius: 99px;
   border: 1px solid #bfdbfe;
+}
+
+.empty-account-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem;
+}
+
+.empty-account-card {
+  max-width: 600px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.empty-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  font-size: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 1.2rem auto;
+}
+
+.empty-account-card h2 {
+  margin: 0 0 0.6rem 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.empty-description {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.btn-configure-terms {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.6rem;
+  border-radius: 99px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-configure-terms:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.empty-schedule-box {
+  margin-top: 1.8rem;
+  padding: 0.8rem 1rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #475569;
 }
 </style>
