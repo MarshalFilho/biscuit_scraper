@@ -15,25 +15,35 @@
         <div class="modal-body">
           <!-- Nicho do Negócio -->
           <div class="form-section">
-            <label class="section-label">
-              🏷️ {{ t('keywords.niche_label', 'Seu Nicho de Mercado / Segmento:') }}
-            </label>
+            <div class="section-header-flex">
+              <label class="section-label">
+                🏷️ {{ t('keywords.niche_label', 'Seu Nicho de Mercado / Segmento:') }}
+              </label>
+              <span class="char-counter" :class="{ 'char-warn': niche.length >= 50 }">
+                {{ niche.length }} / 60 caracteres
+              </span>
+            </div>
             <div class="input-row">
               <input 
                 v-model="niche" 
                 type="text" 
+                maxlength="60"
                 class="input-field" 
-                :placeholder="t('keywords.niche_placeholder', 'Ex: Biscuit, Topo de Bolo, Artesanato...')" 
+                :placeholder="t('keywords.niche_placeholder', 'Ex: Bijuterias, Velas Decorativas, Artesanato...')" 
               />
               <button 
                 type="button" 
                 class="btn-ai-magic" 
-                :disabled="isLoadingAi || !niche.trim() || terms.length >= MAX_TERMS" 
+                :disabled="isLoadingAi || !niche.trim() || terms.length >= MAX_TERMS || aiCooldown > 0" 
                 @click="generateAiSuggestions"
               >
-                <span v-if="!isLoadingAi">✨ {{ t('keywords.btn_ai_suggest', 'Gerar Termos com IA') }}</span>
-                <span v-else class="loading-spin">⏳ {{ t('keywords.btn_ai_loading', 'Consultando Gemini...') }}</span>
+                <span v-if="isLoadingAi" class="loading-spin">⏳ {{ t('keywords.btn_ai_loading', 'Consultando Gemini...') }}</span>
+                <span v-else-if="aiCooldown > 0">⏳ Aguarde {{ aiCooldown }}s</span>
+                <span v-else>✨ {{ t('keywords.btn_ai_suggest', 'Gerar Termos com IA') }}</span>
               </button>
+            </div>
+            <div v-if="quotaRemaining !== null" class="quota-info-row">
+              <small>⚡ Cota de segurança: <strong>{{ quotaRemaining }}</strong> consultas restantes nesta hora</small>
             </div>
           </div>
 
@@ -229,6 +239,21 @@ const aiSuggestions = ref([])
 
 const isLoadingAi = ref(false)
 const isSaving = ref(false)
+const aiCooldown = ref(0)
+const quotaRemaining = ref(null)
+let cooldownTimer = null
+
+function startCooldown(seconds = 15) {
+  aiCooldown.value = seconds
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(() => {
+    if (aiCooldown.value > 0) {
+      aiCooldown.value -= 1
+    } else {
+      clearInterval(cooldownTimer)
+    }
+  }, 1000)
+}
 
 // Carrega configurações do usuário no Supabase
 async function loadUserKeywords() {
@@ -337,6 +362,7 @@ function addSuggestedTerm(termo) {
 }
 
 async function generateAiSuggestions() {
+  if (aiCooldown.value > 0) return
   isLoadingAi.value = true
   try {
     const remainingSlots = Math.max(1, MAX_TERMS - terms.value.length)
@@ -350,14 +376,20 @@ async function generateAiSuggestions() {
       }
     })
 
+    if (res?.remainingQuota !== undefined) {
+      quotaRemaining.value = res.remainingQuota
+    }
+
     if (res?.sugestoes && Array.isArray(res.sugestoes)) {
       aiSuggestions.value = res.sugestoes
+      startCooldown(15)
     } else {
       alert('Nenhuma nova sugestão retornada para os critérios atuais.')
     }
   } catch (e) {
     console.error(e)
-    alert('Erro ao gerar sugestões com a IA: ' + e.message)
+    const errorMsg = e?.data?.statusMessage || e?.message || 'Erro ao consultar IA'
+    alert(errorMsg)
   } finally {
     isLoadingAi.value = false
   }
@@ -373,30 +405,32 @@ async function saveConfigurations() {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     const userId = currentUser?.id || props.user?.id
 
-    const updatePayload = {
-      termos_busca: terms.value,
-      blacklist: blacklist.value,
-      status_scraper: '⚙️ Configurações de termos atualizadas pelo usuário.'
+    if (!userId) {
+      alert('⚠️ Usuário não autenticado. Por favor, recarregue a página.')
+      return
     }
 
-    let error = null
-    if (userId) {
-      updatePayload.user_id = userId
-      const res = await supabase.from('configuracoes_scraper').upsert(updatePayload, { onConflict: 'user_id' })
-      error = res.error
-    } else {
-      const res = await supabase.from('configuracoes_scraper').update(updatePayload).neq('user_id', '00000000-0000-0000-0000-000000000000')
-      error = res.error
+    // Salva via API Server segura (evita bloqueio de RLS no cliente)
+    const res = await $fetch('/api/save-keywords', {
+      method: 'POST',
+      body: {
+        userId,
+        terms: terms.value,
+        blacklist: blacklist.value
+      }
+    })
+
+    if (!res?.success) {
+      throw new Error('Falha na resposta do servidor.')
     }
 
-    if (error) throw error
-
-    alert('✅ Configurações salvas com sucesso!\n\nSeus novos termos de busca e regras de descarte serão utilizados automaticamente na próxima raspagem.')
+    alert('✅ Configurações salvas com sucesso!\n\nSeus novos termos de busca e regras de descarte foram registrados e serão utilizados na próxima raspagem.')
     emit('saved', { terms: terms.value, blacklist: blacklist.value, niche: niche.value })
     close()
   } catch (e) {
     console.error(e)
-    alert('Erro ao salvar configurações no Supabase: ' + e.message)
+    const msg = e?.data?.statusMessage || e?.message || 'Erro desconhecido'
+    alert('Erro ao salvar configurações no Supabase: ' + msg)
   } finally {
     isSaving.value = false
   }
@@ -539,6 +573,27 @@ async function saveConfigurations() {
 
 .btn-clear-danger {
   margin-bottom: 0;
+}
+
+.char-counter {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.char-counter.char-warn {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.quota-info-row {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: #6d28d9;
+  background: #f5f3ff;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .section-label {

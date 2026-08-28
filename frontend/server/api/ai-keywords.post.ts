@@ -1,9 +1,62 @@
+// In-memory rate limiting map: IP -> { count, lastRequestTime, resetTime }
+const rateLimitMap = new Map<string, { count: number; lastRequestTime: number; resetTime: number }>()
+
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hora
+const MAX_REQUESTS_PER_WINDOW = 15 // Máximo de 15 chamadas por hora por IP/Usuário
+const COOLDOWN_SECONDS = 10 // Cooldown de 10s entre chamadas
+
 export default defineEventHandler(async (event) => {
+  // 1. Identifica IP do cliente para proteção de cota
+  const clientIp = getRequestHeader(event, 'x-forwarded-for') || 
+                   getRequestHeader(event, 'x-real-ip') || 
+                   event.node.req.socket.remoteAddress || 
+                   'unknown_client'
+
+  const now = Date.now()
+  let clientLimit = rateLimitMap.get(clientIp)
+
+  if (!clientLimit || now > clientLimit.resetTime) {
+    clientLimit = { count: 0, lastRequestTime: 0, resetTime: now + RATE_LIMIT_WINDOW_MS }
+    rateLimitMap.set(clientIp, clientLimit)
+  }
+
+  // Checagem de Cooldown (anti-spam de cliques rápidos)
+  const timeSinceLast = (now - clientLimit.lastRequestTime) / 1000
+  if (timeSinceLast < COOLDOWN_SECONDS) {
+    const waitTime = Math.ceil(COOLDOWN_SECONDS - timeSinceLast)
+    throw createError({
+      statusCode: 429,
+      statusMessage: `⚠️ Por favor, aguarde ${waitTime} segundos antes de solicitar novas sugestões da IA.`
+    })
+  }
+
+  // Checagem de Cota Máxima por Janela
+  if (clientLimit.count >= MAX_REQUESTS_PER_WINDOW) {
+    const minutesLeft = Math.ceil((clientLimit.resetTime - now) / 60000)
+    throw createError({
+      statusCode: 429,
+      statusMessage: `⚠️ Limite de segurança de IA atingido (máx. ${MAX_REQUESTS_PER_WINDOW} consultas/hora). Tente novamente em ${minutesLeft} minutos.`
+    })
+  }
+
   const body = await readBody(event)
-  const niche = body?.niche || 'Biscuit e Artesanato'
-  const currentTerms = body?.currentTerms || []
-  const blacklist = body?.blacklist || []
-  const maxSuggestions = body?.maxSuggestions || 8
+  
+  // Sanitização e validação de tamanho de texto
+  let niche = String(body?.niche || 'Geral').trim()
+  if (niche.length > 60) {
+    niche = niche.substring(0, 60)
+  }
+  if (!niche) {
+    niche = 'Geral'
+  }
+
+  const currentTerms = Array.isArray(body?.currentTerms) ? body.currentTerms.slice(0, 15) : []
+  const blacklist = Array.isArray(body?.blacklist) ? body.blacklist.slice(0, 30) : []
+  const maxSuggestions = Math.min(8, Math.max(1, Number(body?.maxSuggestions) || 6))
+
+  // Registra uso
+  clientLimit.count += 1
+  clientLimit.lastRequestTime = now
 
   const config = useRuntimeConfig()
   const geminiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
@@ -49,7 +102,11 @@ Retorne EXCLUSIVAMENTE um JSON válido no formato exato:
 
         const text = res?.candidates?.[0]?.content?.parts?.[0]?.text
         if (text) {
-          return JSON.parse(text)
+          const parsed = JSON.parse(text)
+          return {
+            ...parsed,
+            remainingQuota: MAX_REQUESTS_PER_WINDOW - clientLimit.count
+          }
         }
       } catch (e: any) {
         console.warn(`Erro ao conectar ao modelo ${modelName} no /api/ai-keywords:`, e?.message || e)
@@ -67,5 +124,8 @@ Retorne EXCLUSIVAMENTE um JSON válido no formato exato:
     { termo: `kit festa ${niche}`, motivo: "Maior ticket médio por pedido" }
   ].filter(s => !currentTerms.includes(s.termo) && !blacklist.some(b => s.termo.toLowerCase().includes(b.toLowerCase())))
 
-  return { sugestoes: fallbacks.slice(0, maxSuggestions) }
+  return {
+    sugestoes: fallbacks.slice(0, maxSuggestions),
+    remainingQuota: MAX_REQUESTS_PER_WINDOW - clientLimit.count
+  }
 })
