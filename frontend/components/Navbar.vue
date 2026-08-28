@@ -7,6 +7,17 @@
       </div>
 
       <div class="header-right">
+        <!-- Botão de Disparo Imediato ao Worker Local -->
+        <button 
+          @click="triggerScrape" 
+          :disabled="isTriggering"
+          class="btn-trigger-scrape"
+          :title="t('navbar.trigger_scrape_tooltip', 'Solicitar coleta imediata ao Worker Local')"
+        >
+          <span v-if="!isTriggering">⚡ {{ t('navbar.trigger_scrape', 'Disparar Nova Raspagem') }}</span>
+          <span v-else class="loading-spin">⏳ {{ t('navbar.triggering', 'Solicitando ao Worker...') }}</span>
+        </button>
+
         <button 
           @click="toggleLanguage" 
           class="lang-btn" 
@@ -30,9 +41,10 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { createClient } from '@supabase/supabase-js'
 import { useAppI18n } from '~/composables/useAppI18n'
+import { useSupabase } from '~/composables/useSupabase'
 
 const props = defineProps({
   projectName: { type: String, default: 'MarketPulse AI' },
@@ -44,6 +56,43 @@ const emit = defineEmits(['auth-change'])
 const { locale, toggleLanguage, t } = useAppI18n()
 const router = useRouter()
 const supabase = useSupabase()
+
+const isTriggering = ref(false)
+
+async function triggerScrape() {
+  isTriggering.value = true
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    const userId = currentUser?.id || props.user?.id
+
+    if (userId) {
+      const { error } = await supabase.table('configuracoes_scraper').update({
+        disparo_pendente: true,
+        status_scraper: '⚡ Disparo solicitado pelo Dashboard! Aguardando o Worker Local...'
+      }).eq('user_id', userId)
+
+      if (!error) {
+        alert('🚀 Disparo solicitado com sucesso!\n\nSe o seu Worker Local (iniciar_worker.bat) estiver ligado, ele iniciará a coleta em poucos segundos.')
+      } else {
+        alert('⚠️ Aviso ao enviar comando: ' + error.message)
+      }
+    } else {
+      // Caso não haja usuário autenticado
+      await supabase.table('configuracoes_scraper').update({
+        disparo_pendente: true,
+        status_scraper: '⚡ Disparo solicitado!'
+      }).neq('user_id', '00000000-0000-0000-0000-000000000000')
+      alert('🚀 Disparo solicitado com sucesso!')
+    }
+  } catch (e) {
+    console.error(e)
+    alert('Erro ao comunicar com o banco de dados: ' + e.message)
+  } finally {
+    setTimeout(() => {
+      isTriggering.value = false
+    }, 4000)
+  }
+}
 
 async function logout() {
   await supabase.auth.signOut()
@@ -100,6 +149,34 @@ async function logout() {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.btn-trigger-scrape {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-trigger-scrape:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+
+.btn-trigger-scrape:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
 }
 
 .lang-btn {

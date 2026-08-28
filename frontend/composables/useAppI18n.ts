@@ -30,7 +30,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       title: 'Super Filtros Globais',
       subtitle: 'Altera em tempo real todos os KPIs, gráficos e tabelas do painel',
       platform: 'Plataforma:',
-      both: '🌐 Ambas',
+      both: 'Ambas',
       category: 'Categoria:',
       all_categories: 'Todas as Categorias',
       min_sales: 'Vendas Mínimas:',

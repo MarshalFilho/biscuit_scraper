@@ -1,83 +1,85 @@
 <template>
-  <div v-if="product" class="modal-overlay" @click.self="close">
-    <div class="modal-content glass-panel animate-scale">
-      <div class="modal-header">
-        <div class="modal-title-box">
-          <span class="badge-category">{{ product.categoria || t('product_modal.general', 'Geral') }}</span>
-          <h3>{{ t('product_modal.title', '🔎 Análise Detalhada:') }} <span class="product-title-text">{{ product.titulo }}</span></h3>
+  <Teleport to="body">
+    <div v-if="product" class="modal-overlay" @click.self="close">
+      <div class="modal-content glass-panel animate-scale">
+        <div class="modal-header">
+          <div class="modal-title-box">
+            <span class="badge-category">{{ product.categoria || t('product_modal.general', 'Geral') }}</span>
+            <h3>{{ t('product_modal.title', '🔎 Análise Detalhada:') }} <span class="product-title-text">{{ product.titulo }}</span></h3>
+          </div>
+          <button class="close-btn" @click="close" :title="t('product_modal.close_window', 'Fechar janela')">×</button>
         </div>
-        <button class="close-btn" @click="close" :title="t('product_modal.close_window', 'Fechar janela')">×</button>
-      </div>
-      
-      <div class="modal-body">
-        <!-- Cards de Visão Geral do Produto -->
-        <div class="product-summary-grid">
-          <div class="summary-card">
-            <span class="card-label">{{ t('product_modal.platform', 'Plataforma') }}</span>
-            <span :class="['badge-platform', product.plataforma]">
-              {{ product.plataforma === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
-            </span>
+        
+        <div class="modal-body">
+          <!-- Cards de Visão Geral do Produto -->
+          <div class="product-summary-grid">
+            <div class="summary-card">
+              <span class="card-label">{{ t('product_modal.platform', 'Plataforma') }}</span>
+              <span :class="['badge-platform', product.plataforma]">
+                {{ product.plataforma === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
+              </span>
+            </div>
+
+            <div class="summary-card">
+              <span class="card-label">{{ t('product_modal.current_price', 'Preço Atual') }}</span>
+              <span class="card-value price">R$ {{ product.preco ? product.preco.toFixed(2).replace('.', ',') : '0,00' }}</span>
+            </div>
+
+            <div class="summary-card">
+              <span class="card-label">{{ t('product_modal.total_sales', 'Vendas Acumuladas') }}</span>
+              <span class="card-value sales">{{ product.vendas_totais || 0 }} {{ t('product_modal.units_label', 'unidades') }}</span>
+            </div>
+
+            <div class="summary-card" v-if="product.vendedor">
+              <span class="card-label">{{ t('product_modal.seller_origin', 'Vendedor / Origem') }}</span>
+              <span class="card-value seller">
+                {{ product.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ product.vendedor }}
+              </span>
+            </div>
+
+            <div class="summary-card">
+              <span class="card-label">{{ t('product_modal.original_ad', 'Anúncio Original') }}</span>
+              <a :href="product.link" target="_blank" class="store-link-btn">{{ t('product_modal.view_in_store', 'Acessar na Loja ↗') }}</a>
+            </div>
           </div>
 
-          <div class="summary-card">
-            <span class="card-label">{{ t('product_modal.current_price', 'Preço Atual') }}</span>
-            <span class="card-value price">R$ {{ product.preco ? product.preco.toFixed(2).replace('.', ',') : '0,00' }}</span>
+          <!-- Gráfico do Histórico -->
+          <div class="chart-section">
+            <h4>{{ t('product_modal.history_chart_title', '📈 Histórico de Evolução (Preço x Vendas)') }}</h4>
+            <ClientOnly>
+              <apexchart type="line" height="300" :options="chartOptions" :series="chartSeries"></apexchart>
+              <template #fallback>
+                <div class="loading-chart">{{ t('product_modal.loading_chart', 'Carregando dados históricos do anúncio...') }}</div>
+              </template>
+            </ClientOnly>
           </div>
 
-          <div class="summary-card">
-            <span class="card-label">{{ t('product_modal.total_sales', 'Vendas Acumuladas') }}</span>
-            <span class="card-value sales">{{ product.vendas_totais || 0 }} {{ t('product_modal.units_label', 'unidades') }}</span>
-          </div>
-
-          <div class="summary-card" v-if="product.vendedor">
-            <span class="card-label">{{ t('product_modal.seller_origin', 'Vendedor / Origem') }}</span>
-            <span class="card-value seller">
-              {{ product.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ product.vendedor }}
-            </span>
-          </div>
-
-          <div class="summary-card">
-            <span class="card-label">{{ t('product_modal.original_ad', 'Anúncio Original') }}</span>
-            <a :href="product.link" target="_blank" class="store-link-btn">{{ t('product_modal.view_in_store', 'Acessar na Loja ↗') }}</a>
-          </div>
-        </div>
-
-        <!-- Gráfico do Histórico -->
-        <div class="chart-section">
-          <h4>{{ t('product_modal.history_chart_title', '📈 Histórico de Evolução (Preço x Vendas)') }}</h4>
-          <ClientOnly>
-            <apexchart type="line" height="300" :options="chartOptions" :series="chartSeries"></apexchart>
-            <template #fallback>
-              <div class="loading-chart">{{ t('product_modal.loading_chart', 'Carregando dados históricos do anúncio...') }}</div>
-            </template>
-          </ClientOnly>
-        </div>
-
-        <!-- Tabela de Histórico Bruto -->
-        <div class="history-table-section" v-if="product.historico_coletas && product.historico_coletas.length > 0">
-          <h4>{{ t('product_modal.scrape_records', '📅 Registro de Coletas') }}</h4>
-          <div class="history-table-wrapper">
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>{{ t('product_modal.col_date', 'Data da Coleta') }}</th>
-                  <th>{{ t('table.col_price', 'Preço') }} (R$)</th>
-                  <th>{{ t('table.col_sales', 'Vendas Totais') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(entry, index) in product.historico_coletas" :key="index">
-                  <td>{{ formatDate(entry.data_coleta) }}</td>
-                  <td class="fw-bold">R$ {{ entry.preco ? entry.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-                  <td>{{ entry.vendas_totais || 0 }} {{ t('product_modal.unit_short', 'un') }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Tabela de Histórico Bruto -->
+          <div class="history-table-section" v-if="product.historico_coletas && product.historico_coletas.length > 0">
+            <h4>{{ t('product_modal.scrape_records', '📅 Registro de Coletas') }}</h4>
+            <div class="history-table-wrapper">
+              <table class="history-table">
+                <thead>
+                  <tr>
+                    <th>{{ t('product_modal.col_date', 'Data da Coleta') }}</th>
+                    <th>{{ t('table.col_price', 'Preço') }} (R$)</th>
+                    <th>{{ t('table.col_sales', 'Vendas Totais') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, index) in product.historico_coletas" :key="index">
+                    <td>{{ formatDate(entry.data_coleta) }}</td>
+                    <td class="fw-bold">R$ {{ entry.preco ? entry.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
+                    <td>{{ entry.vendas_totais || 0 }} {{ t('product_modal.unit_short', 'un') }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -171,8 +173,8 @@ const chartOptions = computed(() => {
 </script>
 
 <style scoped>
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); padding: 1rem; }
-.modal-content { width: 100%; max-width: 920px; max-height: 90vh; overflow-y: auto; padding: 2rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.modal-overlay { position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 99999; backdrop-filter: blur(6px); padding: 1.5rem; }
+.modal-content { width: 100%; max-width: 920px; max-height: 88vh; overflow-y: auto; padding: 2rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin: auto; }
 
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
 .modal-title-box { flex: 1; padding-right: 1rem; }

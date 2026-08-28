@@ -1,84 +1,98 @@
 <template>
-  <div v-if="seller" class="modal-overlay" @click.self="close">
-    <div class="modal-content glass-panel animate-scale">
-      <div class="modal-header">
-        <div class="modal-title-box">
-          <span :class="['badge-platform', seller.platform]">
-            {{ seller.platform === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
-          </span>
-          <h3>
-            {{ seller.name.startsWith('Loja em') ? '📍' : '🏪' }} 
-            {{ t('seller_modal.store_ads', 'Anúncios da Loja:') }} <span class="seller-title-text">{{ seller.name }}</span>
-          </h3>
+  <Teleport to="body">
+    <div v-if="seller" class="modal-overlay" @click.self="close">
+      <div class="modal-content glass-panel animate-scale">
+        <div class="modal-header">
+          <div class="modal-title-box">
+            <span :class="['badge-platform', seller.platform]">
+              {{ seller.platform === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
+            </span>
+            <h3>
+              {{ seller.name.startsWith('Loja em') ? '📍' : '🏪' }} 
+              {{ t('seller_modal.store_ads', 'Anúncios da Loja:') }} <span class="seller-title-text">{{ seller.name }}</span>
+            </h3>
+          </div>
+          <button class="close-btn" @click="close" :title="t('seller_modal.close_window', 'Fechar janela')">×</button>
         </div>
-        <button class="close-btn" @click="close" :title="t('seller_modal.close_window', 'Fechar janela')">×</button>
+
+        <div class="modal-body">
+          <!-- Resumo da Loja -->
+          <div class="seller-summary-grid">
+            <div class="summary-card">
+              <span class="card-label">{{ t('seller_modal.mapped_ads', 'Anúncios Mapeados') }}</span>
+              <span class="card-value">{{ seller.products.length }} {{ t('seller_modal.products_count', 'produtos') }}</span>
+            </div>
+
+            <div class="summary-card">
+              <span class="card-label">{{ t('seller_modal.total_sales', 'Vendas Totais') }}</span>
+              <span class="card-value sales">{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('charts.units_short', 'un') }}</span>
+            </div>
+
+            <div class="summary-card">
+              <span class="card-label">{{ t('seller_modal.estimated_revenue', 'Faturamento Estimado') }}</span>
+              <span class="card-value revenue">R$ {{ seller.estimatedRevenue.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+            </div>
+          </div>
+
+          <!-- Lista de Produtos/Anúncios da Loja -->
+          <div class="products-table-section">
+            <h4>{{ t('seller_modal.ads_list', '📦 Lista de Anúncios deste Vendedor') }}</h4>
+            <div class="products-table-wrapper">
+              <table class="products-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>{{ t('seller_modal.col_title', 'Título do Anúncio') }}</th>
+                    <th>{{ t('seller_modal.col_price', 'Preço Atual') }}</th>
+                    <th>{{ t('seller_modal.col_sales', 'Vendas Acumuladas') }}</th>
+                    <th>{{ t('table.col_revenue', 'Faturamento Est.') }}</th>
+                    <th class="text-center">{{ t('global.actions', 'Ações') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(p, index) in seller.products" :key="p.id || index">
+                    <td class="rank-td">{{ index + 1 }}</td>
+                    <td class="title-td" :title="p.titulo">
+                      <span class="product-title">{{ p.titulo }}</span>
+                    </td>
+                    <td class="price-td">R$ {{ p.preco ? p.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
+                    <td class="sales-td">{{ p.vendas_totais || 0 }} {{ t('charts.units_short', 'un') }}</td>
+                    <td class="sales-td">R$ {{ ((p.preco || 0) * (p.vendas_totais || 0)).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
+                    <td class="action-td">
+                      <button 
+                        @click="inspectProduct(p)" 
+                        class="icon-btn action-btn" 
+                        :title="t('table.analyze_btn', 'Ver Histórico Completo')"
+                      >
+                        📈
+                      </button>
+                      <a 
+                        :href="p.link" 
+                        target="_blank" 
+                        class="icon-btn link-btn" 
+                        :title="t('table.view_ad_btn', 'Abrir Anúncio')"
+                      >
+                        ↗
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="modal-body">
-        <!-- Resumo da Loja -->
-        <div class="seller-summary-grid">
-          <div class="summary-card">
-            <span class="card-label">{{ t('seller_modal.mapped_ads', 'Anúncios Mapeados') }}</span>
-            <span class="card-value">{{ seller.products.length }} {{ t('seller_modal.products_count', 'produtos') }}</span>
-          </div>
-
-          <div class="summary-card">
-            <span class="card-label">{{ t('seller_modal.total_sales', 'Vendas Totais') }}</span>
-            <span class="card-value sales">{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('charts.units_short', 'un') }}</span>
-          </div>
-
-          <div class="summary-card">
-            <span class="card-label">{{ t('seller_modal.estimated_revenue', 'Faturamento Estimado') }}</span>
-            <span class="card-value revenue">R$ {{ seller.estimatedRevenue.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
-          </div>
-        </div>
-
-        <!-- Lista de Produtos/Anúncios da Loja -->
-        <div class="products-table-section">
-          <h4>{{ t('seller_modal.ads_list', '📦 Lista de Anúncios deste Vendedor') }}</h4>
-          <div class="products-table-wrapper">
-            <table class="products-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>{{ t('seller_modal.col_title', 'Título do Anúncio') }}</th>
-                  <th>{{ t('seller_modal.col_price', 'Preço Atual') }}</th>
-                  <th>{{ t('seller_modal.col_sales', 'Vendas Totais') }}</th>
-                  <th class="text-center">{{ t('seller_modal.col_actions', 'Ações') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(item, index) in seller.products" :key="item.id || index">
-                  <td class="rank-td">{{ index + 1 }}</td>
-                  <td class="title-td" :title="item.titulo">
-                    <span class="product-title">{{ item.titulo }}</span>
-                  </td>
-                  <td class="price-td">R$ {{ item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-                  <td class="sales-td"><strong>{{ item.vendas_totais || 0 }}</strong> {{ t('charts.units_short', 'un') }}</td>
-                  <td class="action-td">
-                    <button @click="inspectProduct(item)" class="icon-btn action-btn" :title="t('seller_modal.inspect_tooltip', 'Ver gráfico e histórico do anúncio')">🔎</button>
-                    <a :href="item.link" target="_blank" class="icon-btn link-btn" :title="t('seller_modal.store_tooltip', 'Abrir anúncio na loja original')">↗</a>
-                  </td>
-                </tr>
-                <tr v-if="!seller.products || seller.products.length === 0">
-                  <td colspan="5" class="empty-state">{{ t('seller_modal.empty', 'Nenhum anúncio encontrado para este vendedor.') }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <!-- Modal de Detalhes do Produto Selecionado -->
+      <ProductModal v-if="selectedProduct" :product="selectedProduct" @close="selectedProduct = null" />
     </div>
-
-    <!-- Modal do Produto Individual (Sub-modal) -->
-    <ProductModal v-if="selectedProduct" :product="selectedProduct" @close="selectedProduct = null" />
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import ProductModal from './ProductModal.vue'
 import { useAppI18n } from '~/composables/useAppI18n'
+import ProductModal from './ProductModal.vue'
 
 const { t, locale } = useAppI18n()
 
@@ -86,7 +100,6 @@ const props = defineProps({
   seller: { type: Object, default: null }
 })
 const emit = defineEmits(['close'])
-
 const selectedProduct = ref(null)
 
 function close() {
@@ -99,8 +112,8 @@ function inspectProduct(product) {
 </script>
 
 <style scoped>
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); display: flex; justify-content: center; align-items: center; z-index: 1100; backdrop-filter: blur(4px); padding: 1rem; }
-.modal-content { width: 100%; max-width: 900px; max-height: 90vh; overflow-y: auto; padding: 2rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+.modal-overlay { position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 99999; backdrop-filter: blur(6px); padding: 1.5rem; }
+.modal-content { width: 100%; max-width: 900px; max-height: 88vh; overflow-y: auto; padding: 2rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin: auto; }
 
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
 .modal-title-box { flex: 1; padding-right: 1rem; }
