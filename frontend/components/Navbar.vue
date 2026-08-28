@@ -93,7 +93,7 @@ const router = useRouter()
 const supabase = useSupabase()
 
 const currentRole = computed(() => {
-  if (!props.user) return 'basic'
+  if (!props.user) return null
   const appRole = String(props.user.app_metadata?.role || '').toLowerCase()
   const userRole = String(props.user.user_metadata?.role || '').toLowerCase()
   const directRole = String(props.user.role || '').toLowerCase()

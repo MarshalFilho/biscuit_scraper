@@ -97,7 +97,7 @@
       <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
     </div>
 
-    <!-- PAINEL EXCLUSIVO ADMIN: Central de Autorizações de Clientes Básicos -->
+    <!-- PAINEL EXCLUSIVO ADMIN: Central de Autorizações & Histórico de Decisões -->
     <section v-if="isAdmin" class="admin-approval-panel glass-panel animate-fade-in">
       <div class="admin-header-row">
         <div class="admin-title-box">
@@ -110,41 +110,179 @@
           <h3>{{ t('admin.approval_title', 'Central de Autorizações & Solicitações de Clientes Básicos') }}</h3>
           <p class="admin-subtitle">{{ t('admin.approval_subtitle', 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.') }}</p>
         </div>
+
+        <!-- Abas do Administrador: Pendentes vs Histórico -->
+        <div class="admin-nav-tabs">
+          <button 
+            type="button" 
+            class="admin-nav-tab" 
+            :class="{ active: adminActiveTab === 'pending' }" 
+            @click="adminActiveTab = 'pending'"
+          >
+            ⏳ {{ t('admin.tab_pending', 'Solicitações Pendentes') }}
+            <span class="tab-counter" v-if="adminPendingRequests.length > 0">{{ adminPendingRequests.length }}</span>
+          </button>
+          <button 
+            type="button" 
+            class="admin-nav-tab" 
+            :class="{ active: adminActiveTab === 'history' }" 
+            @click="adminActiveTab = 'history'"
+          >
+            📋 {{ t('admin.tab_history', 'Histórico de Decisões') }}
+            <span class="tab-counter secondary" v-if="adminDecisionHistory.length > 0">{{ adminDecisionHistory.length }}</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Lista de Solicitações Pendentes dos Clientes -->
-      <div v-if="adminPendingRequests.length > 0" class="admin-requests-grid">
-        <div v-for="req in adminPendingRequests" :key="req.id" class="admin-request-card">
-          <div class="req-card-left">
-            <div class="req-main-info">
-              <strong class="req-term-title">🔍 {{ req.termo }}</strong>
-              <span v-if="req.nicho" class="req-nicho-pill">{{ req.nicho }}</span>
-              <span class="user-tier-pill">BÁSICO</span>
+      <!-- ABA 1: Solicitações Pendentes -->
+      <div v-if="adminActiveTab === 'pending'">
+        <div v-if="adminPendingRequests.length > 0" class="admin-requests-grid">
+          <div v-for="req in adminPendingRequests" :key="req.id" class="admin-request-card">
+            <div class="req-card-left">
+              <div class="req-main-info">
+                <strong class="req-term-title">🔍 {{ req.termo }}</strong>
+                <span v-if="req.nicho" class="req-nicho-pill">{{ req.nicho }}</span>
+                <span class="user-tier-pill">BÁSICO</span>
+              </div>
+              <p v-if="req.motivo" class="req-reason-text">"{{ req.motivo }}"</p>
+              <div class="req-footer-meta">
+                <span class="meta-item">👤 <strong>{{ req.solicitante_email || 'Cliente' }}</strong></span>
+                <span v-if="req.membro_desde" class="meta-item">📅 {{ t('admin.member_since', 'Membro desde:') }} {{ formatDateShort(req.membro_desde) }}</span>
+                <span class="meta-item">📊 {{ req.total_termos_ativos || 0 }} {{ t('admin.active_terms_count', 'termos ativos no robô') }}</span>
+                <span v-if="req.data_solicitacao" class="meta-item">🕒 {{ t('admin.last_request_date', 'Pedido em:') }} {{ formatDateShort(req.data_solicitacao) }}</span>
+              </div>
             </div>
-            <p v-if="req.motivo" class="req-reason-text">"{{ req.motivo }}"</p>
-            <div class="req-footer-meta">
-              <span class="meta-item">👤 <strong>{{ req.solicitante_email || 'Cliente' }}</strong></span>
-              <span v-if="req.membro_desde" class="meta-item">📅 {{ t('admin.member_since', 'Membro desde:') }} {{ formatDateShort(req.membro_desde) }}</span>
-              <span class="meta-item">📊 {{ req.total_termos_ativos || 0 }} {{ t('admin.active_terms_count', 'termos ativos no robô') }}</span>
-              <span v-if="req.data_solicitacao" class="meta-item">🕒 {{ t('admin.last_request_date', 'Pedido em:') }} {{ formatDateShort(req.data_solicitacao) }}</span>
+            <div class="req-card-actions">
+              <button type="button" class="btn-action-approve" @click="approveAdminRequest(req)" :title="t('admin.btn_approve', '✓ Autorizar Termo')">
+                {{ t('admin.btn_approve', '✓ Autorizar Termo') }}
+              </button>
+              <button type="button" class="btn-action-reject" @click="openRejectModal(req)" :title="t('admin.btn_reject', '✕ Recusar')">
+                {{ t('admin.btn_reject', '✕ Recusar') }}
+              </button>
             </div>
           </div>
-          <div class="req-card-actions">
-            <button type="button" class="btn-action-approve" @click="approveAdminRequest(req)" :title="t('admin.btn_approve', '✓ Autorizar Termo')">
-              {{ t('admin.btn_approve', '✓ Autorizar Termo') }}
-            </button>
-            <button type="button" class="btn-action-reject" @click="openRejectModal(req)" :title="t('admin.btn_reject', '✕ Recusar')">
-              {{ t('admin.btn_reject', '✕ Recusar') }}
-            </button>
+        </div>
+
+        <div v-else class="admin-empty-requests">
+          <span class="empty-icon">✨</span>
+          <div>
+            <strong>{{ t('admin.no_pending', 'Nenhuma solicitação pendente no momento.') }}</strong>
+            <p>{{ t('admin.no_pending_desc', 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.') }}</p>
           </div>
         </div>
       </div>
 
-      <div v-else class="admin-empty-requests">
-        <span class="empty-icon">✨</span>
-        <div>
-          <strong>{{ t('admin.no_pending', 'Nenhuma solicitação pendente no momento.') }}</strong>
-          <p>{{ t('admin.no_pending_desc', 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.') }}</p>
+      <!-- ABA 2: Histórico de Decisões com Filtros & Paginação -->
+      <div v-else-if="adminActiveTab === 'history'" class="admin-history-section animate-fade-in">
+        <!-- Barra de Filtros e Busca do Histórico -->
+        <div class="history-controls-row">
+          <div class="history-search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              v-model="historySearchQuery" 
+              :placeholder="t('admin.search_history_placeholder', 'Filtrar por termo ou cliente...')" 
+              class="history-search-input"
+            />
+            <button v-if="historySearchQuery" class="clear-search-btn" @click="historySearchQuery = ''">✕</button>
+          </div>
+
+          <div class="history-filter-pills">
+            <button 
+              type="button" 
+              class="history-pill-btn" 
+              :class="{ active: historyStatusFilter === 'all' }" 
+              @click="historyStatusFilter = 'all'; historyCurrentPage = 1"
+            >
+              {{ t('admin.filter_all_status', 'Todos os Status') }} ({{ adminDecisionHistory.length }})
+            </button>
+            <button 
+              type="button" 
+              class="history-pill-btn approved" 
+              :class="{ active: historyStatusFilter === 'aprovada' }" 
+              @click="historyStatusFilter = 'aprovada'; historyCurrentPage = 1"
+            >
+              {{ t('admin.filter_approved', '✓ Aprovadas') }}
+            </button>
+            <button 
+              type="button" 
+              class="history-pill-btn rejected" 
+              :class="{ active: historyStatusFilter === 'recusada' }" 
+              @click="historyStatusFilter = 'recusada'; historyCurrentPage = 1"
+            >
+              {{ t('admin.filter_rejected', '✕ Recusadas') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Itens do Histórico -->
+        <div v-if="paginatedDecisionHistory.length > 0" class="history-items-list">
+          <div v-for="item in paginatedDecisionHistory" :key="item.id" class="history-item-card" :class="item.status">
+            <div class="history-item-header">
+              <div class="history-term-box">
+                <strong class="history-term-name">🔍 {{ item.termo }}</strong>
+                <span v-if="item.nicho" class="req-nicho-pill">{{ item.nicho }}</span>
+                <span class="status-badge" :class="item.status">
+                  {{ item.status === 'aprovada' ? t('admin.status_approved', 'APROVADA') : t('admin.status_rejected', 'RECUSADA') }}
+                </span>
+              </div>
+              <span class="history-date-badge">
+                🕒 {{ formatDateShort(item.data_decisao || item.data_solicitacao) }}
+              </span>
+            </div>
+
+            <div class="history-item-body">
+              <div class="history-meta-row">
+                <span>👤 <strong>{{ t('admin.col_client', 'Cliente') }}:</strong> {{ item.solicitante_email || 'Cliente' }}</span>
+                <span v-if="item.data_solicitacao">📅 <strong>{{ t('admin.last_request_date', 'Pedido:') }}</strong> {{ formatDateShort(item.data_solicitacao) }}</span>
+              </div>
+
+              <!-- Motivo original do cliente -->
+              <p v-if="item.motivo" class="history-client-reason">
+                💬 <strong>Pedido do cliente:</strong> "{{ item.motivo }}"
+              </p>
+
+              <!-- Justificativa da decisão -->
+              <div v-if="item.status === 'recusada'" class="history-decision-note rejected">
+                ⚠️ <strong>{{ t('admin.reason_label', 'Justificativa da Recusa:') }}</strong> "{{ item.motivo_recusa || 'Fora dos critérios de monitoramento.' }}"
+              </div>
+              <div v-else class="history-decision-note approved">
+                ✓ <strong>{{ t('admin.approved_note', 'Termo adicionado à rotina de monitoramento do robô.') }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paginação do Histórico -->
+          <div class="history-pagination" v-if="historyTotalPages > 1">
+            <button 
+              type="button" 
+              class="btn-page" 
+              :disabled="historyCurrentPage <= 1"
+              @click="historyCurrentPage--"
+            >
+              {{ t('admin.btn_prev', '◀ Anterior') }}
+            </button>
+            <span class="page-indicator">
+              {{ t('admin.page_info', 'Página {current} de {total}').replace('{current}', historyCurrentPage).replace('{total}', historyTotalPages) }}
+            </span>
+            <button 
+              type="button" 
+              class="btn-page" 
+              :disabled="historyCurrentPage >= historyTotalPages"
+              @click="historyCurrentPage++"
+            >
+              {{ t('admin.btn_next', 'Próximo ▶') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Histórico Vazio -->
+        <div v-else class="admin-empty-requests">
+          <span class="empty-icon">📂</span>
+          <div>
+            <strong>{{ t('admin.no_history', 'Nenhuma decisão registrada no histórico.') }}</strong>
+            <p>{{ t('admin.no_history_desc', 'Assim que você autorizar ou recusar solicitações de termos, os registros detalhados aparecerão aqui.') }}</p>
+          </div>
         </div>
       </div>
     </section>
@@ -463,6 +601,37 @@ const canManageDirectly = computed(() => currentRole.value === 'pro')
 const isKeywordsModalOpen = ref(false)
 const isRequestTermModalOpen = ref(false)
 const adminPendingRequests = ref([])
+const adminActiveTab = ref('pending') // 'pending' | 'history'
+const adminDecisionHistory = ref([])
+const historySearchQuery = ref('')
+const historyStatusFilter = ref('all')
+const historyCurrentPage = ref(1)
+const historyItemsPerPage = ref(6)
+
+const filteredDecisionHistory = computed(() => {
+  let list = adminDecisionHistory.value
+  if (historyStatusFilter.value !== 'all') {
+    list = list.filter(item => item.status === historyStatusFilter.value)
+  }
+  if (historySearchQuery.value.trim()) {
+    const q = historySearchQuery.value.toLowerCase().trim()
+    list = list.filter(item => 
+      (item.termo && item.termo.toLowerCase().includes(q)) ||
+      (item.solicitante_email && item.solicitante_email.toLowerCase().includes(q)) ||
+      (item.nicho && item.nicho.toLowerCase().includes(q)) ||
+      (item.motivo_recusa && item.motivo_recusa.toLowerCase().includes(q))
+    )
+  }
+  return list
+})
+
+const historyTotalPages = computed(() => Math.max(1, Math.ceil(filteredDecisionHistory.value.length / historyItemsPerPage.value)))
+
+const paginatedDecisionHistory = computed(() => {
+  const start = (historyCurrentPage.value - 1) * historyItemsPerPage.value
+  return filteredDecisionHistory.value.slice(start, start + historyItemsPerPage.value)
+})
+
 const isRejectModalOpen = ref(false)
 const rejectingRequest = ref(null)
 const rejectReason = ref('')
@@ -505,6 +674,24 @@ async function confirmRejectAdminRequest() {
       rateLimit = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
     }
 
+    const decisionItem = {
+      id: req.id || `dec_${Date.now()}`,
+      termo: req.termo,
+      nicho: req.nicho || '',
+      motivo: req.motivo || '',
+      solicitante_email: req.solicitante_email || 'Cliente',
+      data_solicitacao: req.data_solicitacao || new Date().toISOString(),
+      status: 'recusada',
+      motivo_recusa: motivoRecusa,
+      data_decisao: new Date().toISOString()
+    }
+
+    let existingHistory = []
+    if (rawCategory && typeof rawCategory === 'object' && Array.isArray(rawCategory.historico_solicitacoes)) {
+      existingHistory = [...rawCategory.historico_solicitacoes]
+    }
+    existingHistory.unshift(decisionItem)
+
     const updatedCategory = {
       rate_limit: rateLimit,
       solicitacao_pendente: {
@@ -512,7 +699,8 @@ async function confirmRejectAdminRequest() {
         status: 'recusada',
         motivo_recusa: motivoRecusa,
         data_recusa: new Date().toISOString()
-      }
+      },
+      historico_solicitacoes: existingHistory
     }
 
     await supabase
@@ -524,6 +712,7 @@ async function confirmRejectAdminRequest() {
       }, { onConflict: 'user_id' })
 
     adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
+    adminDecisionHistory.value.unshift(decisionItem)
     isRejectModalOpen.value = false
     rejectingRequest.value = null
     toast.info(`Solicitação recusada e motivo enviado ao cliente com sucesso.`, 'Pedido Recusado')
@@ -556,9 +745,28 @@ async function approveAdminRequest(req) {
       currentTerms.push(req.termo)
     }
 
+    const decisionItem = {
+      id: req.id || `dec_${Date.now()}`,
+      termo: req.termo,
+      nicho: req.nicho || '',
+      motivo: req.motivo || '',
+      solicitante_email: req.solicitante_email || 'Cliente',
+      data_solicitacao: req.data_solicitacao || new Date().toISOString(),
+      status: 'aprovada',
+      motivo_recusa: '',
+      data_decisao: new Date().toISOString()
+    }
+
+    let existingHistory = []
+    if (rawCategory && typeof rawCategory === 'object' && Array.isArray(rawCategory.historico_solicitacoes)) {
+      existingHistory = [...rawCategory.historico_solicitacoes]
+    }
+    existingHistory.unshift(decisionItem)
+
     const updatedCategory = {
       rate_limit: rateLimit,
-      solicitacao_pendente: null
+      solicitacao_pendente: null,
+      historico_solicitacoes: existingHistory
     }
 
     await supabase
@@ -571,6 +779,7 @@ async function approveAdminRequest(req) {
       }, { onConflict: 'user_id' })
 
     adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
+    adminDecisionHistory.value.unshift(decisionItem)
     toast.success(`Termo "${req.termo}" autorizado e adicionado à lista de busca do robô!`, 'Termo Autorizado')
   } catch (err) {
     toast.error('Erro ao autorizar solicitação: ' + err.message)
@@ -828,22 +1037,42 @@ async function loadDashboardData() {
       })
     }
 
-    // 4. Se for Admin, carrega todas as solicitações pendentes de todos os clientes
+    // 4. Se for Admin, carrega todas as solicitações pendentes e histórico de todos os clientes
     if (isAdmin.value) {
       try {
         const { data: allCfgs } = await supabase
           .from('configuracoes_scraper')
-          .select('user_id, termos_busca, regras_categoria')
+          .select('user_id, termos_busca, regras_categoria, updated_at')
 
         if (allCfgs) {
           const pending = []
+          const history = []
           for (const cfg of allCfgs) {
             const rawCat = cfg.regras_categoria
-            if (rawCat && typeof rawCat === 'object' && rawCat.solicitacao_pendente) {
-              pending.push({ ...rawCat.solicitacao_pendente, target_user_id: cfg.user_id })
+            if (rawCat && typeof rawCat === 'object') {
+              // Solicitação Pendente (não concluída)
+              if (rawCat.solicitacao_pendente && rawCat.solicitacao_pendente.status !== 'aprovada' && rawCat.solicitacao_pendente.status !== 'recusada') {
+                const activeCount = Array.isArray(cfg.termos_busca) ? cfg.termos_busca.length : 0
+                pending.push({
+                  ...rawCat.solicitacao_pendente,
+                  target_user_id: cfg.user_id,
+                  total_termos_ativos: activeCount,
+                  membro_desde: cfg.updated_at || rawCat.solicitacao_pendente.data_solicitacao
+                })
+              }
+              // Histórico de Decisões
+              if (Array.isArray(rawCat.historico_solicitacoes)) {
+                for (const h of rawCat.historico_solicitacoes) {
+                  history.push({
+                    ...h,
+                    target_user_id: cfg.user_id
+                  })
+                }
+              }
             }
           }
           adminPendingRequests.value = pending
+          adminDecisionHistory.value = history.sort((a, b) => new Date(b.data_decisao || b.data_solicitacao) - new Date(a.data_decisao || a.data_solicitacao))
         }
       } catch (e) {
         console.warn('Erro ao carregar solicitacoes para admin:', e)
@@ -1752,6 +1981,288 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .btn-confirm-reject:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.admin-nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: #fdf4ff;
+  border: 1px solid #f5d0fe;
+  padding: 0.3rem;
+  border-radius: 12px;
+}
+
+.admin-nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #86198f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-nav-tab:hover {
+  background: #fae8ff;
+  color: #701a75;
+}
+
+.admin-nav-tab.active {
+  background: #a21caf;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(162, 28, 175, 0.25);
+}
+
+.tab-counter {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #fae8ff;
+  color: #a21caf;
+  padding: 0.1rem 0.45rem;
+  border-radius: 99px;
+}
+
+.admin-nav-tab.active .tab-counter {
+  background: #ffffff;
+  color: #a21caf;
+}
+
+.tab-counter.secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-nav-tab.active .tab-counter.secondary {
+  background: #ffffff;
+  color: #701a75;
+}
+
+/* Histórico Controls */
+.history-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.history-search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.4rem 0.75rem;
+  gap: 0.4rem;
+  flex: 1;
+  max-width: 380px;
+}
+
+.history-search-input {
+  border: none;
+  outline: none;
+  font-size: 0.85rem;
+  color: #0f172a;
+  width: 100%;
+  background: transparent;
+}
+
+.clear-search-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.history-filter-pills {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.history-pill-btn {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.history-pill-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.history-pill-btn.active {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.history-pill-btn.approved.active {
+  background: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+.history-pill-btn.rejected.active {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+/* History Cards */
+.history-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.history-item-card.aprovada {
+  border-left: 4px solid #10b981;
+}
+
+.history-item-card.recusada {
+  border-left: 4px solid #ef4444;
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-term-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-term-name {
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.status-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.status-badge.aprovada {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.status-badge.recusada {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+
+.history-date-badge {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.history-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.history-meta-row {
+  display: flex;
+  gap: 1.2rem;
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.history-client-reason {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.history-decision-note {
+  font-size: 0.82rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  margin-top: 0.2rem;
+}
+
+.history-decision-note.rejected {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+}
+
+.history-decision-note.approved {
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
+  color: #166534;
+}
+
+/* History Pagination */
+.history-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.btn-page {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-page:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
 }
 
 .admin-empty-requests {

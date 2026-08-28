@@ -420,7 +420,26 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       quick_reasons: 'Motivos rápidos:',
       reason_out_of_niche: 'Termo fora do nicho',
       reason_low_volume: 'Volume de busca baixo',
-      reason_duplicate: 'Nicho já atendido em outro termo'
+      reason_duplicate: 'Nicho já atendido em outro termo',
+      tab_pending: 'Solicitações Pendentes',
+      tab_history: 'Histórico de Decisões',
+      filter_all_status: 'Todos os Status',
+      filter_approved: '✓ Aprovadas',
+      filter_rejected: '✕ Recusadas',
+      search_history_placeholder: 'Filtrar por termo ou cliente...',
+      no_history: 'Nenhuma decisão registrada no histórico.',
+      no_history_desc: 'Assim que você autorizar ou recusar solicitações de termos, os registros detalhados aparecerão aqui.',
+      col_term: 'Termo Solicitado',
+      col_client: 'Cliente',
+      col_status: 'Status',
+      col_decision_date: 'Data da Decisão',
+      col_details: 'Detalhes / Motivo',
+      status_approved: 'APROVADA',
+      status_rejected: 'RECUSADA',
+      approved_note: 'Termo adicionado à rotina de monitoramento',
+      page_info: 'Página {current} de {total}',
+      btn_prev: '◀ Anterior',
+      btn_next: 'Próximo ▶'
     }
   },
   en: {
@@ -841,7 +860,26 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       quick_reasons: 'Quick reasons:',
       reason_out_of_niche: 'Out of niche scope',
       reason_low_volume: 'Low search volume',
-      reason_duplicate: 'Niche already covered'
+      reason_duplicate: 'Niche already covered',
+      tab_pending: 'Pending Requests',
+      tab_history: 'Decision History',
+      filter_all_status: 'All Statuses',
+      filter_approved: '✓ Approved',
+      filter_rejected: '✕ Declined',
+      search_history_placeholder: 'Filter by search term or client...',
+      no_history: 'No decisions recorded in history.',
+      no_history_desc: 'Once you authorize or decline term requests, full audit logs will appear here.',
+      col_term: 'Requested Term',
+      col_client: 'Client',
+      col_status: 'Status',
+      col_decision_date: 'Decision Date',
+      col_details: 'Details / Reason',
+      status_approved: 'APPROVED',
+      status_rejected: 'DECLINED',
+      approved_note: 'Term added to scraping routine',
+      page_info: 'Page {current} of {total}',
+      btn_prev: '◀ Previous',
+      btn_next: 'Next ▶'
     }
   }
 }
