@@ -72,10 +72,8 @@ def recarregar_config():
             data = response.data[0]
             config_atual["termos_busca"] = data.get("termos_busca", DEFAULT_CONFIG["termos_busca"])
             config_atual["blacklist"] = data.get("blacklist", DEFAULT_CONFIG["blacklist"])
-            
-            # Aqui podemos mapear regras de categoria do JSON para algo compatível no backend, 
-            # se necessitar regras complexas, mas inicialmente usamos as default de teste
-            # ou injetamos na pipeline.
+            config_atual["modo_paginacao"] = data.get("modo_paginacao", "anonimo")
+            config_atual["max_paginas"] = data.get("max_paginas", 1)
             print("✅ Configurações dinâmicas injetadas com sucesso a partir do Supabase.")
         else:
             print("⚠️ AVISO: Nenhuma linha encontrada na tabela configuracoes_scraper para o seu user_id.")
@@ -98,4 +96,5 @@ def get_palavras_negativas_exatas(): return config_atual["palavras_negativas_exa
 def get_regras_tipo_produto(): return config_atual["regras_tipo_produto"]
 def get_regras_conteudo_busca(): return config_atual["regras_conteudo_busca"]
 def get_palavra_obrigatoria_global(): return config_atual["palavra_obrigatoria_global"]
-def get_max_paginas(): return config_atual["max_paginas"]
+def get_max_paginas(): return config_atual.get("max_paginas", 1)
+def get_modo_paginacao(): return config_atual.get("modo_paginacao", "anonimo")

@@ -90,49 +90,25 @@ def fase_bronze():
     profile_dir = os.path.join(auth_dir, "chrome_profile_shopee")
     os.makedirs(profile_dir, exist_ok=True)
     
-    is_headless = os.environ.get("HEADLESS", "true").lower() == "true"
+    is_headless = os.environ.get("HEADLESS", "false").lower() == "true"
     
     with sync_playwright() as p:
-        chrome_installed = os.path.exists(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
-        launch_args = {
-            "user_data_dir": profile_dir,
-            "headless": is_headless,
-            "args": [
+        browser = p.chromium.launch(
+            headless=is_headless,
+            args=[
                 "--disable-blink-features=AutomationControlled",
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
-                "--disable-web-security",
-                "--disable-features=IsolateOrigins,site-per-process"
-            ],
-            "viewport": {"width": 1366, "height": 768},
-            "locale": "pt-BR",
-            "timezone_id": "America/Sao_Paulo",
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        }
-        if chrome_installed:
-            launch_args["channel"] = "chrome"
-
-        try:
-            context = p.chromium.launch_persistent_context(**launch_args)
-        except Exception as lock_err:
-            print(f"⚠️ Perfil do Chrome ocupado ({lock_err}). Iniciando navegador limpo isolado...", flush=True)
-            clean_launch_args = {
-                "headless": is_headless,
-                "args": [
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage"
-                ]
-            }
-            browser = p.chromium.launch(**clean_launch_args)
-            context = browser.new_context(
-                viewport={"width": 1366, "height": 768},
-                locale="pt-BR",
-                timezone_id="America/Sao_Paulo",
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-            )
+                "--disable-web-security"
+            ]
+        )
+        context = browser.new_context(
+            viewport={"width": 1366, "height": 768},
+            locale="pt-BR",
+            timezone_id="America/Sao_Paulo",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        )
         
         # Injeta cookies de sessão autenticados APENAS se o usuário estiver no modo logado
         if config.get_modo_paginacao() == "logado":
