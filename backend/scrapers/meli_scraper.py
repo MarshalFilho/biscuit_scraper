@@ -510,14 +510,27 @@ def fase_ouro(user_id=None):
     
     print("\n☁️ [Etapa Nuvem] Enviando dados para o Supabase...")
     try:
+        import hashlib
         supabase = conectar_supabase()
         enviados = 0
         for item in todos_dados_ouro:
             try:
+                url_str = item["url_anuncio"]
+                match = re.search(r"(MLB-?\d+)", url_str, re.IGNORECASE)
+                if match:
+                    id_ext = match.group(1).replace("-", "").upper()
+                else:
+                    match_p = re.search(r"/p/([A-Z0-9]+)", url_str, re.IGNORECASE)
+                    if match_p:
+                        id_ext = match_p.group(1).upper()
+                    else:
+                        clean_u = url_str.split("?")[0]
+                        id_ext = f"ML_{hashlib.md5(clean_u.encode('utf-8')).hexdigest()[:16]}"
+
                 produto_id = upsert_produto(
                     supabase=supabase,
                     plataforma="meli",
-                    id_externo=item["url_anuncio"].split("-")[1] if "-" in item["url_anuncio"] else item["titulo"][:20],
+                    id_externo=id_ext,
                     titulo=item["titulo"],
                     link=item["url_anuncio"],
                     vendedor=item.get("vendedor"),

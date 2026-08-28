@@ -71,29 +71,31 @@ def registrar_alerta_antibot(user_id: str, plataforma: str, mensagem: str, scree
 
 def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: str, link: str, vendedor: str = None, user_id: str = None) -> str:
     """
-    Verifica se o produto existe para aquele user_id. Se não, insere.
+    Verifica se o produto existe por id_externo (ou título). Se não, insere.
     Retorna o UUID do produto no banco.
     """
     effective_user_id = user_id or os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
     
-    query = supabase.table("produtos").select("id").eq("plataforma", plataforma)
-    if effective_user_id:
-        query = query.eq("user_id", effective_user_id)
-        
-    # 1. Verifica se já existe por id_externo
-    response = query.eq("id_externo", id_externo).execute()
+    # 1. Verifica se já existe por id_externo (chave única global)
+    response = supabase.table("produtos").select("id, user_id").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
     
-    # 2. Fallback por título se for um link de clique patrocinado
+    # 2. Fallback por título se for link de anúncio patrocinado
     if (not response.data or len(response.data) == 0) and titulo:
-        query_title = supabase.table("produtos").select("id").eq("plataforma", plataforma)
-        if effective_user_id:
-            query_title = query_title.eq("user_id", effective_user_id)
-        response = query_title.eq("titulo", titulo).execute()
+        response = supabase.table("produtos").select("id, user_id").eq("plataforma", plataforma).eq("titulo", titulo).execute()
 
     if response.data and len(response.data) > 0:
         produto_id = response.data[0]["id"]
+        update_payload = {}
         if vendedor:
-            supabase.table("produtos").update({"vendedor": vendedor}).eq("id", produto_id).execute()
+            update_payload["vendedor"] = vendedor
+        if effective_user_id and not response.data[0].get("user_id"):
+            update_payload["user_id"] = effective_user_id
+            
+        if update_payload:
+            try:
+                supabase.table("produtos").update(update_payload).eq("id", produto_id).execute()
+            except Exception:
+                pass
         return produto_id
         
     novo_produto = {
