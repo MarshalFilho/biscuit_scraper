@@ -1,7 +1,7 @@
 <template>
   <div class="mini-price-slider">
     <div class="slider-top">
-      <span class="label">{{ t('filters.price_range', 'Faixa de Preço:') }}</span>
+      <span class="label">📊 {{ t('filters.price_range', 'Faixa de Preço:') }}</span>
       <span class="price-val">R$ {{ minVal }} — R$ {{ maxVal === absoluteMax ? maxVal + '+' : maxVal }}</span>
     </div>
     
@@ -60,24 +60,31 @@ const minVal = ref(0)
 const maxVal = ref(300)
 const isInitialized = ref(false)
 
-const NUM_BUCKETS = 28 // 28 barras minimalistas e fluidas
+const NUM_BUCKETS = 24
 
 watch(() => props.items, (newItems) => {
   if (!newItems || newItems.length === 0) return
   
-  const validPrices = newItems.map(i => i.preco).filter(p => typeof p === 'number' && p > 0)
+  const validPrices = newItems.map(i => i.preco).filter(p => typeof p === 'number' && p > 0).sort((a, b) => a - b)
   if (validPrices.length === 0) return
   
-  const maxP = Math.max(...validPrices)
-  const calculatedMax = Math.ceil(maxP / 10) * 10 || 300
-  absoluteMax.value = calculatedMax
+  const minP = validPrices[0]
+  const p95Idx = Math.min(Math.floor(validPrices.length * 0.95), validPrices.length - 1)
+  const maxP = Math.max(validPrices[p95Idx], minP + 10)
+
+  const calcMin = minP < 40 ? 0 : Math.floor(minP / 10) * 10
+  const calcMax = Math.ceil(maxP / 10) * 10 || 300
+
+  absoluteMin.value = calcMin
+  absoluteMax.value = calcMax
   
   if (!isInitialized.value) {
-    minVal.value = 0
-    maxVal.value = calculatedMax
+    minVal.value = calcMin
+    maxVal.value = calcMax
     isInitialized.value = true
-  } else if (maxVal.value > calculatedMax) {
-    maxVal.value = calculatedMax
+  } else {
+    if (minVal.value < calcMin) minVal.value = calcMin
+    if (maxVal.value > calcMax) maxVal.value = calcMax
   }
 }, { immediate: true })
 
@@ -140,60 +147,58 @@ function onSliderChange() {
 
 <style scoped>
 .mini-price-slider {
-  background: #ffffff;
+  background: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-  padding: 0.6rem 0.9rem;
+  padding: 0.5rem 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  gap: 0.3rem;
+  max-width: 480px;
 }
 
 .slider-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .label {
   font-weight: 700;
   color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .price-val {
   font-weight: 800;
   color: #2563eb;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
 }
 
 .bars-container {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 28px;
-  padding: 0 4px;
+  gap: 2px;
+  height: 20px;
+  padding: 0 2px;
 }
 
 .mini-bar {
   flex: 1;
-  background: #e2e8f0;
+  background: #cbd5e1;
   border-radius: 2px 2px 0 0;
   transition: all 0.15s ease;
-  min-height: 3px;
+  min-height: 2px;
 }
 
 .mini-bar.active {
-  background: #3b82f6;
+  background: #2563eb;
 }
 
 .range-wrapper {
   position: relative;
-  height: 14px;
+  height: 12px;
   display: flex;
   align-items: center;
 }
@@ -221,23 +226,19 @@ function onSliderChange() {
 .slider-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   pointer-events: auto;
-  height: 14px;
-  width: 14px;
+  height: 12px;
+  width: 12px;
   border-radius: 50%;
   background: #2563eb;
   cursor: grab;
-  margin-top: -5.5px;
+  margin-top: -4.5px;
   border: 2px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.4);
   transition: transform 0.1s;
 }
 
 .slider-thumb::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-}
-
-.slider-thumb::-webkit-slider-thumb:active {
-  cursor: grabbing;
 }
 
 .slider-track-highlight {

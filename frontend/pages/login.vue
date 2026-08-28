@@ -4,7 +4,7 @@
     <header class="login-header">
       <div class="brand">
         <span class="logo-icon">📈</span>
-        <span class="logo-text">MarketPulse AI</span>
+        <span class="logo-text">PulseMarket AI</span>
       </div>
       <button @click="toggleLanguage" class="lang-toggle-btn" :title="t('navbar.toggle_tooltip')">
         {{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}

@@ -77,7 +77,7 @@
               </td>
 
               <!-- Velocidade & Novas Vendas (Delta) -->
-              <td class="text-center">
+              <td>
                 <div class="velocity-pill">
                   <span class="delta-badge">+{{ item.deltaVendas }} {{ t('trending.units', 'un.') }}</span>
                   <span class="speed-tag" v-if="item.deltaVendas > 20">{{ t('trending.high_acceleration', '⚡ Alta Aceleração') }}</span>
@@ -87,9 +87,15 @@
               </td>
 
               <!-- Ação -->
-              <td class="text-right">
-                <a :href="item.link" target="_blank" class="btn-visit">
-                  {{ t('trending.view_ad', 'Ver Anúncio ↗') }}
+              <td class="text-center">
+                <a 
+                  :href="getAdLink(item)" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="icon-btn link-btn"
+                  :title="t('trending.view_ad', 'Abrir Anúncio no Marketplace')"
+                >
+                  ↗
                 </a>
               </td>
             </tr>
@@ -109,6 +115,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t } = useAppI18n()
 
@@ -161,6 +168,17 @@ function getRankClass(rank) {
   if (rank === 3) return 'rank-3'
   return 'rank-other'
 }
+
+function getAdLink(item) {
+  if (item && item.link && typeof item.link === 'string' && item.link.startsWith('http')) {
+    return item.link
+  }
+  const query = (item && item.titulo) || 'produto'
+  if (item && item.plataforma === 'shopee') {
+    return `https://shopee.com.br/search?keyword=${encodeURIComponent(query)}`
+  }
+  return `https://lista.mercadolivre.com.br/${encodeURIComponent(query)}`
+}
 </script>
 
 <style scoped>
@@ -180,26 +198,46 @@ function getRankClass(rank) {
 .table-responsive { overflow-x: auto; }
 .trending-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
 .trending-table th { background: #f8fafc; color: #475569; padding: 0.8rem 1rem; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
-.trending-table td { padding: 0.9rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.trending-table td { padding: 0.85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 
 .rank-badge { font-weight: 800; font-size: 1rem; }
-.store-cell { display: flex; flex-direction: column; gap: 0.2rem; }
+.store-cell { display: flex; flex-direction: column; gap: 0.2rem; min-width: 140px; }
 .platform-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; width: max-content; }
 .platform-badge.meli { background: #fff59d; color: #574c00; }
 .platform-badge.shopee { background: #ffccbc; color: #bf360c; }
 .store-name { color: #64748b; font-size: 0.78rem; }
 
-.product-title-link { color: #0f172a; font-weight: 600; text-decoration: none; transition: color 0.2s ease; }
+.product-title-link { color: #0f172a; font-weight: 600; text-decoration: none; transition: color 0.2s ease; display: block; max-width: 340px; }
 .product-title-link:hover { color: #2563eb; text-decoration: underline; }
 
-.velocity-pill { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
-.delta-badge { background: #dcfce7; color: #15803d; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.85rem; }
-.speed-tag { font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 4px; }
+.velocity-pill { display: inline-flex; align-items: center; gap: 0.6rem; }
+.delta-badge { background: #dcfce7; color: #15803d; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.82rem; min-width: 68px; text-align: center; display: inline-block; white-space: nowrap; }
+.speed-tag { font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; padding: 0.25rem 0.6rem; border-radius: 6px; min-width: 122px; text-align: center; display: inline-flex; justify-content: center; align-items: center; white-space: nowrap; }
 .speed-tag.medium { background: #e0f2fe; color: #075985; }
 .speed-tag.low { background: #f1f5f9; color: #475569; }
 
-.btn-visit { color: #2563eb; font-weight: 600; text-decoration: none; font-size: 0.82rem; padding: 0.35rem 0.75rem; border: 1px solid #bfdbfe; border-radius: 6px; background: #eff6ff; transition: all 0.2s ease; }
-.btn-visit:hover { background: #2563eb; color: #ffffff; }
+.icon-btn.link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+.icon-btn.link-btn:hover {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
 
 .empty-state { text-align: center; padding: 2.5rem; color: #64748b; font-size: 0.95rem; }
 </style>

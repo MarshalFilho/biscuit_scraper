@@ -37,7 +37,7 @@
                 :disabled="isLoadingAi || !niche.trim() || terms.length >= MAX_TERMS || aiCooldown > 0" 
                 @click="generateAiSuggestions"
               >
-                <span v-if="isLoadingAi" class="loading-spin">⏳ {{ t('keywords.btn_ai_loading', 'Consultando Gemini...') }}</span>
+                <span v-if="isLoadingAi" class="loading-spin">⏳ {{ t('keywords.btn_ai_loading', 'Consultando IA...') }}</span>
                 <span v-else-if="aiCooldown > 0">{{ t('keywords.cooldown_wait', '⏳ Aguarde {sec}s').replace('{sec}', aiCooldown) }}</span>
                 <span v-else>✨ {{ t('keywords.btn_ai_suggest', 'Gerar Termos com IA') }}</span>
               </button>
@@ -50,7 +50,7 @@
           <!-- Sugestões da IA (Se houver) -->
           <div v-if="aiSuggestions.length > 0" class="ai-suggestions-box animate-fade-in">
             <div class="ai-header">
-              <span class="ai-badge">🤖 {{ t('keywords.ai_suggestions_title', 'Sugestões Estratégicas do Gemini 3.6') }}</span>
+              <span class="ai-badge">🤖 {{ t('keywords.ai_suggestions_title', 'Sugestões Estratégicas por IA') }}</span>
               <div class="ai-header-actions">
                 <button 
                   type="button" 

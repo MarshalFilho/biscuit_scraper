@@ -53,11 +53,113 @@
         :products="processedProducts"
       />
 
-      <!-- Super Bloco Unificado de Controle (Abas + Filtros Globais + Linha do Tempo) -->
+      <!-- Super Bloco Unificado de Controle (Filtros Globais + Linha do Tempo + Abas de Visão) -->
       <div class="glass-panel unified-control-panel animate-fade-in">
-        <!-- 1. Linha Superior: Abas de Navegação das Visões & Info de Atualização -->
+        <!-- 1. Linha Superior: Filtros Globais em Tempo Real & Badge de Atualização -->
         <div class="control-header-row">
-          <div class="view-tabs-group">
+          <div class="filters-main-row">
+            <!-- Plataforma -->
+            <div class="filter-item">
+              <label>{{ t('filters.platform', 'Plataforma:') }}</label>
+              <div class="toggle-group">
+                <button 
+                  type="button" 
+                  :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
+                  @click="selectedPlatform = 'Todas'"
+                >
+                  🌐 {{ t('filters.both', 'Todas') }}
+                </button>
+                <button 
+                  type="button" 
+                  :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
+                  @click="selectedPlatform = 'meli'"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
+                    <circle cx="12" cy="12" r="11" fill="#FFE600"/>
+                    <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Mercado Livre
+                </button>
+                <button 
+                  type="button" 
+                  :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
+                  @click="selectedPlatform = 'shopee'"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
+                    <rect width="24" height="24" rx="5" fill="#EE4D2D"/>
+                    <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                  Shopee
+                </button>
+              </div>
+            </div>
+
+            <!-- Categoria -->
+            <div class="filter-item flex-1">
+              <label>{{ t('filters.category', 'Categoria:') }}</label>
+              <select v-model="selectedCategory" class="glass-input">
+                <option value="Todas">{{ t('filters.all_categories', 'Todas as Categorias') }}</option>
+                <option v-for="cat in dynamicCategories" :key="cat" :value="cat">{{ cat }}</option>
+              </select>
+            </div>
+
+            <!-- Vendas Mínimas -->
+            <div class="filter-item">
+              <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
+              <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
+            </div>
+
+            <!-- Checkboxes Rápidos -->
+            <div class="filter-item checkboxes-item">
+              <label class="checkbox-label">
+                <input type="checkbox" v-model="hideZeroSales" />
+                {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
+              </label>
+              <label class="checkbox-label text-muted">
+                <input type="checkbox" v-model="showHiddenProducts" />
+                {{ t('filters.show_hidden', 'Mostrar silenciados') }}
+              </label>
+            </div>
+
+            <!-- Botão Histograma -->
+            <div class="filter-item">
+              <button 
+                type="button" 
+                class="btn-toggle-histogram" 
+                @click="showPriceHistogram = !showPriceHistogram"
+              >
+                📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="header-update-badge" :title="t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00')">
+            <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
+          </div>
+        </div>
+        
+        <!-- Histograma de Preços Expansível -->
+        <transition name="slide-fade">
+          <div v-if="showPriceHistogram" class="histogram-expand-wrapper">
+            <PriceRangeHistogramFilter 
+              :items="processedProducts" 
+              @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
+            />
+          </div>
+        </transition>
+
+        <!-- 2. Linha Intermediária: Linha do Tempo e Comparador de Datas Embutido -->
+        <TimelineScrapeSelector 
+          :rawItems="productsRaw" 
+          :embedded="true"
+          @select-date="onTimelineSelectDate"
+          @compare-dates="onTimelineCompareDates"
+        />
+
+        <!-- 3. Linha Inferior: Abas de Navegação das Visões (Posicionadas no final do bloco) -->
+        <div class="control-bottom-row">
+          <div class="view-tabs-group full-width">
             <button 
               :class="['view-tab-btn', { active: activeViewTab === 'overview' }]" 
               @click="activeViewTab = 'overview'"
@@ -77,107 +179,7 @@
               {{ t('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
             </button>
           </div>
-
-          <div class="header-update-badge" :title="t('filters.daily_info', 'Rotina de raspagem executada automaticamente 1 vez por dia às 22h00')">
-            <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
-          </div>
         </div>
-
-        <!-- 2. Linha Intermediária: Filtros Globais em Tempo Real -->
-        <div class="filters-main-row">
-          <!-- Plataforma -->
-          <div class="filter-item">
-            <label>{{ t('filters.platform', 'Plataforma:') }}</label>
-            <div class="toggle-group">
-              <button 
-                type="button" 
-                :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
-                @click="selectedPlatform = 'Todas'"
-              >
-                🌐 {{ t('filters.both', 'Todas') }}
-              </button>
-              <button 
-                type="button" 
-                :class="['toggle-btn meli-btn', { active: selectedPlatform === 'meli' }]" 
-                @click="selectedPlatform = 'meli'"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
-                  <circle cx="12" cy="12" r="11" fill="#FFE600"/>
-                  <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Mercado Livre
-              </button>
-              <button 
-                type="button" 
-                :class="['toggle-btn shopee-btn', { active: selectedPlatform === 'shopee' }]" 
-                @click="selectedPlatform = 'shopee'"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" class="plat-icon">
-                  <rect width="24" height="24" rx="5" fill="#EE4D2D"/>
-                  <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-                Shopee
-              </button>
-            </div>
-          </div>
-
-          <!-- Categoria -->
-          <div class="filter-item flex-1">
-            <label>{{ t('filters.category', 'Categoria:') }}</label>
-            <select v-model="selectedCategory" class="glass-input">
-              <option value="Todas">{{ t('filters.all_categories', 'Todas as Categorias') }}</option>
-              <option v-for="cat in dynamicCategories" :key="cat" :value="cat">{{ cat }}</option>
-            </select>
-          </div>
-
-          <!-- Vendas Mínimas -->
-          <div class="filter-item">
-            <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
-            <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
-          </div>
-
-          <!-- Checkboxes Rápidos -->
-          <div class="filter-item checkboxes-item">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="hideZeroSales" />
-              {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
-            </label>
-            <label class="checkbox-label text-muted">
-              <input type="checkbox" v-model="showHiddenProducts" />
-              {{ t('filters.show_hidden', 'Mostrar silenciados') }}
-            </label>
-          </div>
-
-          <!-- Botão Histograma -->
-          <div class="filter-item">
-            <button 
-              type="button" 
-              class="btn-toggle-histogram" 
-              @click="showPriceHistogram = !showPriceHistogram"
-            >
-              📊 {{ showPriceHistogram ? 'Ocultar Faixa de Preços' : 'Filtrar Faixa de Preços' }}
-            </button>
-          </div>
-        </div>
-        
-        <!-- Histograma de Preços Expansível -->
-        <transition name="slide-fade">
-          <div v-if="showPriceHistogram" class="histogram-expand-wrapper">
-            <PriceRangeHistogramFilter 
-              :items="processedProducts" 
-              @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
-            />
-          </div>
-        </transition>
-
-        <!-- 3. Linha Inferior: Linha do Tempo e Comparador de Datas Embutido -->
-        <TimelineScrapeSelector 
-          :rawItems="productsRaw" 
-          :embedded="true"
-          @select-date="onTimelineSelectDate"
-          @compare-dates="onTimelineCompareDates"
-        />
       </div>
 
       <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Gráficos e Tabela) -->
@@ -290,7 +292,7 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const authUser = ref(null)
-const nomeProjeto = ref('MarketPulse AI')
+const nomeProjeto = ref('PulseMarket AI')
 const statusAlerta = ref(null)
 
 // Estado das Visões da Dashboard
@@ -925,6 +927,24 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   color: #ffffff;
   border-color: #2563eb;
   box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+}
+
+.control-bottom-row {
+  padding-top: 0.8rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.view-tabs-group.full-width {
+  display: flex;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.view-tabs-group.full-width .view-tab-btn {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  padding: 0.75rem 1rem;
 }
 
 .header-update-badge {

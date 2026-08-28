@@ -2,7 +2,7 @@
   <header class="app-header glass-panel animate-fade-in">
     <div class="header-main">
       <div class="brand-box">
-        <h1 class="brand-title">📈 {{ projectName || 'MarketPulse AI' }}</h1>
+        <h1 class="brand-title">📈 {{ projectName || 'PulseMarket AI' }}</h1>
         <span class="brand-badge">{{ t('navbar.badge', 'Inteligência Ativa') }}</span>
       </div>
 
@@ -51,7 +51,7 @@ import { useAppI18n } from '~/composables/useAppI18n'
 import { useSupabase } from '~/composables/useSupabase'
 
 const props = defineProps({
-  projectName: { type: String, default: 'MarketPulse AI' },
+  projectName: { type: String, default: 'PulseMarket AI' },
   user: { type: Object, default: null }
 })
 
