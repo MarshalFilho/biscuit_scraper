@@ -406,7 +406,21 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       approval_subtitle: 'Analise, autorize ou recuse os novos termos e nichos solicitados pelos clientes.',
       manage_all_terms: 'Configurações de Extração & IA',
       no_pending: 'Nenhuma solicitação pendente no momento.',
-      no_pending_desc: 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.'
+      no_pending_desc: 'Quando os clientes do plano Básico solicitarem novos termos, eles aparecerão aqui para sua aprovação com 1 clique.',
+      btn_approve: '✓ Autorizar Termo',
+      btn_reject: '✕ Recusar',
+      reject_modal_title: 'Recusar Solicitação de Termo',
+      reject_modal_subtitle: 'Informe ao cliente o motivo pelo qual este termo não pôde ser aprovado.',
+      reject_reason_label: 'Motivo da recusa (será exibido ao cliente):',
+      reject_reason_placeholder: 'Ex: Termo fora do nicho cadastrado ou volume de busca irrelevante...',
+      btn_confirm_reject: 'Confirmar e Enviar Motivo',
+      member_since: 'Membro desde:',
+      active_terms_count: 'Termos ativos no robô:',
+      last_request_date: 'Data do pedido:',
+      quick_reasons: 'Motivos rápidos:',
+      reason_out_of_niche: 'Termo fora do nicho',
+      reason_low_volume: 'Volume de busca baixo',
+      reason_duplicate: 'Nicho já atendido em outro termo'
     }
   },
   en: {
@@ -813,7 +827,21 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       approval_subtitle: 'Review, approve, or decline new search terms and product niches submitted by clients.',
       manage_all_terms: 'Extraction Settings & AI',
       no_pending: 'No pending requests at this time.',
-      no_pending_desc: 'When Basic plan clients submit new search terms, they will appear here for your 1-click approval.'
+      no_pending_desc: 'When Basic plan clients submit new search terms, they will appear here for your 1-click approval.',
+      btn_approve: '✓ Authorize Term',
+      btn_reject: '✕ Decline',
+      reject_modal_title: 'Decline Term Request',
+      reject_modal_subtitle: 'Let the client know the reason why this search term cannot be approved.',
+      reject_reason_label: 'Decline reason (will be displayed to client):',
+      reject_reason_placeholder: 'Ex: Search term is outside monitored niche or has low search volume...',
+      btn_confirm_reject: 'Confirm & Send Reason',
+      member_since: 'Member since:',
+      active_terms_count: 'Active terms in scraper:',
+      last_request_date: 'Request date:',
+      quick_reasons: 'Quick reasons:',
+      reason_out_of_niche: 'Out of niche scope',
+      reason_low_volume: 'Low search volume',
+      reason_duplicate: 'Niche already covered'
     }
   }
 }

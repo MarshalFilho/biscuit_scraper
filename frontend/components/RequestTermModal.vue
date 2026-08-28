@@ -13,8 +13,16 @@
         <button class="close-btn" @click="$emit('close')" title="Fechar">✕</button>
       </div>
 
-      <!-- Banner de Solicitação Existente -->
-      <div v-if="existingRequest" class="pending-notice-banner">
+      <!-- Banner de Solicitação Existente / Recusada -->
+      <div v-if="existingRequest && existingRequest.status === 'recusada'" class="rejected-notice-banner">
+        <div class="rejected-title-row">
+          <span>❌ <strong>Pedido Anterior Recusado</strong> (em {{ formatDate(existingRequest.data_recusa || existingRequest.data_atualizacao) }})</span>
+        </div>
+        <p class="rejected-reason-desc"><strong>Motivo do Administrador:</strong> "{{ existingRequest.motivo_recusa || 'Não atende aos critérios do plano.' }}"</p>
+        <small class="rejected-hint">Você pode corrigir as informações abaixo e enviar uma nova solicitação.</small>
+      </div>
+
+      <div v-else-if="existingRequest" class="pending-notice-banner">
         <span>🕒 <strong>Status:</strong> Aguardando análise do Administrador (enviada em {{ formatDate(existingRequest.data_solicitacao) }})</span>
       </div>
 
@@ -428,6 +436,30 @@ onMounted(() => {
   padding: 0.6rem 1.5rem;
   font-size: 0.82rem;
   color: #92400e;
+}
+
+.rejected-notice-banner {
+  background: #fef2f2;
+  border-bottom: 1px solid #fecdd3;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.82rem;
+  color: #991b1b;
+}
+
+.rejected-title-row {
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.rejected-reason-desc {
+  margin: 0.2rem 0;
+  font-style: italic;
+  color: #b91c1c;
+}
+
+.rejected-hint {
+  color: #7f1d1d;
+  font-weight: 600;
 }
 
 .btn-delete-request {

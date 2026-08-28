@@ -26,6 +26,68 @@
       @toast="handleClientToast" 
     />
 
+    <!-- Modal do Administrador: Recusar Solicitação com Motivo -->
+    <div v-if="isRejectModalOpen" class="modal-backdrop" @click.self="isRejectModalOpen = false">
+      <div class="modal-card glass-panel animate-scale-up" style="max-width: 480px;">
+        <div class="modal-header">
+          <div class="header-left">
+            <div class="icon-badge" style="background: #fee2e2; border-color: #fecdd3; color: #dc2626;">⚠️</div>
+            <div>
+              <h3>{{ t('admin.reject_modal_title', 'Recusar Solicitação de Termo') }}</h3>
+              <p class="subtitle">{{ t('admin.reject_modal_subtitle', 'Informe ao cliente o motivo pelo qual este termo não pôde ser aprovado.') }}</p>
+            </div>
+          </div>
+          <button class="close-btn" @click="isRejectModalOpen = false">✕</button>
+        </div>
+
+        <div class="modal-body" v-if="rejectingRequest">
+          <div class="reject-summary-box">
+            <span>🔍 <strong>Termo:</strong> {{ rejectingRequest.termo }}</span>
+            <span>👤 <strong>Cliente:</strong> {{ rejectingRequest.solicitante_email }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              {{ t('admin.reject_reason_label', 'Motivo da recusa (será exibido ao cliente):') }} <span class="required">*</span>
+            </label>
+            <textarea 
+              v-model="rejectReason" 
+              :placeholder="t('admin.reject_reason_placeholder', 'Ex: Termo fora do nicho cadastrado ou volume de busca irrelevante...')" 
+              class="glass-textarea" 
+              rows="3"
+              maxlength="200"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Chips de Motivos Rápidos -->
+          <div class="quick-reasons-row">
+            <small class="text-muted">{{ t('admin.quick_reasons', 'Motivos rápidos:') }}</small>
+            <div class="chips-list">
+              <button type="button" class="reason-chip" @click="applyQuickReason('Termo fora do nicho de atuação monitorado')">
+                🎯 {{ t('admin.reason_out_of_niche', 'Fora do nicho') }}
+              </button>
+              <button type="button" class="reason-chip" @click="applyQuickReason('Volume de buscas e anúncios muito baixo nos marketplaces')">
+                📉 {{ t('admin.reason_low_volume', 'Baixo volume') }}
+              </button>
+              <button type="button" class="reason-chip" @click="applyQuickReason('Este nicho já é atendido por outro termo ativo na sua lista')">
+                🔁 {{ t('admin.reason_duplicate', 'Já existente') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" @click="isRejectModalOpen = false">
+              {{ t('request_term.cancel', 'Cancelar') }}
+            </button>
+            <button type="button" class="btn-confirm-reject" :disabled="!rejectReason.trim()" @click="confirmRejectAdminRequest">
+              {{ t('admin.btn_confirm_reject', 'Confirmar e Enviar Motivo') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>{{ t('global.connecting_db', 'Conectando à base de dados segura do Supabase...') }}</p>
@@ -62,19 +124,22 @@
             <div class="req-main-info">
               <strong class="req-term-title">🔍 {{ req.termo }}</strong>
               <span v-if="req.nicho" class="req-nicho-pill">{{ req.nicho }}</span>
+              <span class="user-tier-pill">BÁSICO</span>
             </div>
             <p v-if="req.motivo" class="req-reason-text">"{{ req.motivo }}"</p>
             <div class="req-footer-meta">
-              <span>👤 <strong>Solicitante:</strong> {{ req.solicitante_email || 'Cliente Básico' }}</span>
-              <span v-if="req.data_solicitacao" class="req-date">🕒 {{ new Date(req.data_solicitacao).toLocaleDateString() }}</span>
+              <span class="meta-item">👤 <strong>{{ req.solicitante_email || 'Cliente' }}</strong></span>
+              <span v-if="req.membro_desde" class="meta-item">📅 {{ t('admin.member_since', 'Membro desde:') }} {{ formatDateShort(req.membro_desde) }}</span>
+              <span class="meta-item">📊 {{ req.total_termos_ativos || 0 }} {{ t('admin.active_terms_count', 'termos ativos no robô') }}</span>
+              <span v-if="req.data_solicitacao" class="meta-item">🕒 {{ t('admin.last_request_date', 'Pedido em:') }} {{ formatDateShort(req.data_solicitacao) }}</span>
             </div>
           </div>
           <div class="req-card-actions">
-            <button type="button" class="btn-action-approve" @click="approveAdminRequest(req)" title="Autorizar e incluir na raspagem do robô">
-              ✓ Autorizar Termo
+            <button type="button" class="btn-action-approve" @click="approveAdminRequest(req)" :title="t('admin.btn_approve', '✓ Autorizar Termo')">
+              {{ t('admin.btn_approve', '✓ Autorizar Termo') }}
             </button>
-            <button type="button" class="btn-action-reject" @click="rejectAdminRequest(req)" title="Recusar pedido">
-              ✕ Recusar
+            <button type="button" class="btn-action-reject" @click="openRejectModal(req)" :title="t('admin.btn_reject', '✕ Recusar')">
+              {{ t('admin.btn_reject', '✕ Recusar') }}
             </button>
           </div>
         </div>
@@ -379,22 +444,74 @@ const { t, locale } = useAppI18n()
 const isKeywordsModalOpen = ref(false)
 const isRequestTermModalOpen = ref(false)
 const adminPendingRequests = ref([])
+const isRejectModalOpen = ref(false)
+const rejectingRequest = ref(null)
+const rejectReason = ref('')
 
-const currentRole = computed(() => {
-  if (!authUser.value) return 'basic'
-  const appRole = String(authUser.value.app_metadata?.role || '').toLowerCase()
-  const userRole = String(authUser.value.user_metadata?.role || '').toLowerCase()
-  const directRole = String(authUser.value.role || '').toLowerCase()
+function formatDateShort(dateStr) {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
 
-  if (appRole === 'admin' || userRole === 'admin' || directRole === 'admin' || authUser.value.email === 'adm@gmail.com') return 'admin'
-  if (appRole === 'pro' || userRole === 'pro' || directRole === 'pro' || authUser.value.email === 'marshalfilho@gmail.com' || authUser.value.email === 'isadora@gmail.com') return 'pro'
-  return 'basic'
-})
+function openRejectModal(req) {
+  rejectingRequest.value = req
+  rejectReason.value = ''
+  isRejectModalOpen.value = true
+}
 
-const isAdmin = computed(() => currentRole.value === 'admin')
-const isPro = computed(() => currentRole.value === 'pro')
-const isBasic = computed(() => currentRole.value === 'basic')
-const canManageDirectly = computed(() => currentRole.value === 'admin' || currentRole.value === 'pro')
+function applyQuickReason(reason) {
+  rejectReason.value = reason
+}
+
+async function confirmRejectAdminRequest() {
+  if (!rejectingRequest.value) return
+  const req = rejectingRequest.value
+  const motivoRecusa = rejectReason.value.trim() || 'Termo não atende aos critérios de monitoramento do plano'
+
+  try {
+    const targetId = req.target_user_id || authUser.value?.id
+    const { data: cfg } = await supabase
+      .from('configuracoes_scraper')
+      .select('regras_categoria')
+      .eq('user_id', targetId)
+      .limit(1)
+      .maybeSingle()
+
+    let rawCategory = cfg?.regras_categoria || {}
+    let rateLimit = []
+
+    if (Array.isArray(rawCategory)) {
+      rateLimit = rawCategory
+    } else if (rawCategory && typeof rawCategory === 'object') {
+      rateLimit = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
+    }
+
+    const updatedCategory = {
+      rate_limit: rateLimit,
+      solicitacao_pendente: {
+        ...req,
+        status: 'recusada',
+        motivo_recusa: motivoRecusa,
+        data_recusa: new Date().toISOString()
+      }
+    }
+
+    await supabase
+      .from('configuracoes_scraper')
+      .upsert({
+        user_id: targetId,
+        regras_categoria: updatedCategory,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' })
+
+    adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
+    isRejectModalOpen.value = false
+    rejectingRequest.value = null
+    toast.info(`Solicitação recusada e motivo enviado ao cliente com sucesso.`, 'Pedido Recusado')
+  } catch (err) {
+    toast.error('Erro ao recusar solicitação: ' + err.message)
+  }
+}
 
 async function approveAdminRequest(req) {
   try {
@@ -438,45 +555,6 @@ async function approveAdminRequest(req) {
     toast.success(`Termo "${req.termo}" autorizado e adicionado à lista de busca do robô!`, 'Termo Autorizado')
   } catch (err) {
     toast.error('Erro ao autorizar solicitação: ' + err.message)
-  }
-}
-
-async function rejectAdminRequest(req) {
-  try {
-    const targetId = req.target_user_id || authUser.value?.id
-    const { data: cfg } = await supabase
-      .from('configuracoes_scraper')
-      .select('regras_categoria')
-      .eq('user_id', targetId)
-      .limit(1)
-      .maybeSingle()
-
-    let rawCategory = cfg?.regras_categoria || {}
-    let rateLimit = []
-
-    if (Array.isArray(rawCategory)) {
-      rateLimit = rawCategory
-    } else if (rawCategory && typeof rawCategory === 'object') {
-      rateLimit = Array.isArray(rawCategory.rate_limit) ? rawCategory.rate_limit : []
-    }
-
-    const updatedCategory = {
-      rate_limit: rateLimit,
-      solicitacao_pendente: null
-    }
-
-    await supabase
-      .from('configuracoes_scraper')
-      .upsert({
-        user_id: targetId,
-        regras_categoria: updatedCategory,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' })
-
-    adminPendingRequests.value = adminPendingRequests.value.filter(r => r.id !== req.id)
-    toast.info(`Solicitação do termo "${req.termo}" recusada.`)
-  } catch (err) {
-    toast.error('Erro ao recusar solicitação: ' + err.message)
   }
 }
 
@@ -1565,6 +1643,103 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   background: #fee2e2;
   color: #b91c1c;
   border-color: #fca5a5;
+}
+
+.user-tier-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.req-footer-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #f8fafc;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.reject-summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 1rem;
+}
+
+.quick-reasons-row {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.reason-chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 0.35rem 0.7rem;
+  border-radius: 99px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.reason-chip:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.btn-confirm-reject {
+  background: #dc2626;
+  border: 1px solid #b91c1c;
+  color: #ffffff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-reject:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-confirm-reject:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .admin-empty-requests {

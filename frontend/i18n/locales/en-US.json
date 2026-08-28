@@ -137,6 +137,20 @@
     "approval_subtitle": "Review, approve, or decline new search terms and product niches submitted by clients.",
     "manage_all_terms": "Extraction Settings & AI",
     "no_pending": "No pending requests at this time.",
-    "no_pending_desc": "When Basic plan clients submit new search terms, they will appear here for your 1-click approval."
+    "no_pending_desc": "When Basic plan clients submit new search terms, they will appear here for your 1-click approval.",
+    "btn_approve": "✓ Authorize Term",
+    "btn_reject": "✕ Decline",
+    "reject_modal_title": "Decline Term Request",
+    "reject_modal_subtitle": "Let the client know the reason why this search term cannot be approved.",
+    "reject_reason_label": "Decline reason (will be displayed to client):",
+    "reject_reason_placeholder": "Ex: Search term is outside monitored niche or has low search volume...",
+    "btn_confirm_reject": "Confirm & Send Reason",
+    "member_since": "Member since:",
+    "active_terms_count": "Active terms in scraper:",
+    "last_request_date": "Request date:",
+    "quick_reasons": "Quick reasons:",
+    "reason_out_of_niche": "Out of niche scope",
+    "reason_low_volume": "Low search volume",
+    "reason_duplicate": "Niche already covered"
   }
 }
