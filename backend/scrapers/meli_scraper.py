@@ -210,12 +210,6 @@ def fase_bronze():
             print("🌐 Modo Anônimo Limpo ativado: navegando sem cookies para máxima estabilidade pública.", flush=True)
 
         page = context.pages[0] if context.pages else context.new_page()
-        page.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
-            Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
-            window.chrome = { runtime: {} };
-        """)
 
         for termo in config.get_termos_busca():
             termo_slug = normalizar_termo_busca(termo)
@@ -226,22 +220,15 @@ def fase_bronze():
             # Acessa a primeira página
             print(f"   Acessando página 1: {url}")
             try:
-                page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                
-                # Se cair em checkpoint por conta de cookies de outro IP, limpa os cookies e retenta
-                if any(chk in page.url for chk in ["/captcha/", "wall/logged", "account-verification", "gz/"]) or "captcha" in page.title().lower():
-                    print("⚠️ [Mercado Livre] Sessão com cookies gerou checagem de segurança (IP de nuvem). Limpando cookies e tentando como visitante limpo...", flush=True)
-                    context.clear_cookies()
-                    time.sleep(1)
-                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                    time.sleep(2)
-
+                page.goto(url)
                 try:
-                    page.wait_for_selector(".ui-search-results, .poly-card, .ui-search-layout, .ui-search-item", timeout=15000)
+                    page.wait_for_selector(".ui-search-layout__item, .poly-card, .ui-search-results", timeout=12000)
                 except Exception:
-                    pass
-                page.mouse.wheel(0, 800)
+                    time.sleep(2)
+                
                 time.sleep(1.5)
+                page.mouse.wheel(0, 800)
+                time.sleep(1)
             except Exception as e:
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}. Pulando para o próximo termo...")
                 continue
