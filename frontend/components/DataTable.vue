@@ -247,9 +247,13 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAppI18n } from '~/composables/useAppI18n'
+import { useToast } from '~/composables/useToast'
+import { useConfirmDialog } from '~/composables/useConfirmDialog'
 import ProductModal from './ProductModal.vue'
 
 const { t, getRaw, locale } = useAppI18n()
+const toast = useToast()
+const { askConfirm } = useConfirmDialog()
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -297,14 +301,21 @@ function openModal(item) {
   selectedProduct.value = item
 }
 
-function confirmDelete(item) {
+async function confirmDelete(item) {
   const isHidden = item._isHidden
   if (isHidden) {
     emit('delete-product', item)
+    toast.success('Anúncio restaurado com sucesso!')
   } else {
-    const msg = t('table.confirm_hide', 'Deseja silenciar/ocultar o anúncio:\n\n"{title}"\n\nVocê pode desfazer isso depois.').replace('{title}', item.titulo)
-    if (confirm(msg)) {
+    const ok = await askConfirm({
+      title: 'Ocultar / Silenciar Anúncio?',
+      message: `Deseja silenciar o anúncio:\n\n"${item.titulo}"\n\nVocê pode visualizá-lo e restaurá-lo a qualquer momento ativando o filtro "Mostrar anúncios silenciados".`,
+      confirmText: 'Sim, silenciar',
+      danger: true
+    })
+    if (ok) {
       emit('delete-product', item)
+      toast.info('Anúncio silenciado do dashboard.')
     }
   }
 }

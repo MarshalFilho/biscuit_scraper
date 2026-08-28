@@ -1,9 +1,9 @@
 // In-memory rate limiting map: IP -> { count, lastRequestTime, resetTime }
 const rateLimitMap = new Map<string, { count: number; lastRequestTime: number; resetTime: number }>()
 
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hora
-const MAX_REQUESTS_PER_WINDOW = 15 // Máximo de 15 chamadas por hora por IP/Usuário
-const COOLDOWN_SECONDS = 10 // Cooldown de 10s entre chamadas
+const RATE_LIMIT_WINDOW_MS = 3 * 60 * 60 * 1000 // 3 horas
+const MAX_REQUESTS_PER_WINDOW = 2 // Máximo de 2 chamadas a cada 3 horas por IP/Usuário
+const COOLDOWN_SECONDS = 20 // Cooldown de 20s entre chamadas
 
 export default defineEventHandler(async (event) => {
   // 1. Identifica IP do cliente para proteção de cota
@@ -30,12 +30,15 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Checagem de Cota Máxima por Janela
+  // Checagem de Cota Máxima por Janela (2 a cada 3 horas)
   if (clientLimit.count >= MAX_REQUESTS_PER_WINDOW) {
     const minutesLeft = Math.ceil((clientLimit.resetTime - now) / 60000)
+    const hoursLeft = Math.floor(minutesLeft / 60)
+    const minsRemainder = minutesLeft % 60
+    const timeText = hoursLeft > 0 ? `${hoursLeft}h ${minsRemainder}min` : `${minutesLeft} minutos`
     throw createError({
       statusCode: 429,
-      statusMessage: `⚠️ Limite de segurança de IA atingido (máx. ${MAX_REQUESTS_PER_WINDOW} consultas/hora). Tente novamente em ${minutesLeft} minutos.`
+      statusMessage: `⚠️ Limite de segurança de IA atingido (máx. 2 consultas a cada 3 horas). Sua cota será restaurada em ${timeText}.`
     })
   }
 

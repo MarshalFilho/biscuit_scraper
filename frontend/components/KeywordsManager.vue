@@ -42,8 +42,8 @@
                 <span v-else>✨ {{ t('keywords.btn_ai_suggest', 'Gerar Termos com IA') }}</span>
               </button>
             </div>
-            <div v-if="quotaRemaining !== null" class="quota-info-row">
-              <small>⚡ Cota de segurança: <strong>{{ quotaRemaining }}</strong> consultas restantes nesta hora</small>
+            <div class="quota-info-row">
+              <small>⚡ Limite de segurança da IA: <strong>2 consultas a cada 3 horas</strong> (restantes: {{ quotaRemaining ?? 2 }})</small>
             </div>
           </div>
 
@@ -217,6 +217,8 @@
 import { ref, watch, onMounted } from 'vue'
 import { useSupabase } from '~/composables/useSupabase'
 import { useAppI18n } from '~/composables/useAppI18n'
+import { useToast } from '~/composables/useToast'
+import { useConfirmDialog } from '~/composables/useConfirmDialog'
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
@@ -227,6 +229,8 @@ const emit = defineEmits(['close', 'saved'])
 
 const { t } = useAppI18n()
 const supabase = useSupabase()
+const toast = useToast()
+const { askConfirm } = useConfirmDialog()
 
 const MAX_TERMS = 15
 
@@ -243,7 +247,7 @@ const aiCooldown = ref(0)
 const quotaRemaining = ref(null)
 let cooldownTimer = null
 
-function startCooldown(seconds = 15) {
+function startCooldown(seconds = 20) {
   aiCooldown.value = seconds
   if (cooldownTimer) clearInterval(cooldownTimer)
   cooldownTimer = setInterval(() => {
@@ -309,15 +313,29 @@ function close() {
   emit('close')
 }
 
-function clearAllTerms() {
-  if (confirm('Deseja realmente remover todos os termos de busca da lista?')) {
+async function clearAllTerms() {
+  const ok = await askConfirm({
+    title: 'Limpar todos os termos?',
+    message: 'Deseja realmente remover todos os termos de busca da sua lista de monitoramento?',
+    confirmText: 'Sim, limpar todos',
+    danger: true
+  })
+  if (ok) {
     terms.value = []
+    toast.info('Lista de termos de busca esvaziada.')
   }
 }
 
-function clearAllBlacklist() {
-  if (confirm('Deseja realmente limpar toda a lista de palavras negativas?')) {
+async function clearAllBlacklist() {
+  const ok = await askConfirm({
+    title: 'Limpar palavras negativas?',
+    message: 'Deseja realmente remover todas as palavras da sua blacklist?',
+    confirmText: 'Sim, limpar blacklist',
+    danger: true
+  })
+  if (ok) {
     blacklist.value = []
+    toast.info('Blacklist esvaziada.')
   }
 }
 
@@ -325,7 +343,7 @@ function addTerm() {
   const val = newTermInput.value.trim().toLowerCase()
   if (!val) return
   if (terms.value.length >= MAX_TERMS) {
-    alert(`⚠️ Limite máximo de ${MAX_TERMS} termos atingido para proteção de recursos!`)
+    toast.warning(`Limite máximo de ${MAX_TERMS} termos atingido para proteção de recursos!`, 'Limite Atingido')
     return
   }
   if (!terms.value.includes(val)) {
@@ -353,11 +371,12 @@ function removeBlacklist(idx) {
 
 function addSuggestedTerm(termo) {
   if (terms.value.length >= MAX_TERMS) {
-    alert(`⚠️ Limite máximo de ${MAX_TERMS} termos atingido! Remova um termo existente antes de adicionar novas sugestões.`)
+    toast.warning(`Limite máximo de ${MAX_TERMS} termos atingido! Remova um termo existente antes de adicionar novos.`, 'Limite Atingido')
     return
   }
   if (!terms.value.includes(termo)) {
     terms.value.push(termo)
+    toast.success(`Termo "${termo}" adicionado ao monitoramento!`)
   }
 }
 
@@ -382,14 +401,15 @@ async function generateAiSuggestions() {
 
     if (res?.sugestoes && Array.isArray(res.sugestoes)) {
       aiSuggestions.value = res.sugestoes
-      startCooldown(15)
+      startCooldown(20)
+      toast.success(`${res.sugestoes.length} sugestões estratégicas geradas pelo Gemini 3.6!`, 'Sugestões Prontas')
     } else {
-      alert('Nenhuma nova sugestão retornada para os critérios atuais.')
+      toast.info('Nenhuma nova sugestão retornada para os critérios atuais.')
     }
   } catch (e) {
     console.error(e)
     const errorMsg = e?.data?.statusMessage || e?.message || 'Erro ao consultar IA'
-    alert(errorMsg)
+    toast.warning(errorMsg, 'Cota de IA')
   } finally {
     isLoadingAi.value = false
   }
@@ -397,7 +417,7 @@ async function generateAiSuggestions() {
 
 async function saveConfigurations() {
   if (terms.value.length === 0) {
-    alert('⚠️ Por favor, mantenha pelo menos 1 termo de busca ativo.')
+    toast.warning('Por favor, mantenha pelo menos 1 termo de busca ativo.', 'Atenção')
     return
   }
   isSaving.value = true
@@ -406,7 +426,7 @@ async function saveConfigurations() {
     const userId = currentUser?.id || props.user?.id
 
     if (!userId) {
-      alert('⚠️ Usuário não autenticado. Por favor, recarregue a página.')
+      toast.error('Usuário não autenticado. Por favor, recarregue a página.')
       return
     }
 
@@ -424,13 +444,13 @@ async function saveConfigurations() {
       throw new Error('Falha na resposta do servidor.')
     }
 
-    alert('✅ Configurações salvas com sucesso!\n\nSeus novos termos de busca e regras de descarte foram registrados e serão utilizados na próxima raspagem.')
+    toast.success('Seus novos termos de busca e regras de descarte foram salvos com sucesso e serão usados na próxima raspagem!', 'Configurações Salvas')
     emit('saved', { terms: terms.value, blacklist: blacklist.value, niche: niche.value })
     close()
   } catch (e) {
     console.error(e)
     const msg = e?.data?.statusMessage || e?.message || 'Erro desconhecido'
-    alert('Erro ao salvar configurações no Supabase: ' + msg)
+    toast.error('Erro ao salvar configurações no Supabase: ' + msg)
   } finally {
     isSaving.value = false
   }
