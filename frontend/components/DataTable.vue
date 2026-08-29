@@ -794,4 +794,31 @@ function exportToCSV() {
   color: #0f172a;
   padding: 0 0.4rem;
 }
+
+@media (max-width: 768px) {
+  .table-container {
+    padding: 0.9rem;
+    border-radius: 12px;
+  }
+  .in-table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.7rem;
+    padding: 0.75rem;
+  }
+  .search-box {
+    min-width: 0;
+    width: 100%;
+  }
+  .pagination-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  .pagination-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+}
 </style>

@@ -192,4 +192,18 @@ function formatCurrency(num, shorten = false) {
   color: #64748b;
   margin-top: 0.2rem;
 }
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .kpi-card {
+    padding: 1rem;
+    min-height: auto;
+  }
+  .kpi-value {
+    font-size: 1.25rem;
+  }
+}
 </style>

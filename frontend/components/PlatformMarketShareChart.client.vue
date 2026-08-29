@@ -1,12 +1,14 @@
 <template>
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.5s;">
-    <div class="chart-header-box">
-      <div class="header-titles">
+    <div class="chart-header">
+      <div>
         <h3>{{ t('charts.platform_share', '🏪 Market Share por Marketplace') }}</h3>
         <p class="chart-subtitle">{{ t('charts.platform_share_desc', 'Comparativo de vendas, faturamento e ticket médio entre Mercado Livre e Shopee') }}</p>
       </div>
+      
       <div class="view-toggle">
         <button 
+          type="button"
           :class="['toggle-sm', { active: metricMode === 'sales' }]" 
           @click="metricMode = 'sales'"
           :title="t('charts.toggle_sales_vol', 'Volume de Vendas')"
@@ -14,6 +16,7 @@
           📦 {{ t('charts.toggle_sales_vol', 'Volume de Vendas') }}
         </button>
         <button 
+          type="button"
           :class="['toggle-sm', { active: metricMode === 'revenue' }]" 
           @click="metricMode = 'revenue'"
           :title="t('charts.toggle_revenue_vol', 'Faturamento (R$)')"
@@ -27,7 +30,7 @@
       <apexchart 
         v-if="isMounted && totalMetricCount > 0" 
         type="donut" 
-        height="260" 
+        height="320" 
         :options="chartOptions" 
         :series="chartSeries"
       ></apexchart>
@@ -41,7 +44,7 @@
       <!-- Mercado Livre -->
       <div class="plat-stat-card meli-card">
         <div class="plat-stat-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="plat-svg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="plat-svg">
             <circle cx="12" cy="12" r="11" fill="#FFE600"/>
             <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -67,7 +70,7 @@
       <!-- Shopee -->
       <div class="plat-stat-card shopee-card">
         <div class="plat-stat-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="plat-svg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="plat-svg">
             <rect width="24" height="24" rx="5" fill="#EE4D2D"/>
             <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
@@ -111,23 +114,24 @@ onMounted(() => {
   isMounted.value = true
 })
 
+const meliItems = computed(() => props.items.filter(i => i.plataforma === 'meli'))
+const shopeeItems = computed(() => props.items.filter(i => i.plataforma === 'shopee'))
+
 const meliData = computed(() => {
-  const meliItems = props.items.filter(i => i.plataforma === 'meli')
-  const count = meliItems.length
-  const sales = meliItems.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
-  const revenue = meliItems.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
-  const totalPrice = meliItems.reduce((acc, i) => acc + (i.preco || 0), 0)
+  const count = meliItems.value.length
+  const sales = meliItems.value.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
+  const revenue = meliItems.value.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
+  const totalPrice = meliItems.value.reduce((acc, i) => acc + (i.preco || 0), 0)
   const avgPrice = count > 0 ? (totalPrice / count) : 0
 
   return { count, sales, revenue, avgPrice }
 })
 
 const shopeeData = computed(() => {
-  const shopeeItems = props.items.filter(i => i.plataforma === 'shopee')
-  const count = shopeeItems.length
-  const sales = shopeeItems.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
-  const revenue = shopeeItems.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
-  const totalPrice = shopeeItems.reduce((acc, i) => acc + (i.preco || 0), 0)
+  const count = shopeeItems.value.length
+  const sales = shopeeItems.value.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
+  const revenue = shopeeItems.value.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
+  const totalPrice = shopeeItems.value.reduce((acc, i) => acc + (i.preco || 0), 0)
   const avgPrice = count > 0 ? (totalPrice / count) : 0
 
   return { count, sales, revenue, avgPrice }
@@ -165,7 +169,7 @@ const chartOptions = computed(() => ({
   chart: {
     type: 'donut',
     background: 'transparent',
-    fontFamily: 'Inter, sans-serif'
+    fontFamily: 'inherit'
   },
   labels: ['Mercado Livre', 'Shopee'],
   colors: ['#eab308', '#ea580c'],
@@ -178,7 +182,7 @@ const chartOptions = computed(() => ({
           total: {
             show: true,
             label: metricMode.value === 'revenue' ? t('kpis.revenue', 'Faturamento') : t('kpis.sales', 'Total de Vendas'),
-            fontSize: '12px',
+            fontSize: '13px',
             fontWeight: 600,
             color: '#64748b',
             formatter: () => {
@@ -189,7 +193,7 @@ const chartOptions = computed(() => ({
             }
           },
           value: {
-            fontSize: '18px',
+            fontSize: '20px',
             fontWeight: 800,
             color: '#0f172a',
             formatter: (val) => {
@@ -210,7 +214,7 @@ const chartOptions = computed(() => ({
   },
   legend: {
     position: 'bottom',
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 600,
     labels: { colors: '#334155' },
     markers: { radius: 12 }
@@ -221,24 +225,21 @@ const chartOptions = computed(() => ({
       formatter: (val) => {
         const perc = totalMetricCount.value > 0 ? ((val / totalMetricCount.value) * 100).toFixed(1) : 0
         if (metricMode.value === 'revenue') {
-          return `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${perc}%)`
+          return `R$ ${Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 })} (${perc}%)`
         }
-        return `${Number(val).toLocaleString('pt-BR')} ${t('charts.units_short', 'un')} (${perc}%)`
+        return `${Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US')} ${t('charts.units_short', 'un')} (${perc}%)`
       }
     }
   },
   dataLabels: {
     enabled: true,
-    formatter: (val) => Number(val).toFixed(1) + '%',
+    formatter: (val) => `${Number(val).toFixed(1)}%`,
     style: {
       fontSize: '11px',
-      fontWeight: 700,
-      colors: ['#ffffff']
+      fontWeight: 'bold'
     },
     dropShadow: {
-      enabled: true,
-      blur: 2,
-      opacity: 0.35
+      enabled: false
     }
   }
 }))
@@ -246,49 +247,55 @@ const chartOptions = computed(() => ({
 
 <style scoped>
 .chart-container {
+  padding: 1.5rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-.chart-header-box {
+.chart-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 0.85rem;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
 }
 
-.header-titles h3 {
-  font-size: 1.05rem;
-  font-weight: 700;
+.chart-header h3 {
+  margin: 0 0 0.2rem 0;
   color: #0f172a;
-  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
 }
 
 .chart-subtitle {
-  font-size: 0.78rem;
+  margin: 0;
   color: #64748b;
-  margin: 0.2rem 0 0 0;
+  font-size: 0.84rem;
 }
 
 .view-toggle {
   display: inline-flex;
   background: #f1f5f9;
-  padding: 0.2rem;
-  border-radius: 8px;
-  gap: 0.2rem;
+  padding: 0.25rem;
+  border-radius: 9px;
+  gap: 0.25rem;
+  border: 1px solid #e2e8f0;
 }
 
 .toggle-sm {
   background: transparent;
   border: none;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: #64748b;
-  padding: 0.3rem 0.65rem;
-  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 7px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -299,13 +306,13 @@ const chartOptions = computed(() => ({
 
 .toggle-sm.active {
   background: #ffffff;
-  color: #0f172a;
+  color: #2563eb;
   font-weight: 700;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .chart-wrapper {
-  min-height: 260px;
+  min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,26 +322,27 @@ const chartOptions = computed(() => ({
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 240px;
+  height: 320px;
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-style: italic;
 }
 
 .platform-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 0.85rem;
-  padding-top: 0.85rem;
-  border-top: 1px dashed #e2e8f0;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
 }
 
 .plat-stat-card {
-  padding: 0.65rem 0.8rem;
-  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .meli-card {
@@ -350,20 +358,20 @@ const chartOptions = computed(() => ({
 .plat-stat-header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .plat-name {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 .plat-share-pill {
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  padding: 0.15rem 0.45rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 99px;
 }
 
@@ -389,20 +397,35 @@ const chartOptions = computed(() => ({
 }
 
 .stat-lbl {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: #64748b;
   font-weight: 600;
 }
 
 .stat-val {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 @media (max-width: 640px) {
+  .chart-container {
+    padding: 1.1rem;
+  }
+  .chart-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .view-toggle {
+    width: 100%;
+  }
+  .toggle-sm {
+    flex: 1;
+    text-align: center;
+  }
   .platform-stats-grid {
     grid-template-columns: 1fr;
+    gap: 0.65rem;
   }
 }
 </style>

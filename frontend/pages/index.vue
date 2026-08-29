@@ -749,4 +749,55 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 880px) {
+  .half-width {
+    min-width: 100%;
+    width: 100%;
+  }
+  .charts-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .unified-control-panel {
+    padding: 0.85rem 0.9rem;
+    border-radius: 14px;
+    gap: 0.85rem;
+  }
+  .filters-main-row {
+    gap: 0.85rem;
+  }
+  .filter-item {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .category-item {
+    max-width: 100%;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .sales-item {
+    width: 100%;
+  }
+  .sales-input {
+    flex: 1;
+    width: auto;
+  }
+  .btn-toggle-histogram {
+    width: 100%;
+    text-align: center;
+  }
+  .view-tabs-group.full-width {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .view-tabs-group.full-width .view-tab-btn {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.84rem;
+  }
+}
 </style>
