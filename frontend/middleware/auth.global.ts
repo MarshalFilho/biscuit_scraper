@@ -1,14 +1,7 @@
-export default defineNuxtRouteMiddleware(async (to) => {
-  if (process.server) return
-
-  const supabase = useSupabase()
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (!session && to.path !== '/login') {
-    return navigateTo('/login')
-  }
-
-  if (session && to.path === '/login') {
+export default defineNuxtRouteMiddleware((to) => {
+  // Public dashboard mode - sem necessidade de login
+  if (to.path === '/login') {
     return navigateTo('/')
   }
 })
+

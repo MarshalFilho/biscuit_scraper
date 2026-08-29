@@ -69,34 +69,6 @@
           </select>
         </div>
 
-        <!-- Filtro de Visibilidade (Ativos, Todos, Ocultos) -->
-        <div class="visibility-pills">
-          <button 
-            type="button" 
-            :class="['vis-pill', { active: localVisibility === 'active' }]"
-            @click="localVisibility = 'active'"
-            :title="t('table.status_active_tooltip', 'Mostrar apenas anúncios ativos')"
-          >
-            🟢 {{ t('table.status_active', 'Ativos') }}
-          </button>
-          <button 
-            type="button" 
-            :class="['vis-pill', { active: localVisibility === 'all' }]"
-            @click="localVisibility = 'all'"
-            :title="t('table.status_all_tooltip', 'Mostrar todos os anúncios')"
-          >
-            👁️ {{ t('table.status_all', 'Todos') }}
-          </button>
-          <button 
-            type="button" 
-            :class="['vis-pill', { active: localVisibility === 'hidden' }]"
-            @click="localVisibility = 'hidden'"
-            :title="t('table.status_hidden_tooltip', 'Mostrar apenas anúncios ocultados/silenciados')"
-          >
-            🚫 {{ t('table.status_hidden', 'Ocultos') }}
-          </button>
-        </div>
-
         <!-- Contador de Registros -->
         <div class="table-counter-badge">
           <span>📊 <strong>{{ filteredData.length }}</strong> produtos</span>
@@ -197,9 +169,6 @@
               <div class="action-btns-wrap">
                 <button @click="openModal(item)" class="icon-btn action-btn-icon" :title="t('table.view_details_title', 'Ver detalhes completos do anúncio')">🔎</button>
                 <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir anúncio original na loja')">↗</a>
-                <button @click="confirmDelete(item)" class="icon-btn delete-btn-icon" :title="item._isHidden ? t('table.restore_ad_title', 'Restaurar produto') : t('table.silence_ad_title', 'Ocultar / Silenciar este anúncio')">
-                  {{ item._isHidden ? '👁️' : '🚫' }}
-                </button>
               </div>
             </td>
           </tr>
@@ -275,25 +244,18 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAppI18n } from '~/composables/useAppI18n'
-import { useToast } from '~/composables/useToast'
-import { useConfirmDialog } from '~/composables/useConfirmDialog'
 import ProductModal from './ProductModal.vue'
 
 const { t, getRaw, locale } = useAppI18n()
-const toast = useToast()
-const { askConfirm } = useConfirmDialog()
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
   isLoading: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['delete-product'])
-
 const search = ref('')
 const localPlatform = ref('Todas')
 const localCategory = ref('Todas')
-const localVisibility = ref('active') // 'active', 'all', 'hidden'
 const selectedProduct = ref(null)
 
 // Paginação
@@ -322,31 +284,12 @@ function sortBy(key) {
 }
 
 // Zera a página quando busca ou filtra
-watch([search, localPlatform, localCategory, localVisibility, sortKey, sortOrder, itemsPerPage], () => {
+watch([search, localPlatform, localCategory, sortKey, sortOrder, itemsPerPage], () => {
   currentPage.value = 1
 })
 
 function openModal(item) {
   selectedProduct.value = item
-}
-
-async function confirmDelete(item) {
-  const isHidden = item._isHidden
-  if (isHidden) {
-    emit('delete-product', item)
-    toast.success(t('keywords.toast_restored', 'Anúncio restaurado com sucesso!'))
-  } else {
-    const ok = await askConfirm({
-      title: t('keywords.confirm_silence_title', 'Ocultar / Silenciar Anúncio?'),
-      message: t('keywords.confirm_silence_msg', 'Deseja silenciar o anúncio:\n\n"{title}"\n\nVocê pode visualizá-lo e restaurá-lo a qualquer momento ativando o filtro "Mostrar anúncios silenciados".').replace('{title}', item.titulo),
-      confirmText: t('keywords.confirm_silence_btn', 'Sim, silenciar'),
-      danger: true
-    })
-    if (ok) {
-      emit('delete-product', item)
-      toast.info(t('keywords.toast_silenced', 'Anúncio silenciado do dashboard.'))
-    }
-  }
 }
 
 const filteredData = computed(() => {

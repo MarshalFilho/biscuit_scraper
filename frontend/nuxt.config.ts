@@ -22,10 +22,11 @@ export default defineNuxtConfig({
   app: {
     baseURL: '/',
     head: {
-      title: 'Biscuit Scraper Dashboard',
+      title: 'BiscuitInsights | Inteligência de Mercado para Biscuit',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'Dashboard de inteligência e análise de mercado do nicho de Biscuit no Mercado Livre e Shopee.' }
       ]
     }
   },
