@@ -13,12 +13,6 @@
       </div>
 
       <div class="header-right">
-        <!-- Indicador Informativo de Frequência Diária -->
-        <div class="schedule-pill" :title="t('filters.daily_info', 'Rotina de monitoramento executada diariamente às 22h00')">
-          <span class="pulse-dot"></span>
-          <span class="schedule-text">{{ t('navbar.daily_schedule', '⏰ Coleta Diária às 22h00') }}</span>
-        </div>
-
         <button 
           @click="toggleLanguage" 
           class="lang-btn" 

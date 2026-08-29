@@ -555,4 +555,22 @@ onMounted(() => {
   padding: 0.2rem 0.6rem;
   border-radius: 99px;
 }
+
+@media (max-width: 960px) {
+  .timeline-range-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .bar-brand-section, .bar-selectors-section, .bar-presets-section {
+    width: 100%;
+  }
+  .range-select {
+    width: 100%;
+    min-width: 0;
+  }
+  .date-picker-box {
+    flex: 1;
+  }
+}
 </style>

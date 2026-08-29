@@ -2,8 +2,6 @@
   <div class="container">
     <Navbar :projectName="nomeProjeto" />
 
-    <AntiBotAlert :alerta="statusAlerta" />
-
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
       <p>{{ t('global.connecting_db', 'Conectando à base de dados do Supabase...') }}</p>
@@ -23,7 +21,7 @@
 
       <!-- Super Bloco Unificado de Controle (Filtros Globais + Barra de Intervalo Histórico + Abas de Visão) -->
       <div class="glass-panel unified-control-panel animate-fade-in">
-        <!-- 1. Linha Superior: Filtros Globais em Tempo Real & Badge de Atualização -->
+        <!-- 1. Linha Superior: Filtros Globais em Tempo Real -->
         <div class="control-header-row">
           <div class="filters-main-row">
             <!-- Plataforma -->
@@ -64,7 +62,7 @@
             </div>
 
             <!-- Categoria -->
-            <div class="filter-item flex-1">
+            <div class="filter-item category-item">
               <label>{{ t('filters.category', 'Categoria:') }}</label>
               <select v-model="selectedCategory" class="glass-input">
                 <option value="Todas">{{ t('filters.all_categories', 'Todas as Categorias') }}</option>
@@ -73,7 +71,7 @@
             </div>
 
             <!-- Vendas Mínimas -->
-            <div class="filter-item">
+            <div class="filter-item sales-item">
               <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
               <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
             </div>
@@ -96,10 +94,6 @@
                 📊 {{ showPriceHistogram ? t('filters.hide_price_range', 'Ocultar Faixa de Preços') : t('filters.filter_price_range', 'Filtrar Faixa de Preços') }}
               </button>
             </div>
-          </div>
-
-          <div class="header-update-badge" :title="t('filters.daily_info', 'Rotina de monitoramento executada diariamente às 22h00')">
-            <span>🕒 <strong>{{ t('filters.latest_scrape', 'Última atualização:') }}</strong> {{ lastScrapeFormatted }}</span>
           </div>
         </div>
         
@@ -221,7 +215,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import Navbar from '~/components/Navbar.vue'
-import AntiBotAlert from '~/components/AntiBotAlert.vue'
 import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
@@ -242,7 +235,6 @@ const productsRaw = ref([])
 const loading = ref(true)
 const error = ref(null)
 const nomeProjeto = ref('BiscuitInsights')
-const statusAlerta = ref(null)
 const aiReportData = ref(null)
 
 // Estado das Visões da Dashboard
@@ -299,32 +291,6 @@ function getCategoryByRules(title) {
   return 'Outros'
 }
 
-const lastScrapeFormatted = computed(() => {
-  if (!productsRaw.value || productsRaw.value.length === 0) return t('global.no_scrapes', 'Sem registros de raspagem')
-  let maxDate = null
-  for (const p of productsRaw.value) {
-    if (p.criado_em) {
-      const d = new Date(p.criado_em)
-      if (!maxDate || d > maxDate) maxDate = d
-    }
-    if (p.historico_coletas && Array.isArray(p.historico_coletas)) {
-      for (const h of p.historico_coletas) {
-        if (h.data_coleta) {
-          const d = new Date(h.data_coleta)
-          if (!maxDate || d > maxDate) maxDate = d
-        }
-      }
-    }
-  }
-  if (!maxDate) return t('global.no_scrapes', 'Sem registros de raspagem')
-  const dateLocale = locale.value === 'pt' ? 'pt-BR' : 'en-US'
-  const dateFormatted = maxDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const hours = String(maxDate.getHours()).padStart(2, '0')
-  const minutes = String(maxDate.getMinutes()).padStart(2, '0')
-  const atWord = t('global.at', 'às')
-  return `${dateFormatted} ${atWord} ${hours}:${minutes}`
-})
-
 async function loadDashboardData() {
   try {
     loading.value = true
@@ -334,12 +300,11 @@ async function loadDashboardData() {
     try {
       const { data: cfg } = await supabase
         .from('configuracoes_scraper')
-        .select('relatorio_insights, nome_projeto, status_alerta')
+        .select('relatorio_insights, nome_projeto')
         .limit(1)
         .maybeSingle()
       
       if (cfg) {
-        if (cfg.status_alerta) statusAlerta.value = cfg.status_alerta
         if (cfg.relatorio_insights) aiReportData.value = cfg.relatorio_insights
         if (cfg.nome_projeto) nomeProjeto.value = cfg.nome_projeto
       }
@@ -604,25 +569,22 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 }
 
 .control-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding-bottom: 0.9rem;
+  width: 100%;
 }
 
 .filters-main-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.15rem 1.4rem;
+  width: 100%;
 }
 
 .filter-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
+  flex-shrink: 0;
 }
 
 .filter-item label {
@@ -632,17 +594,22 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   white-space: nowrap;
 }
 
-.flex-1 {
-  flex: 1;
+.category-item {
+  flex: 1 1 220px;
   min-width: 200px;
+  max-width: 320px;
+}
+
+.category-item select {
+  width: 100%;
 }
 
 .glass-input {
   background: #ffffff;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #cbd5e1;
   color: #0f172a;
   padding: 0.5rem 0.85rem;
-  border-radius: 8px;
+  border-radius: 9px;
   outline: none;
   font-size: 0.88rem;
   font-weight: 600;
@@ -652,6 +619,10 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .glass-input:focus {
   border-color: #d97706;
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+}
+
+.sales-item {
+  flex-shrink: 0;
 }
 
 .sales-input {
@@ -667,20 +638,21 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #475569;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-toggle-histogram {
   background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #cbd5e1;
   color: #334155;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  padding: 0.48rem 0.9rem;
-  border-radius: 8px;
+  padding: 0.5rem 0.95rem;
+  border-radius: 9px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -689,24 +661,12 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 .btn-toggle-histogram:hover {
   background: #e2e8f0;
   color: #0f172a;
+  border-color: #94a3b8;
 }
 
 .histogram-expand-wrapper {
   padding-top: 0.5rem;
   border-top: 1px dashed #e2e8f0;
-}
-
-.header-update-badge {
-  font-size: 0.82rem;
-  color: #92400e;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
-  padding: 0.42rem 0.9rem;
-  border-radius: 99px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
 }
 
 .control-bottom-row {

@@ -303,12 +303,6 @@ const filteredData = computed(() => {
     result = result.filter(item => item.categoria === localCategory.value)
   }
 
-  if (localVisibility.value === 'active') {
-    result = result.filter(item => !item._isHidden)
-  } else if (localVisibility.value === 'hidden') {
-    result = result.filter(item => item._isHidden)
-  }
-
   if (search.value) {
     const lowerSearch = search.value.toLowerCase().trim()
     result = result.filter(item => 
