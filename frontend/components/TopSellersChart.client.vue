@@ -7,18 +7,18 @@
       </div>
       <div class="view-toggle">
         <button 
-          :class="['toggle-sm', { active: activeMode === 'chart' }]" 
-          @click="activeMode = 'chart'"
-          :title="t('charts.view_chart_title', 'Ver como gráfico de barras')"
-        >
-          📊 {{ t('global.chart', 'Gráfico') }}
-        </button>
-        <button 
           :class="['toggle-sm', { active: activeMode === 'table' }]" 
           @click="activeMode = 'table'"
           :title="t('charts.view_table_title', 'Ver como tabela detalhada')"
         >
           📋 {{ t('global.table', 'Tabela') }}
+        </button>
+        <button 
+          :class="['toggle-sm', { active: activeMode === 'chart' }]" 
+          @click="activeMode = 'chart'"
+          :title="t('charts.view_chart_title', 'Ver como gráfico de barras')"
+        >
+          📊 {{ t('global.chart', 'Gráfico') }}
         </button>
       </div>
     </div>
@@ -89,7 +89,7 @@ const props = defineProps({
 })
 
 const isMounted = ref(false)
-const activeMode = ref('chart')
+const activeMode = ref('table')
 const selectedSeller = ref(null)
 
 onMounted(() => { isMounted.value = true })
