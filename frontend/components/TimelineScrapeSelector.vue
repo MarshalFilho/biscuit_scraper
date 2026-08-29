@@ -25,7 +25,7 @@
           <div class="select-wrapper">
             <select v-model="selectedStartDate" @change="onStartDateChange" class="range-select" :disabled="availableDates.length === 0">
               <option v-for="d in availableDates" :key="'start-' + d.dateStr" :value="d.dateStr">
-                {{ d.labelFull }} ({{ d.count }} itens)
+                {{ d.labelFull }} ({{ d.count }} {{ t('timeline.items', 'itens') }})
               </option>
             </select>
           </div>
@@ -45,7 +45,7 @@
           <div class="select-wrapper">
             <select v-model="selectedEndDate" @change="onEndDateChange" class="range-select" :disabled="availableDates.length === 0">
               <option v-for="d in availableDates" :key="'end-' + d.dateStr" :value="d.dateStr">
-                {{ d.labelFull }} ({{ d.count }} itens)
+                {{ d.labelFull }} ({{ d.count }} {{ t('timeline.items', 'itens') }})
               </option>
             </select>
           </div>
@@ -106,7 +106,7 @@
           {{ t('timeline.until_text', 'até') }}
           <strong>{{ formatDateBadge(selectedEndDate) }}</strong>
           <span class="diff-days-pill" v-if="daysDifference > 0">
-            ⏳ {{ daysDifference }} {{ daysDifference === 1 ? t('timeline.day_singular', 'dia') : t('timeline.days_plural', 'dias') }} de evolução
+            ⏳ {{ daysDifference }} {{ daysDifference === 1 ? t('timeline.day_singular', 'dia') : t('timeline.days_plural', 'dias') }} {{ t('timeline.of_evolution', 'de evolução') }}
           </span>
           <span class="diff-days-pill single" v-else>
             📸 {{ t('timeline.single_day_snapshot', 'Retrato de 1 dia') }}
@@ -167,7 +167,7 @@ const availableDates = computed(() => {
       dateStr: d.dateStr,
       count: d.count,
       labelShort: formattedShort,
-      labelFull: isLatest ? `${formatted} (Mais recente)` : formatted
+      labelFull: isLatest ? `${formatted} (${t('timeline.most_recent', 'Mais recente')})` : formatted
     }
   })
 })
