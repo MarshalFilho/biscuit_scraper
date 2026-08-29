@@ -129,15 +129,16 @@ def fase_bronze():
             except Exception as e:
                 print(f"⚠️ Aviso ao injetar cookies da Shopee: {e}", flush=True)
 
+        page = context.pages[0] if context.pages else context.new_page()
+        page.add_init_script("""
+            delete Object.getPrototypeOf(navigator).webdriver;
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
+            window.chrome = { runtime: { connect: () => {}, sendMessage: () => {} } };
+        """)
+
         for termo in config.get_termos_busca():
-            page = context.pages[0] if context.pages else context.new_page()
-            page.add_init_script("""
-                delete Object.getPrototypeOf(navigator).webdriver;
-                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-                Object.defineProperty(navigator, 'languages', { get: () => ['pt-BR', 'pt', 'en-US'] });
-                window.chrome = { runtime: { connect: () => {}, sendMessage: () => {} } };
-            """)
             nome_arquivo_base = termo.replace(" ", "_")
             print(f"\n🔎 Termo de busca: '{termo}'")
             
@@ -175,17 +176,9 @@ def fase_bronze():
                     notificar_e_interromper_bloqueio,
                 )
                 if isinstance(e, BotDetectionError):
-                    try: page.close()
-                    except: pass
-                    try: context.close()
-                    except: pass
                     raise e
                 
                 print(f"   ⏳ Falha ao carregar a página inicial: {e}")
-                if "closed" in str(e).lower() or "target" in str(e).lower():
-                    notificar_e_interromper_bloqueio("Shopee", detalhe="O navegador foi fechado ou bloqueado pela Shopee.")
-                try: page.close()
-                except Exception: pass
                 continue
                 
             max_pags = config.get_max_paginas()
@@ -239,17 +232,16 @@ def fase_bronze():
                         
                 except Exception as e:
                     print(f"   ⚠️ Erro ao processar a página {pagina} do termo '{termo}': {e}")
-                    if "closed" in str(e).lower():
-                        print("   ❌ O navegador foi fechado. Encerrando scraper para este termo.")
                     break
             
-            # Fecha a aba atual e espera um pouco antes de abrir a próxima para simular navegação humana
-            page.close()
-            tempo_espera = random.uniform(6.0, 12.0)
+            tempo_espera = random.uniform(3.0, 6.0)
             print(f"   ⏳ Aguardando {tempo_espera:.1f}s antes da próxima busca...")
             time.sleep(tempo_espera)
 
-        context.close()
+        try:
+            context.close()
+        except Exception:
+            pass
     print("✅ [Etapa Bronze - Shopee] Concluída!")
 
 
