@@ -51,10 +51,10 @@ def verificar_bloqueio_shopee(page, html_content: str = "", user_id: str = None)
         notificar_e_interromper_bloqueio("Shopee", user_id, "O navegador ou a conexão foram encerrados pela página de segurança da Shopee.")
         return
 
-    # Sinais claros de redirecionamento anti-bot da Shopee
-    sinais_url = ["verify/captcha", "verify/traffic", "scene=crawler", "traffic_control", "anti_bot_tracking_id"]
-    sinais_titulo = ["verify", "captcha", "security check", "robot", "robô", "acesso bloqueado"]
-    sinais_conteudo = ["anti_bot_tracking_id", "scene=crawler_item", "desculpe, estamos enfrentando alguns problemas"]
+    # Sinais reais de redirecionamento anti-bot da Shopee
+    sinais_url = ["verify/captcha", "verify/traffic", "scene=crawler", "traffic_control"]
+    sinais_titulo = ["verify captcha", "security check", "acesso bloqueado", "robot check"]
+    sinais_conteudo = ["verify/captcha", "scene=crawler_item", "desculpe, estamos enfrentando alguns problemas", "id=\"captcha\"", "class=\"captcha\""]
 
     if any(s in url for s in sinais_url):
         notificar_e_interromper_bloqueio("Shopee", user_id, f"Redirecionado para URL de verificação: {page.url}")
@@ -62,8 +62,8 @@ def verificar_bloqueio_shopee(page, html_content: str = "", user_id: str = None)
     if any(s in title for s in sinais_titulo):
         notificar_e_interromper_bloqueio("Shopee", user_id, f"Página de captcha no título: '{page.title()}'")
 
-    if "verify/captcha" in content or "anti_bot_tracking_id" in content:
-        notificar_e_interromper_bloqueio("Shopee", user_id, "Script anti-bot da Shopee ativado no HTML.")
+    if any(s in content for s in ["verify/captcha", "scene=crawler_item"]):
+        notificar_e_interromper_bloqueio("Shopee", user_id, "Página de bloqueio/captcha da Shopee detectada.")
 
 def verificar_bloqueio_meli(page, html_content: str = "", user_id: str = None):
     """
