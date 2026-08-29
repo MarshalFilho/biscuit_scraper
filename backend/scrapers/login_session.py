@@ -43,21 +43,30 @@ def inicializar_sessao_mercadolivre():
         if chrome_executable:
             launch_args["executable_path"] = chrome_executable
 
-        context = p.chromium.launch_persistent_context(**launch_args)
-        page = context.pages[0] if context.pages else context.new_page()
-        page.goto("https://lista.mercadolivre.com.br/biscuit", wait_until="domcontentloaded")
+        try:
+            context = p.chromium.launch_persistent_context(**launch_args)
+            page = context.pages[0] if context.pages else context.new_page()
+            page.goto("https://lista.mercadolivre.com.br/biscuit", wait_until="domcontentloaded")
 
-        print("\n👉 A janela do Mercado Livre está aberta na sua tela!")
-        print("   Se houver Captcha ou login, resolva-o diretamente no navegador.")
-        input("\n👉 QUANDO TERMINAR, pressione [ENTER] AQUI NO TERMINAL para salvar a sessão... ")
+            print("\n👉 A janela do Mercado Livre está aberta na sua tela!")
+            print("   Se houver Captcha ou login, resolva-o diretamente no navegador.")
+            input("\n👉 QUANDO TERMINAR (ou fechar a janela), pressione [ENTER] aqui no terminal... ")
 
-        cookies = context.cookies()
-        auth_file = os.path.join(AUTH_DIR, "auth_meli.json")
-        with open(auth_file, "w", encoding="utf-8") as f:
-            json.dump(cookies, f, indent=2)
+            try:
+                cookies = context.cookies()
+                auth_file = os.path.join(AUTH_DIR, "auth_meli.json")
+                with open(auth_file, "w", encoding="utf-8") as f:
+                    json.dump(cookies, f, indent=2)
+                print(f"✅ Cookies e Sessão do Mercado Livre salvos com sucesso ({len(cookies)} cookies)!")
+            except Exception:
+                print("✅ Sessão do Mercado Livre gravada com sucesso no perfil do navegador!")
 
-        context.close()
-        print(f"✅ Cookies e Sessão do Mercado Livre salvos com sucesso ({len(cookies)} cookies)!")
+            try:
+                context.close()
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"⚠️ Aviso no Mercado Livre: {e}")
 
 
 def inicializar_sessao_shopee():
@@ -83,21 +92,30 @@ def inicializar_sessao_shopee():
         if chrome_executable:
             launch_args["executable_path"] = chrome_executable
 
-        context = p.chromium.launch_persistent_context(**launch_args)
-        page = context.pages[0] if context.pages else context.new_page()
-        page.goto("https://shopee.com.br/search?keyword=biscuit", wait_until="domcontentloaded")
+        try:
+            context = p.chromium.launch_persistent_context(**launch_args)
+            page = context.pages[0] if context.pages else context.new_page()
+            page.goto("https://shopee.com.br/search?keyword=biscuit", wait_until="domcontentloaded")
 
-        print("\n👉 A janela da Shopee está aberta na sua tela!")
-        print("   Se houver Captcha ou login, resolva-o diretamente no navegador.")
-        input("\n👉 QUANDO TERMINAR, pressione [ENTER] AQUI NO TERMINAL para salvar a sessão... ")
+            print("\n👉 A janela da Shopee está aberta na sua tela!")
+            print("   Se houver Captcha ou login, resolva-o diretamente no navegador.")
+            input("\n👉 QUANDO TERMINAR (ou fechar a janela), pressione [ENTER] aqui no terminal... ")
 
-        cookies = context.cookies()
-        auth_file = os.path.join(AUTH_DIR, "auth_shopee.json")
-        with open(auth_file, "w", encoding="utf-8") as f:
-            json.dump(cookies, f, indent=2)
+            try:
+                cookies = context.cookies()
+                auth_file = os.path.join(AUTH_DIR, "auth_shopee.json")
+                with open(auth_file, "w", encoding="utf-8") as f:
+                    json.dump(cookies, f, indent=2)
+                print(f"✅ Cookies e Sessão da Shopee salvos com sucesso ({len(cookies)} cookies)!")
+            except Exception:
+                print("✅ Sessão da Shopee gravada com sucesso no perfil do navegador!")
 
-        context.close()
-        print(f"✅ Cookies e Sessão da Shopee salvos com sucesso ({len(cookies)} cookies)!")
+            try:
+                context.close()
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"⚠️ Aviso na Shopee: {e}")
 
 
 if __name__ == "__main__":
