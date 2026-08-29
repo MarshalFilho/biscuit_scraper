@@ -79,6 +79,17 @@ def limpar_vendas(texto_vendas):
 
 
 
+def find_chrome():
+    paths = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), r"Google\Chrome\Application\chrome.exe")
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
+
 def fase_bronze():
     """
     Fase Bronze: Abre o navegador, acessa a Shopee e salva a página HTML bruta
@@ -91,34 +102,35 @@ def fase_bronze():
     os.makedirs(profile_dir, exist_ok=True)
     
     is_headless = os.environ.get("HEADLESS", "false").lower() == "true"
+    chrome_executable = find_chrome()
     
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=is_headless,
-            args=["--disable-blink-features=AutomationControlled"]
-        )
-        context = browser.new_context(
-            viewport={"width": 1366, "height": 768},
-            locale="pt-BR"
-        )
+        launch_args = {
+            "user_data_dir": profile_dir,
+            "headless": is_headless,
+            "viewport": {"width": 1366, "height": 768},
+            "locale": "pt-BR",
+            "args": ["--disable-blink-features=AutomationControlled"]
+        }
+        if chrome_executable:
+            launch_args["executable_path"] = chrome_executable
+            
+        context = p.chromium.launch_persistent_context(**launch_args)
         
-        # Injeta cookies de sessão autenticados APENAS se o usuário estiver no modo logado
-        if config.get_modo_paginacao() == "logado":
-            auth_file = os.path.join(AUTH_DIR, "auth_shopee.json")
-            if os.path.exists(auth_file):
-                try:
-                    with open(auth_file, "r", encoding="utf-8") as f:
-                        cookies = json.load(f)
-                        if isinstance(cookies, list) and len(cookies) > 0:
-                            context.add_cookies(cookies)
-                            print(f"🍪 [{len(cookies)} Cookies] Sessão autenticada da Shopee injetada com sucesso!", flush=True)
-                except Exception as e:
-                    print(f"⚠️ Aviso ao injetar cookies da Shopee: {e}", flush=True)
-        else:
-            print("🌐 Modo Anônimo Limpo ativado para Shopee.", flush=True)
+        # Injeta cookies de sessão se existirem
+        auth_file = os.path.join(AUTH_DIR, "auth_shopee.json")
+        if os.path.exists(auth_file):
+            try:
+                with open(auth_file, "r", encoding="utf-8") as f:
+                    cookies = json.load(f)
+                    if isinstance(cookies, list) and len(cookies) > 0:
+                        context.add_cookies(cookies)
+                        print(f"🍪 [{len(cookies)} Cookies] Sessão da Shopee injetada com sucesso!", flush=True)
+            except Exception as e:
+                print(f"⚠️ Aviso ao injetar cookies da Shopee: {e}", flush=True)
 
         for termo in config.get_termos_busca():
-            page = context.new_page()
+            page = context.pages[0] if context.pages else context.new_page()
             page.add_init_script("""
                 delete Object.getPrototypeOf(navigator).webdriver;
                 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
