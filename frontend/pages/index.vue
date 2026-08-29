@@ -145,7 +145,7 @@
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <span class="section-badge green">💰 Métricas</span>
+              <span class="section-badge green">💰 {{ t('sections.badge_metrics', 'Métricas') }}</span>
               <h3>{{ t('sections.kpi_title', 'Resultados & Métricas Consolidadas') }}</h3>
             </div>
             <p class="section-subtitle">{{ t('sections.kpi_subtitle', 'Resumo dos valores, preços e volume capturados no nicho monitorado.') }}</p>
@@ -164,7 +164,7 @@
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <span class="section-badge blue">📊 Concorrência</span>
+              <span class="section-badge blue">📊 {{ t('sections.badge_competition', 'Concorrência') }}</span>
               <h3>{{ t('sections.charts_title', 'Mapeamento Visual de Concorrência') }}</h3>
             </div>
             <p class="section-subtitle">{{ t('sections.charts_subtitle', 'Distribuição de lojas líderes, faixas de preço e categorias de mercado.') }}</p>
@@ -181,7 +181,8 @@
             </div>
 
             <div class="charts-row">
-              <CategoryVolumeChart :items="filteredProducts" class="full-width" />
+              <CategoryVolumeChart :items="filteredProducts" class="half-width" />
+              <PlatformMarketShareChart :items="filteredProducts" class="half-width" />
             </div>
           </div>
         </section>
@@ -190,7 +191,7 @@
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <span class="section-badge purple">🔍 Produtos</span>
+              <span class="section-badge purple">🔍 {{ t('sections.badge_products', 'Produtos') }}</span>
               <h3>{{ t('sections.table_title', 'Catálogo Completo de Anúncios') }}</h3>
             </div>
             <p class="section-subtitle">{{ t('sections.table_subtitle', 'Detalhamento de cada anúncio coletado com preço, vendedor e link oficial.') }}</p>
@@ -220,6 +221,7 @@ import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
 import PriceVsSalesChart from '~/components/PriceVsSalesChart.client.vue'
 import CategoryVolumeChart from '~/components/CategoryVolumeChart.client.vue'
+import PlatformMarketShareChart from '~/components/PlatformMarketShareChart.client.vue'
 import TopSellersChart from '~/components/TopSellersChart.client.vue'
 import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
 import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'

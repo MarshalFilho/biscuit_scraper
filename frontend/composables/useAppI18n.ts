@@ -5,7 +5,8 @@ const currentLocale = ref<'pt' | 'en'>('pt')
 const dictionary: Record<'pt' | 'en', Record<string, any>> = {
   pt: {
     navbar: {
-      badge: 'Inteligência Ativa',
+      badge: 'Painel Aberto',
+      tagline: 'Inteligência de Mercado em Biscuit',
       daily_schedule: '⏰ Coleta Diária às 22h00',
       login: 'Entrar',
       logout: 'Sair',
@@ -104,6 +105,10 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       revenue_sub: 'Estimativa (Preço × Vendas)'
     },
     sections: {
+      badge_ai: 'Inteligência',
+      badge_metrics: 'Métricas',
+      badge_competition: 'Concorrência',
+      badge_products: 'Produtos',
       ai_title: '🧠 Inteligência Executiva & IA',
       ai_subtitle: 'Diagnóstico automatizado de mercado para orientar suas decisões estratégicas.',
       kpi_title: '💰 Resultados & Métricas Consolidadas',
@@ -146,6 +151,14 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       csv_headers: ['Plataforma', 'Categoria', 'Título', 'Preço Atual (R$)', 'Vendas Totais', 'Crescimento de Vendas', 'Variação Preço (R$)', 'Data Criação', 'Link']
     },
     charts: {
+      platform_share: '🏪 Market Share por Marketplace',
+      platform_share_desc: 'Comparativo de vendas, faturamento e ticket médio entre Mercado Livre e Shopee',
+      toggle_sales_vol: 'Volume de Vendas',
+      toggle_revenue_vol: 'Faturamento (R$)',
+      avg_ticket: 'Ticket Médio',
+      meli_name: 'Mercado Livre',
+      shopee_name: 'Shopee',
+      listings_count: 'anúncios',
       top_sellers: '🏆 Ranking de Vendedores Líderes por Faturamento',
       top_sellers_desc: 'Lojas e vendedores com maior volume de vendas no mercado',
       top_products: '🔥 Top 10 Produtos Mais Vendidos no Nicho',
@@ -467,7 +480,8 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
   },
   en: {
     navbar: {
-      badge: 'Active Intelligence',
+      badge: 'Public Dashboard',
+      tagline: 'Biscuit Market Intelligence',
       daily_schedule: '⏰ Daily Scrape at 22:00 BRT',
       login: 'Sign In',
       logout: 'Sign Out',
@@ -566,6 +580,10 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       revenue_sub: 'Est. (Price × Sales)'
     },
     sections: {
+      badge_ai: 'AI Intelligence',
+      badge_metrics: 'Metrics',
+      badge_competition: 'Competition',
+      badge_products: 'Products',
       ai_title: '🧠 Executive AI Intelligence',
       ai_subtitle: 'Automated market diagnostics to guide your strategic decisions.',
       kpi_title: '💰 Financial & Consolidated Metrics',
@@ -609,6 +627,14 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       csv_headers: ['Platform', 'Category', 'Title', 'Current Price (R$)', 'Total Sales', 'Sales Growth', 'Price Variation (R$)', 'Creation Date', 'Link']
     },
     charts: {
+      platform_share: '🏪 Market Share by Marketplace',
+      platform_share_desc: 'Sales volume, revenue and average ticket breakdown between Mercado Livre and Shopee',
+      toggle_sales_vol: 'Sales Volume',
+      toggle_revenue_vol: 'Revenue (R$)',
+      avg_ticket: 'Average Ticket',
+      meli_name: 'Mercado Livre',
+      shopee_name: 'Shopee',
+      listings_count: 'listings',
       top_sellers: '🏆 Top Selling Stores by Revenue',
       top_sellers_desc: 'Stores and sellers with the highest sales volume in the market',
       top_products: '🔥 Top 10 Best Selling Products in Niche',
