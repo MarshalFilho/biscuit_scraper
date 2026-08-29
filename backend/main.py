@@ -113,8 +113,10 @@ def main():
             inicializar_sessao_mercadolivre,
             inicializar_sessao_shopee,
         )
-        inicializar_sessao_mercadolivre()
-        inicializar_sessao_shopee()
+        if args.plataforma in ["meli", "todos"]:
+            inicializar_sessao_mercadolivre()
+        if args.plataforma in ["shopee", "todos"]:
+            inicializar_sessao_shopee()
         return
 
     if args.daily_cron:
