@@ -383,11 +383,7 @@ const effectiveReport = computed(() => {
 
   if (!raw) return defaultReportData.value
 
-  const rawMods = raw.modulos || []
-  const hasStrategy = rawMods.some(m => m.id === 'estrategia' || m.tipo === 'estrategia_completa')
-  if (hasStrategy && rawMods.length <= 4) {
-    return raw
-  }
+  const rawMods = raw?.modulos || []
 
   // Consolidação inteligente dos módulos no padrão oficial
   const topSellers = rawMods.find(m => m.id === 'top_sellers' || m.id === 'vendedores_produtos' || m.tipo === 'vendedores')
@@ -438,7 +434,7 @@ const effectiveReport = computed(() => {
   }
 
   return {
-    atualizado_em: raw.atualizado_em || t('report.default_model', 'Modelo Padrão'),
+    atualizado_em: raw?.atualizado_em || t('report.default_model', 'Modelo Padrão'),
     modulos: [modEstrategia, modVendedores, modSeo, modPlataformas]
   }
 })
