@@ -7,13 +7,19 @@
         <p class="subtitle">{{ t('table.subtitle', 'Filtre, pesquise e navegue pelas páginas diretamente por esta tabela.') }}</p>
       </div>
       <div class="table-actions">
-        <button @click="exportToCSV" class="btn outline-btn" title="Exportar CSV">
-          ⬇️ {{ t('table.export_csv', 'Exportar CSV') }}
+        <div class="table-counter-badge">
+          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('filters.items', 'produtos') }}</span>
+        </div>
+        <button @click="exportToCSV" class="btn-export-csv" :title="t('table.export_csv', 'Exportar CSV')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="export-icon">
+            <path d="M12 3V16M12 16L7 11M12 16L17 11M4 20H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ t('table.export_csv', 'Exportar CSV') }}
         </button>
       </div>
     </div>
 
-    <!-- Barra Integrada de Filtros e Busca da Tabela -->
+    <!-- Barra Integrada de Busca e Itens por Página da Tabela -->
     <div class="in-table-toolbar">
       <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -26,52 +32,16 @@
         <button v-if="search" @click="search = ''" class="clear-search-btn" title="Limpar busca">✕</button>
       </div>
 
-      <div class="quick-filters-row">
-        <!-- Pílulas de Plataforma com Ícones Oficiais -->
-        <div class="platform-pills">
-          <button 
-            type="button"
-            :class="['plat-pill', { active: localPlatform === 'Todas' }]" 
-            @click="localPlatform = 'Todas'"
-          >
-            🌐 {{ t('filters.both', 'Todas') }}
-          </button>
-          <button 
-            type="button"
-            :class="['plat-pill meli-pill', { active: localPlatform === 'meli' }]" 
-            @click="localPlatform = 'meli'"
-          >
-            <svg class="plat-svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="11" fill="#FFE600"/>
-              <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Mercado Livre
-          </button>
-          <button 
-            type="button"
-            :class="['plat-pill shopee-pill', { active: localPlatform === 'shopee' }]" 
-            @click="localPlatform = 'shopee'"
-          >
-            <svg class="plat-svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <rect width="24" height="24" rx="6" fill="#EE4D2D"/>
-              <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
-            </svg>
-            Shopee
-          </button>
-        </div>
-
-        <!-- Categoria Dropdown -->
-        <div class="category-select-wrap" v-if="tableCategories.length > 1">
-          <select v-model="localCategory" class="table-select">
-            <option value="Todas">📂 {{ t('filters.all_categories', 'Todas as Categorias') }}</option>
-            <option v-for="cat in tableCategories" :key="cat" :value="cat">{{ cat }}</option>
+      <div class="toolbar-right-controls">
+        <div class="items-per-page-inline">
+          <label class="per-page-label">{{ t('table.show_per_page', 'Exibir:') }}</label>
+          <select v-model="itemsPerPage" class="per-page-select-inline">
+            <option :value="10">10</option>
+            <option :value="15">15</option>
+            <option :value="30">30</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
           </select>
-        </div>
-
-        <!-- Contador de Registros -->
-        <div class="table-counter-badge">
-          <span>📊 <strong>{{ filteredData.length }}</strong> produtos</span>
         </div>
       </div>
     </div>
@@ -254,21 +224,11 @@ const props = defineProps({
 })
 
 const search = ref('')
-const localPlatform = ref('Todas')
-const localCategory = ref('Todas')
 const selectedProduct = ref(null)
 
 // Paginação
 const currentPage = ref(1)
 const itemsPerPage = ref(15)
-
-const tableCategories = computed(() => {
-  const cats = new Set()
-  props.items.forEach(p => {
-    if (p.categoria) cats.add(p.categoria)
-  })
-  return Array.from(cats).sort()
-})
 
 // Ordenação interativa por coluna
 const sortKey = ref('vendas_totais')
@@ -283,8 +243,13 @@ function sortBy(key) {
   }
 }
 
-// Zera a página quando busca ou filtra
-watch([search, localPlatform, localCategory, sortKey, sortOrder, itemsPerPage], () => {
+// Zera a página quando a lista de itens muda (ex: usuário trocou de categoria/plataforma nos filtros globais)
+watch(() => props.items, () => {
+  currentPage.value = 1
+})
+
+// Zera a página quando busca ou ordenação mudar
+watch([search, sortKey, sortOrder, itemsPerPage], () => {
   currentPage.value = 1
 })
 
@@ -293,15 +258,7 @@ function openModal(item) {
 }
 
 const filteredData = computed(() => {
-  let result = props.items
-  
-  if (localPlatform.value !== 'Todas') {
-    result = result.filter(item => item.plataforma === localPlatform.value)
-  }
-
-  if (localCategory.value !== 'Todas') {
-    result = result.filter(item => item.categoria === localCategory.value)
-  }
+  let result = props.items || []
 
   if (search.value) {
     const lowerSearch = search.value.toLowerCase().trim()
@@ -337,6 +294,13 @@ const filteredData = computed(() => {
 
 const totalPages = computed(() => {
   return Math.ceil(filteredData.value.length / itemsPerPage.value) || 1
+})
+
+// Clampa a página para 1 se a página atual ultrapassar totalPages
+watch(totalPages, (newTotal) => {
+  if (currentPage.value > newTotal) {
+    currentPage.value = 1
+  }
 })
 
 const paginatedData = computed(() => {
@@ -463,96 +427,93 @@ function exportToCSV() {
   color: #0f172a;
 }
 
-.quick-filters-row {
+.table-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.85rem;
   flex-wrap: wrap;
 }
 
-.platform-pills {
-  display: flex;
-  background: #e2e8f0;
-  padding: 0.25rem;
-  border-radius: 8px;
-  gap: 0.25rem;
-}
-
-.plat-pill {
-  border: none;
-  background: none;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 700;
+.table-counter-badge {
+  background: #f1f5f9;
   color: #475569;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.plat-svg {
-  display: inline-block;
-  flex-shrink: 0;
-}
-
-.plat-pill:hover {
-  color: #0f172a;
-}
-
-.plat-pill.active {
-  background: #ffffff;
-  color: #0f172a;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.plat-pill.meli-pill.active {
-  color: #854d0e;
-  border: 1px solid #fde047;
-}
-
-.plat-pill.shopee-pill.active {
-  color: #9a3412;
-  border: 1px solid #fdba74;
-}
-
-.table-select {
-  background: #ffffff;
   border: 1px solid #cbd5e1;
-  padding: 0.4rem 0.8rem;
-  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  border-radius: 99px;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #334155;
-  outline: none;
+  display: inline-flex;
+  align-items: center;
 }
 
-.visibility-pills {
-  display: flex;
-  background: #f1f5f9;
-  padding: 0.25rem;
-  border-radius: 8px;
-  gap: 0.25rem;
-  border: 1px solid #e2e8f0;
-}
-
-.vis-pill {
-  border: none;
-  background: none;
-  padding: 0.35rem 0.65rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.vis-pill:hover {
+.table-counter-badge strong {
   color: #0f172a;
+  margin: 0 0.2rem;
+}
+
+.btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1.5px solid #86efac;
+  padding: 0.5rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(22, 101, 52, 0.08);
+  transition: all 0.2s ease;
+}
+
+.btn-export-csv:hover {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+  transform: translateY(-1px);
+}
+
+.export-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.btn-export-csv:hover .export-icon {
+  transform: translateY(1px);
+}
+
+.toolbar-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.items-per-page-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.per-page-select-inline {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+}
+
+.per-page-select-inline:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .vis-pill.active {

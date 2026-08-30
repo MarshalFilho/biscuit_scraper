@@ -12,14 +12,24 @@
     </div>
 
     <div v-else>
-      <!-- Relatório de Inteligência Executiva por IA -->
+      <!-- 1. Métricas Principais (KPIs) no Topo da Página -->
+      <KpiCards 
+        :totalProducts="totalProducts"
+        :averagePrice="averagePrice"
+        :topPlatform="topPlatform"
+        :topProduct="topProduct"
+        :estimatedRevenue="estimatedRevenue"
+        :dateRangeText="dateRangeText"
+      />
+
+      <!-- 2. Relatório de Inteligência Executiva por IA -->
       <AiExecutiveReport 
         :isLoading="loading" 
         :reportData="aiReportData"
         :products="processedProducts"
       />
 
-      <!-- Super Bloco Unificado de Controle (Filtros Globais + Barra de Intervalo Histórico + Abas de Visão) -->
+      <!-- 3. Super Bloco Unificado de Controle (Filtros Globais + Barra de Intervalo Histórico + Abas de Visão) -->
       <div class="glass-panel unified-control-panel animate-fade-in">
         <!-- 1. Linha Superior: Filtros Globais em Tempo Real -->
         <div class="control-header-row">
@@ -139,28 +149,9 @@
         </div>
       </div>
 
-      <!-- VISÃO 1: Visão Geral de Mercado (KPIs, Gráficos e Tabela) -->
+      <!-- VISÃO 1: Visão Geral de Mercado (Gráficos e Tabela) -->
       <div v-if="activeViewTab === 'overview'" class="overview-layout">
-        <!-- SEÇÃO 2: Métricas Financeiras & KPIs -->
-        <section class="dashboard-section">
-          <div class="section-header">
-            <div class="section-title-box">
-              <span class="section-badge green">💰 {{ t('sections.badge_metrics', 'Métricas') }}</span>
-              <h3>{{ t('sections.kpi_title', 'Resultados & Métricas Consolidadas') }}</h3>
-            </div>
-            <p class="section-subtitle">{{ t('sections.kpi_subtitle', 'Resumo dos valores, preços e volume capturados no nicho monitorado.') }}</p>
-          </div>
-          <KpiCards 
-            :totalProducts="totalProducts"
-            :averagePrice="averagePrice"
-            :topPlatform="topPlatform"
-            :topProduct="topProduct"
-            :estimatedRevenue="estimatedRevenue"
-            :dateRangeText="dateRangeText"
-          />
-        </section>
-
-        <!-- SEÇÃO 3: Mapeamento Visual de Concorrência & Gráficos -->
+        <!-- SEÇÃO 2: Mapeamento Visual de Concorrência & Gráficos -->
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
