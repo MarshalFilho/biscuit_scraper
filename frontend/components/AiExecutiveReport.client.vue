@@ -414,7 +414,7 @@ const effectiveReport = computed(() => {
     titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
     tipo: 'vendedores',
     resumo: topSellers?.resumo || t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
-    itens: sellersItens.length > 0 ? sellersItens : (stats?.topSellers || defaultReportData.value.modulos[1].itens)
+    itens: stats?.topSellers?.length > 0 ? stats.topSellers : (sellersItens.length > 0 ? sellersItens : defaultReportData.value.modulos[1].itens)
   }
 
   const modSeo = {
@@ -433,7 +433,7 @@ const effectiveReport = computed(() => {
     titulo: t('report.tab_platforms', '📊 Comparativo de Marketplaces'),
     tipo: 'plataformas',
     resumo: (platformBattle?.resumo || oceanBlue?.resumo) || t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
-    itens: platformItens.length > 0 ? platformItens : (stats?.platforms || defaultReportData.value.modulos[3].itens),
+    itens: stats?.platforms?.length > 0 ? stats.platforms : (platformItens.length > 0 ? platformItens : defaultReportData.value.modulos[3].itens),
     faixas_preco: (oceanBlue?.itens || oceanBlue?.faixas || [])
   }
 
@@ -497,12 +497,12 @@ function openSellerDetails(sellerItem) {
   const targetName = (sellerItem.name || '').trim().toLowerCase()
   let sellerProds = props.products.filter(p => (p.vendedor || '').trim().toLowerCase() === targetName)
   
-  if (sellerProds.length === 0 && sellerItem.products && sellerItem.products.length > 0) {
+  if (sellerProds.length === 0 && sellerItem.products && Array.isArray(sellerItem.products) && sellerItem.products.length > 0) {
     sellerProds = sellerItem.products
   }
 
-  if (sellerProds.length === 0) {
-    sellerProds = props.products.filter(p => p.titulo && sellerItem.top_produto && p.titulo.toLowerCase().includes(sellerItem.top_produto.toLowerCase()))
+  if (sellerProds.length === 0 && sellerItem.top_produto) {
+    sellerProds = props.products.filter(p => p.titulo && p.titulo.toLowerCase().includes(sellerItem.top_produto.toLowerCase()))
   }
 
   const firstProd = sellerProds[0]
@@ -511,21 +511,26 @@ function openSellerDetails(sellerItem) {
     ? `https://shopee.com.br/search?keyword=${encodeURIComponent(sellerItem.top_produto || sellerItem.name)}`
     : `https://lista.mercadolivre.com.br/${encodeURIComponent(sellerItem.top_produto || sellerItem.name)}`
 
+  const finalProducts = sellerProds.length > 0 ? sellerProds : [
+    { 
+      id: 'seller-prod-1', 
+      titulo: sellerItem.top_produto || 'Anúncio Principal da Loja', 
+      preco: 45.0, 
+      vendas_totais: sellerItem.vendas || 1, 
+      link: fallbackLink,
+      plataforma: plat
+    }
+  ]
+
+  const totalSales = finalProducts.reduce((acc, p) => acc + (p.vendas_totais || 0), 0)
+  const estimatedRevenue = finalProducts.reduce((acc, p) => acc + ((p.preco || 0) * (p.vendas_totais || 0)), 0)
+
   selectedSeller.value = {
     name: sellerItem.name,
     platform: plat,
-    products: sellerProds.length > 0 ? sellerProds : [
-      { 
-        id: 'seller-prod-1', 
-        titulo: sellerItem.top_produto || 'Anúncio Principal da Loja', 
-        preco: 45.0, 
-        vendas_totais: sellerItem.vendas || 1, 
-        link: fallbackLink,
-        plataforma: plat
-      }
-    ],
-    totalSales: sellerItem.vendas || sellerProds.reduce((acc, p) => acc + (p.vendas_totais || 0), 0),
-    estimatedRevenue: sellerItem.receita || sellerProds.reduce((acc, p) => acc + ((p.preco || 0) * (p.vendas_totais || 0)), 0)
+    products: finalProducts,
+    totalSales,
+    estimatedRevenue
   }
 }
 </script>
