@@ -126,12 +126,9 @@
             </td>
             
             <td class="sales-diff-cell">
-              <span class="sales-value">{{ item.vendas_totais || 0 }}</span>
+              <span class="sales-value">{{ (item.vendas_totais || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }}</span>
               <span v-if="item.salesDiff !== null && item.salesDiff > 0" class="badge-growth" :title="t('table.sales_growth_title', 'Vendas novas registradas no período selecionado')">
-                +{{ item.salesDiff }}
-              </span>
-              <span v-else-if="item.salesDiff === 0" class="badge-stable" :title="t('table.sales_stable_title', 'Sem novas vendas no período')">
-                0
+                +{{ item.salesDiff.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }}
               </span>
             </td>
             
