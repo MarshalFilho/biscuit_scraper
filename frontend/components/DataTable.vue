@@ -8,7 +8,7 @@
       </div>
       <div class="table-actions">
         <div class="table-counter-badge">
-          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('filters.items', 'produtos') }}</span>
+          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('table.products_count', 'produtos') }}</span>
         </div>
         <button @click="exportToCSV" class="btn-export-csv" :title="t('table.export_csv', 'Exportar CSV')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="export-icon">
@@ -149,12 +149,13 @@
     <!-- Paginação Completa e Elegante -->
     <div v-if="!isLoading && filteredData.length > 0" class="pagination-footer">
       <div class="pagination-info">
-        <span>Mostrando <strong>{{ (currentPage - 1) * itemsPerPage + 1 }}</strong> a <strong>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</strong> de <strong>{{ filteredData.length }}</strong> produtos</span>
+        <span v-if="locale === 'pt'">Mostrando <strong>{{ (currentPage - 1) * itemsPerPage + 1 }}</strong> a <strong>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</strong> de <strong>{{ filteredData.length }}</strong> produtos</span>
+        <span v-else>Showing <strong>{{ (currentPage - 1) * itemsPerPage + 1 }}</strong> to <strong>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</strong> of <strong>{{ filteredData.length }}</strong> products</span>
       </div>
 
       <div class="pagination-controls">
         <div class="items-per-page">
-          <label>Por página:</label>
+          <label>{{ t('table.per_page', 'Por página:') }}</label>
           <select v-model="itemsPerPage" class="per-page-select">
             <option :value="15">15</option>
             <option :value="30">30</option>
@@ -168,7 +169,7 @@
             :disabled="currentPage === 1" 
             @click="currentPage = 1" 
             class="page-btn" 
-            title="Primeira Página"
+            :title="t('table.first_page', 'Primeira Página')"
           >
             «
           </button>
@@ -176,26 +177,26 @@
             :disabled="currentPage === 1" 
             @click="currentPage--" 
             class="page-btn" 
-            title="Página Anterior"
+            :title="t('table.prev_page', 'Página Anterior')"
           >
-            ‹ Anterior
+            ‹ {{ t('table.prev_page', 'Anterior') }}
           </button>
 
-          <span class="page-current">Pág. {{ currentPage }} de {{ totalPages }}</span>
+          <span class="page-current">{{ locale === 'pt' ? `Pág. ${currentPage} de ${totalPages}` : `Page ${currentPage} of ${totalPages}` }}</span>
 
           <button 
             :disabled="currentPage === totalPages" 
             @click="currentPage++" 
             class="page-btn" 
-            title="Próxima Página"
+            :title="t('table.next_page', 'Próxima Página')"
           >
-            Próxima ›
+            {{ t('table.next_page', 'Próxima') }} ›
           </button>
           <button 
             :disabled="currentPage === totalPages" 
             @click="currentPage = totalPages" 
             class="page-btn" 
-            title="Última Página"
+            :title="t('table.last_page', 'Última Página')"
           >
             »
           </button>
