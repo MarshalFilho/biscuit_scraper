@@ -77,19 +77,24 @@ def upsert_produto(supabase: Client, plataforma: str, id_externo: str, titulo: s
     effective_user_id = user_id or os.environ.get("CURRENT_USER_ID") or os.environ.get("SUPABASE_USER_ID")
     
     # 1. Verifica se já existe por id_externo (chave única global)
-    response = supabase.table("produtos").select("id, user_id").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
+    response = supabase.table("produtos").select("id, user_id, link, id_externo").eq("plataforma", plataforma).eq("id_externo", id_externo).execute()
     
-    # 2. Fallback por título se for link de anúncio patrocinado
+    # 2. Fallback por título se for link de anúncio patrocinado ou se o ID mudou
     if (not response.data or len(response.data) == 0) and titulo:
-        response = supabase.table("produtos").select("id, user_id").eq("plataforma", plataforma).eq("titulo", titulo).execute()
+        response = supabase.table("produtos").select("id, user_id, link, id_externo").eq("plataforma", plataforma).eq("titulo", titulo).execute()
 
     if response.data and len(response.data) > 0:
-        produto_id = response.data[0]["id"]
+        row = response.data[0]
+        produto_id = row["id"]
         update_payload = {}
-        if vendedor:
+        if vendedor and vendedor != row.get("vendedor"):
             update_payload["vendedor"] = vendedor
-        if effective_user_id and not response.data[0].get("user_id"):
+        if effective_user_id and not row.get("user_id"):
             update_payload["user_id"] = effective_user_id
+        if link and link != row.get("link"):
+            update_payload["link"] = link
+        if id_externo and id_externo != row.get("id_externo"):
+            update_payload["id_externo"] = id_externo
             
         if update_payload:
             try:
