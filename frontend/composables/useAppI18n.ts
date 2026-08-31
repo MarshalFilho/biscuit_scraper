@@ -13,7 +13,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toggle_tooltip: 'Mudar para Inglês'
     },
     global: {
-      connecting_db: 'Conectando à base de dados segura do Supabase...',
+      connecting_db: 'Carregando dados de inteligência de mercado...',
       error_loading: '⚠️ Ocorreu um erro ao carregar os dados:',
       no_scrapes: 'Sem registros de raspagem',
       loading_dates: 'Carregando datas...',
@@ -497,7 +497,7 @@ const dictionary: Record<'pt' | 'en', Record<string, any>> = {
       toggle_tooltip: 'Switch to Portuguese'
     },
     global: {
-      connecting_db: 'Connecting to secure Supabase database...',
+      connecting_db: 'Loading market intelligence data...',
       error_loading: '⚠️ An error occurred while loading data:',
       no_scrapes: 'No scrape records',
       loading_dates: 'Loading dates...',

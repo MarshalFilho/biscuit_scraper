@@ -4,7 +4,7 @@
 
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>{{ t('global.connecting_db', 'Conectando à base de dados do Supabase...') }}</p>
+      <p>{{ t('global.connecting_db', 'Carregando dados de inteligência de mercado...') }}</p>
     </div>
 
     <div v-else-if="error" class="error-state">
