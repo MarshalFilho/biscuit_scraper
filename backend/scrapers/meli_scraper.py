@@ -442,7 +442,20 @@ def fase_ouro(user_id=None):
                 if not verificar_relevancia(titulo, termo):
                     continue
                 
-                link_tag = produto.find("a")
+                # Prioridade absoluta para o link ancorado diretamente no título (evita capturar banners externos/loja)
+                link_tag = None
+                if titulo_tag.name == "a" and "href" in titulo_tag.attrs:
+                    link_tag = titulo_tag
+                elif titulo_tag.find("a") and "href" in titulo_tag.find("a").attrs:
+                    link_tag = titulo_tag.find("a")
+                elif titulo_tag.find_parent("a") and "href" in titulo_tag.find_parent("a").attrs:
+                    link_tag = titulo_tag.find_parent("a")
+                
+                if not link_tag:
+                    link_tag = produto.find("a", class_=re.compile(r"poly-component__title|ui-search-link"))
+                if not link_tag:
+                    link_tag = produto.find("a")
+                
                 raw_url = link_tag["href"] if link_tag and "href" in link_tag.attrs else ""
                 url_anuncio = sanitizar_url_meli(raw_url)
                 
