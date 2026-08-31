@@ -38,6 +38,20 @@ def limpar_preco(texto_preco):
         except ValueError: pass
     return 0.0
 
+def sanitizar_url_meli(raw_url):
+    """
+    Higieniza links do Mercado Livre, convertendo URLs de tracking/patrocinados (click1.mercadolivre.com.br / mclics)
+    e páginas de vendedores para o link direto canônico do produto (https://produto.mercadolivre.com.br/MLB-XXXXX).
+    """
+    if not raw_url:
+        return ""
+    import urllib.parse
+    decoded = urllib.parse.unquote(urllib.parse.unquote(raw_url))
+    match = re.search(r"MLB-?(\d{8,12})", decoded)
+    if match:
+        return f"https://produto.mercadolivre.com.br/MLB-{match.group(1)}"
+    return raw_url
+
 def extrair_preco_card_meli(produto):
     """
     Extrai com 100% de precisão o preço de venda real/vigente do card do Mercado Livre.
@@ -429,7 +443,8 @@ def fase_ouro(user_id=None):
                     continue
                 
                 link_tag = produto.find("a")
-                url_anuncio = link_tag["href"] if link_tag and "href" in link_tag.attrs else ""
+                raw_url = link_tag["href"] if link_tag and "href" in link_tag.attrs else ""
+                url_anuncio = sanitizar_url_meli(raw_url)
                 
                 if not url_anuncio:
                     continue

@@ -276,6 +276,20 @@ const dynamicCategories = computed(() => {
   return Array.from(cats)
 })
 
+function sanitizeProductLink(rawLink, platform) {
+  if (!rawLink || typeof rawLink !== 'string') return ''
+  if (platform === 'meli' || rawLink.includes('mercadolivre.com')) {
+    try {
+      const decoded = decodeURIComponent(decodeURIComponent(rawLink))
+      const match = decoded.match(/MLB-?(\d{8,12})/)
+      if (match) {
+        return `https://produto.mercadolivre.com.br/MLB-${match[1]}`
+      }
+    } catch (e) {}
+  }
+  return rawLink
+}
+
 function getCategoryByRules(title) {
   const t = (title || '').toLowerCase()
   for (const rule of defaultCategoryRules) {
@@ -323,7 +337,7 @@ async function loadDashboardData() {
           id: p.id,
           plataforma: p.plataforma,
           titulo: p.titulo,
-          link: p.link,
+          link: sanitizeProductLink(p.link, p.plataforma),
           vendedor: p.vendedor || null,
           criado_em: p.criado_em,
           preco: latestHistory.preco || 0,
