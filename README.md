@@ -6,7 +6,7 @@
 
 ## 🎯 Objetivo do Projeto
 
-Automatizar o monitoramento do mercado de Biscuit nos principais marketplaces do Brasil, coletando dados de anúncios, preços, vendas e concorrentes para responder perguntas estratégicas como:
+Automatizar o monitoramento do mercado de Biscuit nos principais marketplaces do Brasil, coletando dados de anúncios, preços, vendas e concorrência para responder perguntas estratégicas:
 - Quais são os produtos e topos de bolo mais vendidos?
 - Quais são os maiores vendedores do nicho?
 - Qual é a faixa de preço ideal para cada tipo de peça de biscuit?
@@ -18,8 +18,8 @@ Automatizar o monitoramento do mercado de Biscuit nos principais marketplaces do
 
 - **Backend & Scraping**: Python 3.12, BeautifulSoup4, `curl_cffi` (bypass de proteções TLS/WAF), Playwright, Pandas.
 - **Inteligência Artificial**: Google Gemini API (geração de relatórios estratégicos e categorização).
-- **Banco de Dados & Autenticação**: Supabase (PostgreSQL com Row Level Security).
-- **Frontend**: Nuxt 3, Vue 3, ApexCharts, Lucide Icons, Vanilla CSS (tema escuro com Glassmorphism).
+- **Banco de Dados**: Supabase (PostgreSQL).
+- **Frontend**: Nuxt 3, Vue 3, ApexCharts, Lucide Icons, Vanilla CSS (tema moderno com Glassmorphism).
 
 ---
 
@@ -51,7 +51,7 @@ Automatizar o monitoramento do mercado de Biscuit nos principais marketplaces do
 ```text
 biscuit_scraper/
 │
-├── iniciar_worker.bat               # Atalho Windows para iniciar o extrator/worker
+├── iniciar_worker.bat               # Atalho Windows para iniciar o worker em segundo plano
 ├── requirements.txt                 # Dependências Python do backend
 ├── config_app.json                  # Termos de busca, blacklist e regras de categorias
 │
@@ -65,15 +65,12 @@ biscuit_scraper/
 │   │   ├── meli_scraper.py          # Extrator do Mercado Livre
 │   │   ├── shopee_scraper.py        # Extrator da Shopee
 │   │   └── login_session.py         # Gerenciamento de cookies/sessão
-│   ├── scripts/
-│   │   ├── init_user_configs.py     # Inicialização de configurações no Supabase
-│   │   └── setup_roles_and_users.py # Configuração inicial de usuários
 │   └── utils/
 │       ├── ai_engine.py             # Conexão com a API do Google Gemini
 │       ├── bot_detector.py          # Detecção de bloqueios/CAPTCHA
 │       ├── limpar_dados_antigos.py  # Limpeza de coletas legadas
 │       ├── relevancia.py            # Filtros de relevância e palavras-chave
-│       └── supabase_client.py       # Integração com banco Supabase
+│       └── supabase_client.py       # Integração com o banco Supabase
 │
 ├── frontend/                        # Painel analítico em Nuxt 3
 │   ├── assets/css/main.css          # Estilos e design system do painel
@@ -81,8 +78,7 @@ biscuit_scraper/
 │   ├── composables/                 # Composables (i18n, Supabase, Toasts, Modais)
 │   ├── pages/
 │   │   ├── index.vue                # Dashboard analítico principal
-│   │   ├── config.vue               # Configurações de busca e categorias
-│   │   └── login.vue                # Autenticação de usuário
+│   │   └── config.vue               # Configurações de termos e categorias
 │   ├── nuxt.config.ts               # Configuração do Nuxt
 │   └── package.json                 # Dependências do frontend
 │
@@ -103,8 +99,7 @@ Crie um arquivo `.env` na raiz do projeto seguindo o modelo do `.env.example`:
 ```env
 # Supabase
 SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_KEY=sua_service_role_key
-SUPABASE_USER_ID=seu_user_id
+SUPABASE_KEY=sua_service_role_key_ou_anon_key
 
 # Google Gemini
 GEMINI_API_KEY=sua_chave_gemini
@@ -116,7 +111,7 @@ NUXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key
 
 ### 2. Configurar o Banco no Supabase
 1. No painel do **Supabase**, abra o **SQL Editor**.
-2. Execute o script [`database/database_setup.sql`](database/database_setup.sql) para criar as tabelas e políticas necessárias.
+2. Execute o script [`database/database_setup.sql`](database/database_setup.sql) para criar as tabelas necessárias (`configuracoes_scraper`, `produtos`, `historico_coletas`).
 
 ### 3. Rodar o Backend / Scraper
 
@@ -144,7 +139,7 @@ Abra no navegador em `http://localhost:3000`.
 
 ## 🧪 Testes
 
-Para rodar os testes unitários dos parsers de extração:
+Para rodar os testes unitários dos parsers:
 ```bash
 python -m pytest tests/
 ```
