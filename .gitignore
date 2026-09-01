@@ -12,7 +12,28 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Data files (ignored to avoid committing sensitive/large data)
+# OS generated files
+node_modules/
+frontend/node_modules/
+.output/
+frontend/.output/
+dist/
+frontend/dist/
+.nuxt/
+frontend/.nuxt/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing & Caches
+.pytest_cache/
+.ruff_cache/
+
+# Data files & generated scrapes
 *.json
 !package.json
 !package-lock.json
@@ -23,34 +44,19 @@ __pycache__/
 !config_app.json
 *.xlsx
 *.csv
-data/bronze/
-data/prata/
-
-# OS generated files
-node_modules/
-frontend/node_modules/
-.output/
-frontend/.output/
-dist/
-frontend/dist/
-.nuxt/
-frontend/.nuxt/
-
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Documentation / Roadmap
-PLANO_DESENVOLVIMENTO.md
-AGENTS_GUIDELINES.md
-AGENTS.md
-
-# Local config & data
-config_app.json
-data/
-
-
+*.html
+data/auth/
+data/mercado_livre/bronze/*
+!data/mercado_livre/bronze/.gitkeep
+data/mercado_livre/prata/*
+!data/mercado_livre/prata/.gitkeep
+data/mercado_livre/ouro/*
+!data/mercado_livre/ouro/.gitkeep
+data/shopee/bronze/*
+!data/shopee/bronze/.gitkeep
+data/shopee/prata/*
+!data/shopee/prata/.gitkeep
+data/shopee/ouro/*
+!data/shopee/ouro/.gitkeep
+reports/*
+!reports/.gitkeep

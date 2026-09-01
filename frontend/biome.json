@@ -26,6 +26,7 @@
     "useIgnoreFile": false
   },
   "files": {
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "includes": ["**", "!**/.nuxt/**", "!**/.output/**", "!**/dist/**", "!**/node_modules/**"]
   }
 }
