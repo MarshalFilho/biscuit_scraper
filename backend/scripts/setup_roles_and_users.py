@@ -8,40 +8,21 @@ if sys.stdout.encoding != 'utf-8':
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://tqyhsxgsauwdzkepfqnr.supabase.co")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
 SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
 
-if not SERVICE_KEY:
-    print("❌ Erro: SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_KEY não encontrada no .env")
+if not SUPABASE_URL or not SERVICE_KEY:
+    print("❌ Erro: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY devem estar configuradas no .env")
     sys.exit(1)
 
 supabase = create_client(SUPABASE_URL, SERVICE_KEY)
 
+# Lista padrão para criação/atualização de cargos
 USERS_TO_SETUP = [
     {
-        "email": "adm@gmail.com",
-        "password": "Admin@2026!",
+        "email": os.getenv("ADMIN_EMAIL", "admin@example.com"),
+        "password": os.getenv("ADMIN_INITIAL_PASSWORD", "Admin@123456!"),
         "role": "admin"
-    },
-    {
-        "email": "marshalfilho@gmail.com",
-        "password": "Pro@2026!",
-        "role": "pro"
-    },
-    {
-        "email": "isadora@gmail.com",
-        "password": "Pro@2026!",
-        "role": "pro"
-    },
-    {
-        "email": "basic@gmail.com",
-        "password": "Basic@2026!",
-        "role": "basic"
-    },
-    {
-        "email": "light@gmail.com",
-        "password": "Light@2026!",
-        "role": "basic"
     }
 ]
 

@@ -131,9 +131,13 @@ def main():
             tenants = []
 
         if not tenants:
-            fallback_user_id = os.environ.get("SUPABASE_USER_ID", "693b19e1-936e-4322-ac9a-79467d143566")
-            print(f"ℹ️ Nenhum tenant listado dinamicamente. Executando com fallback para o tenant padrão ({fallback_user_id}).")
-            tenants = [{"user_id": fallback_user_id, "nome_projeto": "Projeto Padrão"}]
+            fallback_user_id = os.environ.get("SUPABASE_USER_ID")
+            if fallback_user_id:
+                print(f"ℹ️ Nenhum tenant listado dinamicamente. Executando com fallback para o tenant configurado no .env ({fallback_user_id}).")
+                tenants = [{"user_id": fallback_user_id, "nome_projeto": "Projeto Principal"}]
+            else:
+                print("⚠️ Nenhum tenant encontrado e SUPABASE_USER_ID não foi definido.")
+                return
 
         print(f"📊 Total de clientes/tenants a processar: {len(tenants)}")
         for idx, tenant in enumerate(tenants, 1):
@@ -157,14 +161,14 @@ def main():
         from utils.supabase_client import atualizar_status_scraper, conectar_supabase, listar_tenants_ativos
         
         print("\n" + "=" * 70)
-        print("🎧 [SmartDashboard AI] Worker Local Ativo & Monitorando em Segundo Plano")
+        print("🎧 [Biscuit Scraper] Worker Local Ativo & Monitorando em Segundo Plano")
         print("=" * 70)
-        print("⚡ Resposta Imediata: Escutando cliques de 'Disparar Raspagem' da Vercel")
+        print("⚡ Resposta Imediata: Escutando cliques de 'Disparar Raspagem' no Dashboard")
         print("⏰ Agendamento Diário: Coleta automática programada para todos os dias às 22:00")
         print("🛡️ IP Residencial: Raspagem limpa e veloz sem bloqueios de WAF / Datacenter")
         print("=" * 70 + "\n", flush=True)
 
-        user_id = os.environ.get("SUPABASE_USER_ID", "693b19e1-936e-4322-ac9a-79467d143566")
+        user_id = os.environ.get("SUPABASE_USER_ID")
         try:
             supabase = conectar_supabase()
         except Exception as e:

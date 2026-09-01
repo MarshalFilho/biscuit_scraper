@@ -6,7 +6,7 @@ const COOLDOWN_SECONDS = 10 // Cooldown de 10s entre chamadas
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const supabaseUrl = config.public.supabaseUrl || process.env.SUPABASE_URL || 'https://tqyhsxgsauwdzkepfqnr.supabase.co'
+  const supabaseUrl = config.public.supabaseUrl || process.env.SUPABASE_URL || ''
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabaseServiceRoleKey || process.env.SUPABASE_KEY || config.public.supabaseAnonKey
 
   const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {

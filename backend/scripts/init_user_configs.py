@@ -8,8 +8,12 @@ if sys.stdout.encoding != 'utf-8':
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://tqyhsxgsauwdzkepfqnr.supabase.co")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
 SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SERVICE_KEY:
+    print("❌ Erro: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_KEY) devem estar no .env")
+    sys.exit(1)
 
 supabase = create_client(SUPABASE_URL, SERVICE_KEY)
 

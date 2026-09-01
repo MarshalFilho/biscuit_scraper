@@ -33,14 +33,17 @@ export function getUserRole(user: any): UserRole {
   if (appRole === 'basic' || userRole === 'basic' || directRole === 'basic' || appRole === 'light' || userRole === 'light' || appRole === 'cliente') return 'basic'
 
   const email = (user.email || '').toLowerCase()
-  const adminEmails = (process.env.ADMIN_EMAILS || 'adm@gmail.com')
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((e: string) => e.trim().toLowerCase())
     .filter(Boolean)
 
   if (adminEmails.includes(email)) return 'admin'
 
-  const proEmails = ['marshalfilho@gmail.com', 'isadora@gmail.com']
+  const proEmails = (process.env.PRO_EMAILS || '')
+    .split(',')
+    .map((e: string) => e.trim().toLowerCase())
+    .filter(Boolean)
   if (proEmails.includes(email)) return 'pro'
 
   return 'basic'
