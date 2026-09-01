@@ -2,7 +2,10 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.4s;">
     <div class="chart-header">
       <div>
-        <h3>{{ t('charts.category_share', '🥧 Share de Volume de Vendas por Categoria') }}</h3>
+        <h3 class="chart-heading-inline">
+          <PieChart :size="18" class="text-blue-600" />
+          <span>{{ t('charts.category_share', 'Share de Volume de Vendas por Categoria') }}</span>
+        </h3>
         <p class="chart-subtitle">{{ t('charts.category_share_desc', 'Fatia de mercado e total de unidades vendidas em cada segmento') }}</p>
       </div>
       <div class="total-badge" v-if="totalSalesCount > 0">
@@ -13,6 +16,7 @@
     <div class="chart-wrapper">
       <apexchart 
         v-if="isMounted && series.length > 0 && totalSalesCount > 0" 
+        :key="chartKey"
         type="donut" 
         height="320" 
         :options="chartOptions" 
@@ -27,12 +31,14 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { PieChart } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  isComparing: { type: Boolean, default: false }
 })
 
 const isMounted = ref(false)
@@ -42,7 +48,9 @@ const categoryData = computed(() => {
   const map = {}
   for (const item of props.items) {
     const cat = item.categoria || 'Outros'
-    const sales = item.vendas_totais || 0
+    const sales = (props.isComparing && item.salesDiff !== null && item.salesDiff !== undefined) 
+      ? item.salesDiff 
+      : (item.vendas_totais || 0)
     map[cat] = (map[cat] || 0) + sales
   }
   
@@ -60,6 +68,10 @@ const categoryData = computed(() => {
 const labels = computed(() => categoryData.value.labels)
 const series = computed(() => categoryData.value.series)
 const totalSalesCount = computed(() => series.value.reduce((acc, v) => acc + v, 0))
+
+const chartKey = computed(() => {
+  return `${props.isComparing}-${labels.value.join(',')}-${series.value.join(',')}`
+})
 
 const chartOptions = computed(() => ({
   chart: {

@@ -177,3 +177,9 @@ h1, h2, h3, h4, h5, h6 {
 .pulse-active {
   animation: pulseRing 2s infinite;
 }
+
+.chart-heading-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}

@@ -5,14 +5,19 @@
         <div class="modal-header">
           <div class="modal-title-box">
             <span :class="['badge-platform', seller.platform]">
-              {{ seller.platform === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
+              <ShoppingBag :size="14" />
+              {{ seller.platform === 'meli' ? 'Mercado Livre' : 'Shopee' }}
             </span>
-            <h3>
-              {{ seller.name.startsWith('Loja em') ? '📍' : '🏪' }} 
-              {{ t('seller_modal.store_ads', 'Anúncios da Loja:') }} <span class="seller-title-text">{{ seller.name }}</span>
+            <h3 class="modal-heading-flex">
+              <MapPin v-if="seller.name.startsWith('Loja em')" :size="20" class="text-blue-600" />
+              <Store v-else :size="20" class="text-blue-600" />
+              <span>{{ t('seller_modal.store_ads', 'Anúncios da Loja:') }}</span>
+              <span class="seller-title-text">{{ seller.name }}</span>
             </h3>
           </div>
-          <button class="close-btn" @click="close" :title="t('seller_modal.close_window', 'Fechar janela')">×</button>
+          <button class="close-btn" @click="close" :title="t('seller_modal.close_window', 'Fechar janela')">
+            <X :size="18" />
+          </button>
         </div>
 
         <div class="modal-body">
@@ -36,7 +41,10 @@
 
           <!-- Lista de Produtos/Anúncios da Loja -->
           <div class="products-table-section">
-            <h4>{{ t('seller_modal.ads_list', '📦 Lista de Anúncios deste Vendedor') }}</h4>
+            <h4 class="section-title-flex">
+              <Package :size="17" />
+              {{ t('seller_modal.ads_list', 'Lista de Anúncios deste Vendedor') }}
+            </h4>
             <div class="products-table-wrapper">
               <table class="products-table">
                 <thead>
@@ -64,7 +72,7 @@
                         class="icon-btn action-btn" 
                         :title="t('table.analyze_btn', 'Ver Histórico Completo')"
                       >
-                        📈
+                        <LineChart :size="15" />
                       </button>
                       <a 
                         :href="getProductLink(p)" 
@@ -73,7 +81,7 @@
                         class="icon-btn link-btn" 
                         :title="t('table.view_ad_btn', 'Abrir Anúncio')"
                       >
-                        ↗
+                        <ExternalLink :size="15" />
                       </a>
                     </td>
                   </tr>
@@ -92,6 +100,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { ShoppingBag, MapPin, Store, X, Package, LineChart, ExternalLink } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 import ProductModal from './ProductModal.vue'
 
@@ -130,10 +139,10 @@ function getProductLink(product) {
 
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
 .modal-title-box { flex: 1; padding-right: 1rem; }
-.badge-platform { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.4rem; }
+.badge-platform { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.4rem; }
 .badge-platform.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .badge-platform.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
-.modal-header h3 { margin: 0; color: #0f172a; font-size: 1.25rem; }
+.modal-heading-flex { margin: 0; color: #0f172a; font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .seller-title-text { color: #2563eb; font-weight: 700; }
 
 .close-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; width: 36px; height: 36px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; line-height: 1; }
@@ -147,7 +156,7 @@ function getProductLink(product) {
 .card-value.revenue { color: #2563eb; }
 
 .products-table-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem; }
-.products-table-section h4 { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; }
+.section-title-flex { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.45rem; }
 .products-table-wrapper { overflow-x: auto; max-height: 380px; }
 .products-table { width: 100%; border-collapse: collapse; text-align: left; background: #ffffff; }
 .products-table th, .products-table td { padding: 0.75rem 0.9rem; border-bottom: 1px solid #e2e8f0; font-size: 0.88rem; }

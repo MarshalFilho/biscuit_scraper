@@ -3,13 +3,12 @@
     <div class="header-main">
       <div class="brand-box">
         <div class="brand-logo-badge">
-          <span class="biscuit-emoji">🎨</span>
+          <Palette :size="20" class="brand-icon" />
         </div>
         <div class="brand-text-col">
           <h1 class="brand-title">{{ projectName || 'BiscuitInsights' }}</h1>
           <span class="brand-subtitle">{{ t('navbar.tagline', 'Inteligência de Mercado em Biscuit') }}</span>
         </div>
-        <span class="brand-badge">{{ t('navbar.badge', 'Painel Aberto') }}</span>
       </div>
 
       <div class="header-right">
@@ -18,7 +17,8 @@
           class="lang-btn" 
           :title="t('navbar.toggle_tooltip', 'Alternar idioma')"
         >
-          <span class="lang-flag">{{ locale === 'pt' ? '🇧🇷 PT' : '🇺🇸 EN' }}</span>
+          <Globe :size="15" />
+          <span class="lang-flag">{{ locale === 'pt' ? 'PT' : 'EN' }}</span>
         </button>
       </div>
     </div>
@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+import { Palette, Globe } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const props = defineProps({
@@ -72,8 +73,8 @@ const { locale, toggleLanguage, t } = useAppI18n()
   flex-shrink: 0;
 }
 
-.biscuit-emoji {
-  font-size: 1.3rem;
+.brand-icon {
+  color: #d97706;
 }
 
 .brand-text-col {

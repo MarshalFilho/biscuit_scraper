@@ -2,7 +2,10 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.6s;">
     <div class="chart-header-box">
       <div class="header-titles">
-        <h3>{{ t('charts.top_sellers', '🏆 Ranking de Vendedores Líderes por Faturamento') }}</h3>
+        <h3 class="header-title-flex">
+          <Trophy :size="20" class="text-amber-500" />
+          <span>{{ t('charts.top_sellers', 'Ranking de Vendedores Líderes por Faturamento') }}</span>
+        </h3>
         <p class="chart-subtitle">{{ t('charts.top_sellers_desc', 'Lojas e vendedores com maior volume de vendas no mercado') }}</p>
       </div>
       <div class="view-toggle">
@@ -11,26 +14,39 @@
           @click="activeMode = 'table'"
           :title="t('charts.view_table_title', 'Ver como tabela detalhada')"
         >
-          📋 {{ t('global.table', 'Tabela') }}
+          <Table :size="13" />
+          {{ t('global.table', 'Tabela') }}
         </button>
         <button 
           :class="['toggle-sm', { active: activeMode === 'chart' }]" 
           @click="activeMode = 'chart'"
           :title="t('charts.view_chart_title', 'Ver como gráfico de barras')"
         >
-          📊 {{ t('global.chart', 'Gráfico') }}
+          <BarChart2 :size="13" />
+          {{ t('global.chart', 'Gráfico') }}
         </button>
       </div>
     </div>
 
     <!-- Banner informativo se a maioria for sem vendedor -->
     <div class="seller-notice-banner" v-if="hasUnregisteredSellers">
-      <span>💡 <strong>{{ t('charts.seller_note', 'Nota sobre Vendedores:') }}</strong> {{ t('charts.seller_note_desc', 'Os nomes oficiais dos vendedores serão sincronizados e preenchidos automaticamente na próxima execução do robô de raspagem.') }}</span>
+      <Info :size="16" class="notice-icon" />
+      <span><strong>{{ t('charts.seller_note', 'Nota sobre Vendedores:') }}</strong> {{ t('charts.seller_note_desc', 'Os nomes oficiais dos vendedores serão sincronizados e preenchidos automaticamente na próxima execução do robô de raspagem.') }}</span>
     </div>
 
     <!-- Visão Gráfico -->
     <div class="chart-wrapper" v-if="activeMode === 'chart'">
-      <apexchart v-if="isMounted" type="bar" height="320" :options="chartOptions" :series="series"></apexchart>
+      <apexchart 
+        v-if="isMounted && topSellersList.length > 0" 
+        :key="chartKey"
+        type="bar" 
+        height="320" 
+        :options="chartOptions" 
+        :series="series"
+      ></apexchart>
+      <div v-else class="empty-chart">
+        <p>{{ t('charts.empty_sellers', 'Sem dados de vendedores para exibir no momento.') }}</p>
+      </div>
     </div>
 
     <!-- Visão Tabela -->
@@ -42,7 +58,7 @@
             <th>{{ t('charts.col_seller', 'Vendedor / Loja') }}</th>
             <th>{{ t('table.col_platform', 'Plataforma') }}</th>
             <th>{{ t('charts.col_ads', 'Anúncios Ativos') }}</th>
-            <th>{{ t('kpis.sales', 'Vendas Totais') }}</th>
+            <th>{{ isComparing ? t('charts.new_sales', 'Novas Vendas') : t('kpis.sales', 'Vendas Totais') }}</th>
             <th>{{ t('kpis.revenue', 'Fat. Estimado') }}</th>
           </tr>
         </thead>
@@ -62,7 +78,9 @@
                 {{ seller.productCount }} {{ seller.productCount === 1 ? t('charts.ad', 'anúncio') : t('charts.ads', 'anúncios') }}
               </span>
             </td>
-            <td class="sales-td">{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }}</td>
+            <td class="sales-td">
+              <span v-if="isComparing && seller.totalSales > 0">+</span>{{ seller.totalSales.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ isComparing ? t('charts.units_short', 'novas vendas') : t('report.sales_units', 'vendas') }}
+            </td>
             <td class="revenue-td">R$ {{ seller.estimatedRevenue.toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</td>
           </tr>
           <tr v-if="topSellersList.length === 0">
@@ -79,13 +97,15 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { Trophy, Table, BarChart2, Info } from 'lucide-vue-next'
 import SellerProductsModal from './SellerProductsModal.vue'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  isComparing: { type: Boolean, default: false }
 })
 
 const isMounted = ref(false)
@@ -127,8 +147,9 @@ const topSellersList = computed(() => {
 
     const entry = map.get(key)
     entry.productCount += 1
-    entry.totalSales += (item.vendas_totais || 0)
-    entry.estimatedRevenue += ((item.preco || 0) * (item.vendas_totais || 0))
+    const sales = (props.isComparing && item.salesDiff !== null && item.salesDiff !== undefined) ? item.salesDiff : (item.vendas_totais || 0)
+    entry.totalSales += sales
+    entry.estimatedRevenue += ((item.preco || 0) * sales)
     entry.products.push(item)
   }
 
@@ -146,10 +167,14 @@ const topSellersList = computed(() => {
 const series = computed(() => {
   return [
     {
-      name: t('kpis.sales', 'Vendas Totais'),
+      name: props.isComparing ? t('charts.new_sales', 'Novas Vendas') : t('kpis.sales', 'Vendas Totais'),
       data: topSellersList.value.map(s => s.totalSales)
     }
   ]
+})
+
+const chartKey = computed(() => {
+  return `${props.isComparing}-${topSellersList.value.map(s => `${s.name}-${s.totalSales}`).join(',')}`
 })
 
 const chartOptions = computed(() => ({
@@ -192,12 +217,14 @@ const chartOptions = computed(() => ({
 .chart-container { padding: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; }
 .chart-header-box { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; gap: 1rem; flex-wrap: wrap; }
 .header-titles h3 { margin: 0 0 0.2rem 0; color: #0f172a; font-size: 1.15rem; }
+.header-title-flex { display: flex; align-items: center; gap: 0.5rem; }
 .chart-subtitle { color: #64748b; font-size: 0.85rem; margin: 0; }
 
-.seller-notice-banner { background: #fefce8; border: 1px solid #fef08a; color: #854d0e; padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; }
+.seller-notice-banner { background: #fefce8; border: 1px solid #fef08a; color: #854d0e; padding: 0.5rem 0.8rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.notice-icon { flex-shrink: 0; }
 
 .view-toggle { display: flex; gap: 0.3rem; background: #f1f5f9; padding: 3px; border-radius: 8px; border: 1px solid #cbd5e1; }
-.toggle-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
+.toggle-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600; border: none; background: transparent; color: #475569; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.35rem; }
 .toggle-sm.active { background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.06); }
 
 .chart-wrapper { height: 320px; max-height: 320px; }

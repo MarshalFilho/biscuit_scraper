@@ -8,7 +8,10 @@
     </div>
 
     <div v-else-if="error" class="error-state">
-      <p>{{ t('global.error_loading', '⚠️ Ocorreu um erro ao carregar os dados:') }} {{ error }}</p>
+      <p>
+        <AlertTriangle :size="16" class="inline-error-icon" />
+        {{ t('global.error_loading', 'Ocorreu um erro ao carregar os dados:') }} {{ error }}
+      </p>
     </div>
 
     <div v-else>
@@ -43,7 +46,8 @@
                   :class="['toggle-btn', { active: selectedPlatform === 'Todas' }]" 
                   @click="selectedPlatform = 'Todas'"
                 >
-                  🌐 {{ t('filters.both', 'Todas') }}
+                  <Globe :size="14" />
+                  {{ t('filters.both', 'Todas') }}
                 </button>
                 <button 
                   type="button" 
@@ -101,7 +105,8 @@
                 class="btn-toggle-histogram" 
                 @click="showPriceHistogram = !showPriceHistogram"
               >
-                📊 {{ showPriceHistogram ? t('filters.hide_price_range', 'Ocultar Faixa de Preços') : t('filters.filter_price_range', 'Filtrar Faixa de Preços') }}
+                <SlidersHorizontal :size="14" />
+                {{ showPriceHistogram ? t('filters.hide_price_range', 'Ocultar Faixa de Preços') : t('filters.filter_price_range', 'Filtrar Faixa de Preços') }}
               </button>
             </div>
           </div>
@@ -131,19 +136,22 @@
               :class="['view-tab-btn', { active: activeViewTab === 'overview' }]" 
               @click="activeViewTab = 'overview'"
             >
-              {{ t('tabs.overview', '📊 Visão Geral de Mercado') }}
+              <BarChart3 :size="15" />
+              {{ t('tabs.overview', 'Visão Geral de Mercado') }}
             </button>
             <button 
               :class="['view-tab-btn', { active: activeViewTab === 'trending' }]" 
               @click="activeViewTab = 'trending'"
             >
-              {{ t('tabs.trending', '🚀 Produtos em Alta & Aceleração') }}
+              <Flame :size="15" />
+              {{ t('tabs.trending', 'Produtos em Alta & Aceleração') }}
             </button>
             <button 
               :class="['view-tab-btn', { active: activeViewTab === 'pricing' }]" 
               @click="activeViewTab = 'pricing'"
             >
-              {{ t('tabs.pricing', '🏷️ Estratégias de Preço & Oportunidades') }}
+              <Tag :size="15" />
+              {{ t('tabs.pricing', 'Estratégias de Preço & Oportunidades') }}
             </button>
           </div>
         </div>
@@ -155,7 +163,6 @@
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <span class="section-badge blue">📊 {{ t('sections.badge_competition', 'Concorrência') }}</span>
               <h3>{{ t('sections.charts_title', 'Mapeamento Visual de Concorrência') }}</h3>
             </div>
             <p class="section-subtitle">{{ t('sections.charts_subtitle', 'Distribuição de lojas líderes, faixas de preço e categorias de mercado.') }}</p>
@@ -163,17 +170,17 @@
           
           <div class="charts-container">
             <div class="charts-row">
-              <TopProductsChart :items="filteredProducts" class="half-width" />
-              <PriceVsSalesChart :items="filteredProducts" class="half-width" />
+              <TopProductsChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
+              <PriceVsSalesChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
             </div>
             
             <div class="charts-row">
-              <TopSellersChart :items="filteredProducts" class="full-width" />
+              <TopSellersChart :items="filteredProducts" :isComparing="isComparing" class="full-width" />
             </div>
 
             <div class="charts-row">
-              <CategoryVolumeChart :items="filteredProducts" class="half-width" />
-              <PlatformMarketShareChart :items="filteredProducts" class="half-width" />
+              <CategoryVolumeChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
+              <PlatformMarketShareChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
             </div>
           </div>
         </section>
@@ -182,7 +189,6 @@
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <span class="section-badge purple">🔍 {{ t('sections.badge_products', 'Produtos') }}</span>
               <h3>{{ t('sections.table_title', 'Catálogo Completo de Anúncios') }}</h3>
             </div>
             <p class="section-subtitle">{{ t('sections.table_subtitle', 'Detalhamento de cada anúncio coletado com preço, vendedor e link oficial.') }}</p>
@@ -206,6 +212,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { Globe, SlidersHorizontal, BarChart3, Flame, Tag, BarChart2, Layers, AlertTriangle } from 'lucide-vue-next'
 import Navbar from '~/components/Navbar.vue'
 import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
@@ -377,43 +384,126 @@ const dateRangeText = computed(() => {
   return t('global.real_time_updates', 'Dados atualizados em tempo real')
 })
 
+function extractDateStr(raw) {
+  if (!raw) return ''
+  const str = String(raw).trim()
+  const match = str.match(/^\d{4}-\d{2}-\d{2}/)
+  if (match) return match[0]
+  try {
+    const d = new Date(str)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0]
+    }
+  } catch (e) {}
+  return str.split('T')[0].split(' ')[0]
+}
+
+function getSnapshotForDate(historico, targetDateStr) {
+  if (!historico || !Array.isArray(historico) || historico.length === 0) return null
+  
+  // 1. Tenta correspondência exata de data (YYYY-MM-DD)
+  const exact = historico.find(h => extractDateStr(h.data_coleta) === targetDateStr)
+  if (exact) return exact
+
+  // 2. Se não houver exata, busca a coleta mais recente <= targetDateStr
+  const targetTime = new Date(targetDateStr + 'T23:59:59').getTime()
+  const prior = historico
+    .filter(h => {
+      const dStr = extractDateStr(h.data_coleta)
+      return dStr && new Date(dStr + 'T00:00:00').getTime() <= targetTime
+    })
+    .sort((a, b) => new Date(b.data_coleta).getTime() - new Date(a.data_coleta).getTime())
+
+  if (prior.length > 0) return prior[0]
+
+  return null
+}
+
 // Processa métricas e variações com base no intervalo de datas selecionado
 const processedProducts = computed(() => {
   return productsRaw.value
     .map(p => {
-      let snapshot = p
+      const history = p.historico_coletas || []
+      let snapshot = { ...p }
       let hist = null
       let varInfo = null
       let salesDiff = null
 
       if (timelineCompareRange.value) {
         const { dateA, dateB } = timelineCompareRange.value
-        const entryA = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(dateA))
-        const entryB = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(dateB))
-        
-        const priceB = entryB ? entryB.preco : p.preco
-        const salesB = entryB ? entryB.vendas_totais : p.vendas_totais
-        const priceA = entryA ? entryA.preco : p.preco
-        const salesA = entryA ? entryA.vendas_totais : 0
+        // Ponto B (Data final/mais recente)
+        const entryB = getSnapshotForDate(history, dateB) || (history.length > 0 ? history[0] : null)
+        // Ponto A (Data inicial/base)
+        const entryA = getSnapshotForDate(history, dateA)
 
-        snapshot = { ...p, preco: priceB, vendas_totais: salesB }
-        hist = { preco: priceA, vendas_totais: salesA }
-        salesDiff = Math.max(0, salesB - salesA)
-        if (priceA > 0) {
-          const diff = priceB - priceA
-          if (Math.abs(diff) > 0.05) {
-            varInfo = { diff, perc: (diff / priceA) * 100, isPositive: diff > 0, isNegative: diff < 0 }
+        const priceB = entryB ? (entryB.preco ?? p.preco ?? 0) : (p.preco ?? 0)
+        const salesB = entryB ? (entryB.vendas_totais ?? p.vendas_totais ?? 0) : (p.vendas_totais ?? 0)
+
+        if (entryA) {
+          const priceA = entryA.preco ?? 0
+          const salesA = entryA.vendas_totais ?? 0
+
+          snapshot = { ...p, preco: priceB, vendas_totais: salesB }
+          hist = { preco: priceA, vendas_totais: salesA }
+          salesDiff = Math.max(0, salesB - salesA)
+          
+          if (priceA > 0) {
+            const diff = priceB - priceA
+            if (Math.abs(diff) > 0.05) {
+              varInfo = {
+                diff,
+                perc: (diff / priceA) * 100,
+                isPositive: diff > 0,
+                isNegative: diff < 0
+              }
+            }
           }
+        } else {
+          // Produto adicionado após a data inicial (novo no período)
+          snapshot = { ...p, preco: priceB, vendas_totais: salesB, isNew: true }
+          hist = null
+          salesDiff = salesB
+          varInfo = null
         }
       } else if (timelineSelectedDate.value) {
-        const histEntry = p.historico_coletas?.find(h => h.data_coleta && h.data_coleta.startsWith(timelineSelectedDate.value))
-        if (histEntry) {
-          snapshot = { ...p, preco: histEntry.preco, vendas_totais: histEntry.vendas_totais }
+        const targetDate = timelineSelectedDate.value
+        const entryCurrent = getSnapshotForDate(history, targetDate) || (history.length > 0 ? history[0] : null)
+        
+        if (entryCurrent) {
+          snapshot = { ...p, preco: entryCurrent.preco ?? 0, vendas_totais: entryCurrent.vendas_totais ?? 0 }
+          
+          // Busca a coleta imediatamente anterior a essa data no histórico
+          const currentTargetTime = new Date(extractDateStr(entryCurrent.data_coleta) + 'T00:00:00').getTime()
+          const priorEntries = history.filter(h => {
+            const d = new Date(extractDateStr(h.data_coleta) + 'T00:00:00').getTime()
+            return d < currentTargetTime
+          })
+          
+          if (priorEntries.length > 0) {
+            const entryPrev = priorEntries[0]
+            const pricePrev = entryPrev.preco ?? 0
+            const salesPrev = entryPrev.vendas_totais ?? 0
+            
+            hist = { preco: pricePrev, vendas_totais: salesPrev }
+            salesDiff = Math.max(0, (entryCurrent.vendas_totais ?? 0) - salesPrev)
+            
+            if (pricePrev > 0) {
+              const diff = (entryCurrent.preco ?? 0) - pricePrev
+              if (Math.abs(diff) > 0.05) {
+                varInfo = {
+                  diff,
+                  perc: (diff / pricePrev) * 100,
+                  isPositive: diff > 0,
+                  isNegative: diff < 0
+                }
+              }
+            }
+          }
         }
       }
 
       const createdDate = snapshot.criado_em ? new Date(snapshot.criado_em) : new Date()
-      const isNew = (snapshot.historico_coletas && snapshot.historico_coletas.length === 1) || (new Date() - createdDate < 86400000)
+      const isNew = snapshot.isNew || (history.length === 1) || (new Date().getTime() - createdDate.getTime() < 86400000)
 
       return {
         ...snapshot,
@@ -470,6 +560,7 @@ const topPlatform = computed(() => {
   }, {})
   return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b)
 })
+const isComparing = computed(() => !!timelineCompareRange.value)
 const topProduct = computed(() => filteredProducts.value.length > 0 ? filteredProducts.value[0] : null)
 const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) => acc + ((p.preco || 0) * (p.vendas_totais || 0)), 0))
 </script>
@@ -522,6 +613,9 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   border-radius: 99px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .section-badge.green {
@@ -663,6 +757,9 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .btn-toggle-histogram:hover {

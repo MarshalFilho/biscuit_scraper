@@ -2,19 +2,24 @@
   <transition name="fade">
     <div v-if="alertaVisivel" class="antibot-alert glass-panel">
       <div class="alert-content">
-        <div class="alert-icon">⚠️</div>
+        <div class="alert-icon">
+          <AlertTriangle :size="20" />
+        </div>
         <div class="alert-text">
           <strong>{{ t('alert.anti_bot_title', 'Alerta de Coleta Automática') }}</strong>
           <p>{{ customMensagem || t('alert.anti_bot_desc', 'O robô de coleta encontrou uma verificação de segurança na última execução.') }}</p>
         </div>
       </div>
-      <button @click="dismiss" class="btn-dismiss" :title="t('alert.dismiss', 'Entendido')">✕</button>
+      <button @click="dismiss" class="btn-dismiss" :title="t('alert.dismiss', 'Entendido')">
+        <X :size="18" />
+      </button>
     </div>
   </transition>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { AlertTriangle, X } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t } = useAppI18n()

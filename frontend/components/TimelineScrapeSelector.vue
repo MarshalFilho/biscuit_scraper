@@ -4,12 +4,11 @@
       <!-- 1. Título & Ícone da Barra -->
       <div class="bar-brand-section">
         <div class="bar-icon-pill">
-          <span>📈</span>
+          <TrendingUp :size="18" class="text-blue-600" />
         </div>
         <div class="bar-title-wrap">
           <div class="title-with-badge">
             <h4>{{ t('timeline.range_title', 'Comparador de Evolução Histórica') }}</h4>
-            <span class="range-badge-pulse">{{ t('timeline.growth_badge', 'Análise de Crescimento') }}</span>
           </div>
           <p class="bar-desc">{{ t('timeline.range_desc', 'Selecione a data inicial e final para comparar oscilação de preços, vendas acumuladas e tendências:') }}</p>
         </div>
@@ -58,39 +57,43 @@
         <div class="preset-buttons">
           <button 
             type="button" 
-            class="btn-preset" 
+            class="btn-preset btn-preset-flex" 
             :class="{ active: isPresetActive(7) }"
             @click="applyDaysPreset(7)"
             :title="t('timeline.preset_7_title', 'Comparar evolução dos últimos 7 dias')"
           >
-            ⚡ {{ t('timeline.preset_7_days', 'Últimos 7 Dias') }}
+            <Zap :size="13" />
+            {{ t('timeline.preset_7_days', 'Últimos 7 Dias') }}
           </button>
           <button 
             type="button" 
-            class="btn-preset" 
+            class="btn-preset btn-preset-flex" 
             :class="{ active: isPresetActive(3) }"
             @click="applyDaysPreset(3)"
             :title="t('timeline.preset_3_title', 'Comparar últimos 3 dias')"
           >
-            ⚡ {{ t('timeline.preset_3_days', 'Últimos 3 Dias') }}
+            <Zap :size="13" />
+            {{ t('timeline.preset_3_days', 'Últimos 3 Dias') }}
           </button>
           <button 
             type="button" 
-            class="btn-preset" 
+            class="btn-preset btn-preset-flex" 
             :class="{ active: isAllHistoryActive }"
             @click="applyAllHistoryPreset"
             :title="t('timeline.preset_all_title', 'Comparar todo o histórico coletado')"
           >
-            🌐 {{ t('timeline.preset_all', 'Todo o Período') }}
+            <Globe :size="13" />
+            {{ t('timeline.preset_all', 'Todo o Período') }}
           </button>
           <button 
             type="button" 
-            class="btn-preset" 
+            class="btn-preset btn-preset-flex" 
             :class="{ active: isSingleDayActive }"
             @click="applySingleDayPreset"
             :title="t('timeline.preset_latest_title', 'Ver apenas a última coleta')"
           >
-            📸 {{ t('timeline.preset_latest', 'Última Coleta') }}
+            <Clock :size="13" />
+            {{ t('timeline.preset_latest', 'Última Coleta') }}
           </button>
         </div>
       </div>
@@ -99,22 +102,27 @@
     <!-- 4. Barra Informativa de Status da Comparação -->
     <div v-if="selectedStartDate && selectedEndDate" class="comparison-status-strip">
       <div class="status-left">
-        <span class="status-icon">📊</span>
+        <BarChart2 :size="16" class="text-amber-700" />
         <span class="status-text">
           {{ t('timeline.comparing_text', 'Comparando') }}
           <strong>{{ formatDateBadge(selectedStartDate) }}</strong>
           {{ t('timeline.until_text', 'até') }}
           <strong>{{ formatDateBadge(selectedEndDate) }}</strong>
           <span class="diff-days-pill" v-if="daysDifference > 0">
-            ⏳ {{ daysDifference }} {{ daysDifference === 1 ? t('timeline.day_singular', 'dia') : t('timeline.days_plural', 'dias') }} {{ t('timeline.of_evolution', 'de evolução') }}
+            <Clock :size="12" />
+            {{ daysDifference }} {{ daysDifference === 1 ? t('timeline.day_singular', 'dia') : t('timeline.days_plural', 'dias') }} {{ t('timeline.of_evolution', 'de evolução') }}
           </span>
           <span class="diff-days-pill single" v-else>
-            📸 {{ t('timeline.single_day_snapshot', 'Retrato de 1 dia') }}
+            <Calendar :size="12" />
+            {{ t('timeline.single_day_snapshot', 'Retrato de 1 dia') }}
           </span>
         </span>
       </div>
       <div class="status-right" v-if="matchingProductsCount > 0">
-        <span class="count-badge">📦 {{ matchingProductsCount }} {{ t('timeline.items_with_history', 'produtos analisados') }}</span>
+        <span class="count-badge count-badge-flex">
+          <Package :size="13" />
+          {{ matchingProductsCount }} {{ t('timeline.items_with_history', 'produtos analisados') }}
+        </span>
       </div>
     </div>
   </div>
@@ -122,6 +130,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { TrendingUp, Zap, Globe, Clock, BarChart2, Calendar, Package } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
@@ -136,6 +145,20 @@ const emit = defineEmits(['select-date', 'compare-dates'])
 const selectedStartDate = ref(null)
 const selectedEndDate = ref(null)
 
+function extractDateStr(raw) {
+  if (!raw) return ''
+  const str = String(raw).trim()
+  const match = str.match(/^\d{4}-\d{2}-\d{2}/)
+  if (match) return match[0]
+  try {
+    const d = new Date(str)
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0]
+    }
+  } catch (e) {}
+  return str.split('T')[0].split(' ')[0]
+}
+
 // Extrai todas as datas únicas ordenadas da MAIS ANTIGA para a MAIS RECENTE
 const availableDates = computed(() => {
   const map = new Map()
@@ -144,18 +167,20 @@ const availableDates = computed(() => {
     if (item.historico_coletas && Array.isArray(item.historico_coletas)) {
       for (const h of item.historico_coletas) {
         if (h.data_coleta) {
-          const dateStr = h.data_coleta.split('T')[0]
-          if (!map.has(dateStr)) {
-            map.set(dateStr, { dateStr, count: 0 })
+          const dateStr = extractDateStr(h.data_coleta)
+          if (dateStr) {
+            if (!map.has(dateStr)) {
+              map.set(dateStr, { dateStr, count: 0 })
+            }
+            map.get(dateStr).count += 1
           }
-          map.get(dateStr).count += 1
         }
       }
     }
   }
 
   // Ordenadas da MAIS ANTIGA para a MAIS RECENTE
-  const sorted = Array.from(map.values()).sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr))
+  const sorted = Array.from(map.values()).sort((a, b) => new Date(a.dateStr + 'T00:00:00').getTime() - new Date(b.dateStr + 'T00:00:00').getTime())
 
   return sorted.map((d, index) => {
     const isLatest = index === sorted.length - 1
@@ -194,19 +219,53 @@ const isAllHistoryActive = computed(() => {
   if (availableDates.value.length < 2) return false
   const first = availableDates.value[0].dateStr
   const latest = availableDates.value[availableDates.value.length - 1].dateStr
-  return selectedStartDate.value === first && selectedEndDate.value === latest
+  return selectedStartDate.value === first && selectedEndDate.value === latest && !isSingleDayActive.value
 })
 
 function isPresetActive(days) {
   if (availableDates.value.length < 2) return false
   const latest = availableDates.value[availableDates.value.length - 1].dateStr
-  if (selectedEndDate.value !== latest) return false
+  if (selectedEndDate.value !== latest || isSingleDayActive.value) return false
+  
+  if (days === 7) {
+    const target = new Date(latest + 'T00:00:00')
+    target.setDate(target.getDate() - 7)
+    const expected = findClosestDate(target)
+    return selectedStartDate.value === expected && !isAllHistoryActive.value
+  }
+
+  if (days === 3) {
+    const target = new Date(latest + 'T00:00:00')
+    target.setDate(target.getDate() - 3)
+    let expected = findClosestDate(target)
+    const len = availableDates.value.length
+    if (len >= 3 && expected === availableDates.value[0].dateStr && len > 3) {
+      expected = availableDates.value[Math.max(0, len - 3)].dateStr
+    }
+    return selectedStartDate.value === expected && !isAllHistoryActive.value
+  }
+
   return daysDifference.value === days
+}
+
+function findClosestDate(targetDate) {
+  const targetTime = targetDate.getTime()
+  let closest = availableDates.value[0].dateStr
+  let minDiff = Infinity
+
+  for (const d of availableDates.value) {
+    const dTime = new Date(d.dateStr + 'T00:00:00').getTime()
+    const diff = Math.abs(dTime - targetTime)
+    if (diff < minDiff) {
+      minDiff = diff
+      closest = d.dateStr
+    }
+  }
+  return closest
 }
 
 function onStartDateChange() {
   if (new Date(selectedStartDate.value) > new Date(selectedEndDate.value)) {
-    // Se a data inicial for maior que a final, ajusta a final para ser igual
     selectedEndDate.value = selectedStartDate.value
   }
   emitCurrentRange()
@@ -214,7 +273,6 @@ function onStartDateChange() {
 
 function onEndDateChange() {
   if (new Date(selectedEndDate.value) < new Date(selectedStartDate.value)) {
-    // Se a data final for menor que a inicial, ajusta a inicial para ser igual
     selectedStartDate.value = selectedEndDate.value
   }
   emitCurrentRange()
@@ -222,25 +280,27 @@ function onEndDateChange() {
 
 function applyDaysPreset(days) {
   if (availableDates.value.length === 0) return
-  const latest = availableDates.value[availableDates.value.length - 1].dateStr
+  const len = availableDates.value.length
+  const latest = availableDates.value[len - 1].dateStr
   selectedEndDate.value = latest
 
-  const target = new Date(latest + 'T00:00:00')
-  target.setDate(target.getDate() - days)
-
-  // Encontra a data mais próxima disponível no array
-  let closest = availableDates.value[0].dateStr
-  let minDiff = Infinity
-  for (const d of availableDates.value) {
-    const dTime = new Date(d.dateStr + 'T00:00:00')
-    const diff = Math.abs(dTime - target)
-    if (diff < minDiff) {
-      minDiff = diff
-      closest = d.dateStr
+  if (days === 3 && len >= 3) {
+    // Para 3 dias em bancos com poucas coletas, seleciona o antepenúltimo registro
+    const target = new Date(latest + 'T00:00:00')
+    target.setDate(target.getDate() - 3)
+    let closest = findClosestDate(target)
+    if (closest === availableDates.value[0].dateStr && len > 3) {
+      closest = availableDates.value[len - 3].dateStr
+    } else if (len === 3) {
+      closest = availableDates.value[1].dateStr
     }
+    selectedStartDate.value = closest
+  } else {
+    const target = new Date(latest + 'T00:00:00')
+    target.setDate(target.getDate() - days)
+    selectedStartDate.value = findClosestDate(target)
   }
 
-  selectedStartDate.value = closest
   emitCurrentRange()
 }
 
@@ -278,11 +338,11 @@ function formatDateBadge(dateStr) {
   return dObj.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-// Inicialização automática com 7 dias ou todo o período
+// Inicialização automática com todo o período ou presets
 watch(availableDates, (newDates) => {
   if (newDates.length > 0 && !selectedStartDate.value && !selectedEndDate.value) {
     if (newDates.length >= 2) {
-      applyDaysPreset(7)
+      applyAllHistoryPreset()
     } else {
       selectedStartDate.value = newDates[0].dateStr
       selectedEndDate.value = newDates[0].dateStr
@@ -292,9 +352,9 @@ watch(availableDates, (newDates) => {
 }, { immediate: true })
 
 onMounted(() => {
-  if (availableDates.value.length > 0) {
+  if (availableDates.value.length > 0 && !selectedStartDate.value) {
     if (availableDates.value.length >= 2) {
-      applyDaysPreset(7)
+      applyAllHistoryPreset()
     } else {
       selectedStartDate.value = availableDates.value[0].dateStr
       selectedEndDate.value = availableDates.value[0].dateStr
@@ -476,6 +536,12 @@ onMounted(() => {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
+.btn-preset-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .btn-preset:hover {
   background: #f1f5f9;
   border-color: #94a3b8;
@@ -525,6 +591,7 @@ onMounted(() => {
 .diff-days-pill {
   display: inline-flex;
   align-items: center;
+  gap: 0.3rem;
   background: #fff7ed;
   color: #c2410c;
   border: 1px solid #ffedd5;
@@ -554,6 +621,12 @@ onMounted(() => {
   border: 1px solid #fde68a;
   padding: 0.2rem 0.6rem;
   border-radius: 99px;
+}
+
+.count-badge-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 @media (max-width: 960px) {

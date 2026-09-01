@@ -2,7 +2,10 @@
   <div class="glass-panel chart-container animate-fade-in" style="animation-delay: 0.5s;">
     <div class="chart-header">
       <div>
-        <h3>{{ t('charts.platform_share', '🏪 Market Share por Marketplace') }}</h3>
+        <h3 class="chart-heading-inline">
+          <Store :size="18" class="text-blue-600" />
+          <span>{{ t('charts.platform_share', 'Market Share por Marketplace') }}</span>
+        </h3>
         <p class="chart-subtitle">{{ t('charts.platform_share_desc', 'Comparativo de vendas, faturamento e ticket médio entre Mercado Livre e Shopee') }}</p>
       </div>
       
@@ -13,7 +16,8 @@
           @click="metricMode = 'sales'"
           :title="t('charts.toggle_sales_vol', 'Volume de Vendas')"
         >
-          📦 {{ t('charts.toggle_sales_vol', 'Volume de Vendas') }}
+          <Package :size="13" />
+          <span>{{ t('charts.toggle_sales_vol', 'Volume de Vendas') }}</span>
         </button>
         <button 
           type="button"
@@ -21,7 +25,8 @@
           @click="metricMode = 'revenue'"
           :title="t('charts.toggle_revenue_vol', 'Faturamento (R$)')"
         >
-          💰 {{ t('charts.toggle_revenue_vol', 'Faturamento (R$)') }}
+          <DollarSign :size="13" />
+          <span>{{ t('charts.toggle_revenue_vol', 'Faturamento (R$)') }}</span>
         </button>
       </div>
     </div>
@@ -29,6 +34,7 @@
     <div class="chart-wrapper">
       <apexchart 
         v-if="isMounted && totalMetricCount > 0" 
+        :key="chartKey"
         type="donut" 
         height="320" 
         :options="chartOptions" 
@@ -99,12 +105,14 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { Store, Package, DollarSign } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  isComparing: { type: Boolean, default: false }
 })
 
 const isMounted = ref(false)
@@ -119,8 +127,9 @@ const shopeeItems = computed(() => props.items.filter(i => i.plataforma === 'sho
 
 const meliData = computed(() => {
   const count = meliItems.value.length
-  const sales = meliItems.value.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
-  const revenue = meliItems.value.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
+  const getItemSales = (i) => (props.isComparing && i.salesDiff !== null && i.salesDiff !== undefined) ? i.salesDiff : (i.vendas_totais || 0)
+  const sales = meliItems.value.reduce((acc, i) => acc + getItemSales(i), 0)
+  const revenue = meliItems.value.reduce((acc, i) => acc + ((i.preco || 0) * getItemSales(i)), 0)
   const totalPrice = meliItems.value.reduce((acc, i) => acc + (i.preco || 0), 0)
   const avgPrice = count > 0 ? (totalPrice / count) : 0
 
@@ -129,8 +138,9 @@ const meliData = computed(() => {
 
 const shopeeData = computed(() => {
   const count = shopeeItems.value.length
-  const sales = shopeeItems.value.reduce((acc, i) => acc + (i.vendas_totais || 0), 0)
-  const revenue = shopeeItems.value.reduce((acc, i) => acc + ((i.preco || 0) * (i.vendas_totais || 0)), 0)
+  const getItemSales = (i) => (props.isComparing && i.salesDiff !== null && i.salesDiff !== undefined) ? i.salesDiff : (i.vendas_totais || 0)
+  const sales = shopeeItems.value.reduce((acc, i) => acc + getItemSales(i), 0)
+  const revenue = shopeeItems.value.reduce((acc, i) => acc + ((i.preco || 0) * getItemSales(i)), 0)
   const totalPrice = shopeeItems.value.reduce((acc, i) => acc + (i.preco || 0), 0)
   const avgPrice = count > 0 ? (totalPrice / count) : 0
 
@@ -156,6 +166,10 @@ const meliShare = computed(() => {
 const shopeeShare = computed(() => {
   if (totalMetricCount.value === 0) return 50
   return (chartSeries.value[1] / totalMetricCount.value) * 100
+})
+
+const chartKey = computed(() => {
+  return `${props.isComparing}-${metricMode.value}-${chartSeries.value.join(',')}`
 })
 
 function formatNumberShort(num) {

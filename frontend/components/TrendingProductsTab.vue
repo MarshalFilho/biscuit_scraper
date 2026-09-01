@@ -3,7 +3,10 @@
     <!-- Header descritivo da aba -->
     <div class="glass-panel trending-header animate-fade-in">
       <div class="header-content">
-        <h2>{{ t('trending.title', '🔥 Ranking de Aceleração & Tendências de Vendas') }}</h2>
+        <h2 class="title-with-icon">
+          <Flame :size="22" class="text-amber-500" />
+          <span>{{ t('trending.title', 'Ranking de Aceleração & Tendências de Vendas') }}</span>
+        </h2>
         <p v-html="t('trending.subtitle', 'Produtos que registraram o maior volume de <strong>novas vendas</strong> entre a coleta mais recente e o histórico selecionado.')"></p>
       </div>
 
@@ -45,7 +48,7 @@
               <!-- Posição -->
               <td class="text-center font-bold">
                 <span :class="['rank-badge', getRankClass(idx + 1)]">
-                  {{ idx + 1 === 1 ? '🥇' : (idx + 1 === 2 ? '🥈' : (idx + 1 === 3 ? '🥉' : `#${idx + 1}`)) }}
+                  #{{ idx + 1 }}
                 </span>
               </td>
 
@@ -80,9 +83,18 @@
               <td>
                 <div class="velocity-pill">
                   <span class="delta-badge">+{{ item.deltaVendas }} {{ t('trending.units', 'un.') }}</span>
-                  <span class="speed-tag" v-if="item.deltaVendas > 20">{{ t('trending.high_acceleration', '⚡ Alta Aceleração') }}</span>
-                  <span class="speed-tag medium" v-else-if="item.deltaVendas > 5">{{ t('trending.growing', '📈 Em Crescimento') }}</span>
-                  <span class="speed-tag low" v-else>{{ t('trending.stable', '🌱 Estável') }}</span>
+                  <span class="speed-tag" v-if="item.deltaVendas > 20">
+                    <Zap :size="12" />
+                    {{ t('trending.high_acceleration', 'Alta Aceleração') }}
+                  </span>
+                  <span class="speed-tag medium" v-else-if="item.deltaVendas > 5">
+                    <TrendingUp :size="12" />
+                    {{ t('trending.growing', 'Em Crescimento') }}
+                  </span>
+                  <span class="speed-tag low" v-else>
+                    <Minus :size="12" />
+                    {{ t('trending.stable', 'Estável') }}
+                  </span>
                 </div>
               </td>
 
@@ -95,14 +107,17 @@
                   class="icon-btn link-btn"
                   :title="t('trending.view_ad', 'Abrir Anúncio no Marketplace')"
                 >
-                  ↗
+                  <ExternalLink :size="14" />
                 </a>
               </td>
             </tr>
 
             <tr v-if="trendingList.length === 0">
               <td colspan="7" class="empty-state">
-                <span>{{ t('trending.empty_state', '🔍 Nenhum produto apresentou novas vendas no período selecionado.') }}</span>
+                <div class="empty-flex">
+                  <Inbox :size="24" class="text-slate-400" />
+                  <span>{{ t('trending.empty_state', 'Nenhum produto apresentou novas vendas no período selecionado.') }}</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -115,6 +130,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { Flame, Zap, TrendingUp, Minus, ExternalLink, Inbox } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t } = useAppI18n()
@@ -130,21 +146,23 @@ const props = defineProps({
   }
 })
 
-// Processa a lista calculando o delta de vendas reais
+// Processa a lista calculando o delta de vendas reais com base no período selecionado
 const trendingList = computed(() => {
   const list = []
 
   for (const item of props.products) {
-    if (!item.historico_coletas || item.historico_coletas.length < 2) continue
-
-    const precoHoje = item.preco || 0
     const vendasHoje = item.vendas_totais || 0
+    let delta = 0
+    let vendasAnterior = 0
 
-    // Pega o registro anterior mais recente
-    const historicoAnterior = item.historico_coletas[1]
-    const vendasAnterior = historicoAnterior.vendas_totais || 0
-
-    const delta = vendasHoje - vendasAnterior
+    if (item.salesDiff !== null && item.salesDiff !== undefined) {
+      delta = item.salesDiff
+      vendasAnterior = item.hist ? item.hist.vendas_totais : Math.max(0, vendasHoje - delta)
+    } else if (item.historico_coletas && item.historico_coletas.length >= 2) {
+      const historicoAnterior = item.historico_coletas[1]
+      vendasAnterior = historicoAnterior.vendas_totais || 0
+      delta = Math.max(0, vendasHoje - vendasAnterior)
+    }
 
     if (delta > 0) {
       list.push({
@@ -184,7 +202,7 @@ function getAdLink(item) {
 <style scoped>
 .trending-container { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem; }
 .trending-header { padding: 1.5rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.header-content h2 { margin: 0 0 0.3rem 0; font-size: 1.3rem; color: #0f172a; }
+.title-with-icon { margin: 0 0 0.3rem 0; font-size: 1.3rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
 .header-content p { margin: 0; color: #64748b; font-size: 0.9rem; }
 
 .trending-stats { display: flex; gap: 0.8rem; }
@@ -200,7 +218,10 @@ function getAdLink(item) {
 .trending-table th { background: #f8fafc; color: #475569; padding: 0.8rem 1rem; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
 .trending-table td { padding: 0.85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 
-.rank-badge { font-weight: 800; font-size: 1rem; }
+.rank-badge { font-weight: 800; font-size: 0.9rem; color: #475569; background: #f1f5f9; padding: 0.2rem 0.5rem; border-radius: 6px; }
+.rank-1 { color: #b45309; background: #fef3c7; border: 1px solid #fde68a; }
+.rank-2 { color: #475569; background: #e2e8f0; border: 1px solid #cbd5e1; }
+.rank-3 { color: #9a3412; background: #ffedd5; border: 1px solid #fed7aa; }
 .store-cell { display: flex; flex-direction: column; gap: 0.2rem; min-width: 140px; }
 .platform-badge { font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; width: max-content; }
 .platform-badge.meli { background: #fff59d; color: #574c00; }
@@ -212,9 +233,12 @@ function getAdLink(item) {
 
 .velocity-pill { display: inline-flex; align-items: center; gap: 0.6rem; }
 .delta-badge { background: #dcfce7; color: #15803d; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 99px; font-size: 0.82rem; min-width: 68px; text-align: center; display: inline-block; white-space: nowrap; }
-.speed-tag { font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; padding: 0.25rem 0.6rem; border-radius: 6px; min-width: 122px; text-align: center; display: inline-flex; justify-content: center; align-items: center; white-space: nowrap; }
+.speed-tag { font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: #991b1b; padding: 0.25rem 0.6rem; border-radius: 6px; min-width: 122px; text-align: center; display: inline-flex; justify-content: center; align-items: center; gap: 0.3rem; white-space: nowrap; }
 .speed-tag.medium { background: #e0f2fe; color: #075985; }
 .speed-tag.low { background: #f1f5f9; color: #475569; }
+
+.empty-state { text-align: center; padding: 2.5rem; color: #64748b; font-size: 0.95rem; }
+.empty-flex { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; }
 
 .icon-btn.link-btn {
   display: inline-flex;

@@ -2,10 +2,16 @@
   <div class="glass-panel executive-panel animate-fade-in">
     <div class="panel-header" @click="toggleCollapse">
       <div class="title-group">
-        <h3>🧠 {{ t('report.title', 'Relatório de Inteligência Executiva de Mercado') }} <span class="ai-badge">{{ t('report.badge', 'IA Analytics') }}</span></h3>
+        <h3 class="header-heading-flex">
+          <Sparkles :size="20" class="text-amber-500" />
+          <span>{{ t('report.title', 'Relatório de Inteligência Executiva de Mercado') }}</span>
+        </h3>
         <p class="subtitle">{{ t('report.subtitle', 'Diagnóstico estratégico avançado baseado em análise quantitativa em tempo real') }}</p>
       </div>
-      <button class="btn-toggle">{{ isCollapsed ? t('report.expand', '▼ Expandir Insights') : t('report.collapse', '▲ Minimizar') }}</button>
+      <button class="btn-toggle">
+        <component :is="isCollapsed ? ChevronDown : ChevronUp" :size="15" />
+        {{ isCollapsed ? t('report.expand', 'Expandir Insights') : t('report.collapse', 'Minimizar') }}
+      </button>
     </div>
 
     <transition name="slide-fade">
@@ -18,7 +24,8 @@
             :class="['tab-btn', { active: activeTab === idx }]"
             @click="activeTab = idx"
           >
-            {{ getModuleTabName(mod) }}
+            <component :is="getModuleIcon(mod)" :size="14" class="tab-icon" />
+            <span>{{ getModuleTabName(mod) }}</span>
           </button>
         </div>
 
@@ -40,7 +47,10 @@
           <div v-else-if="currentModule">
             <div class="card-top">
               <h4>{{ getModuleTitle(currentModule.id, currentModule.titulo, currentModule) }}</h4>
-              <span class="update-tag">📅 {{ t('report.updated_at', 'Atualizado em') }} {{ formatReportDate(effectiveReport?.atualizado_em) }}</span>
+              <span class="update-tag">
+                <Calendar :size="13" />
+                {{ t('report.updated_at', 'Atualizado em') }} {{ formatReportDate(effectiveReport?.atualizado_em) }}
+              </span>
             </div>
 
             <p class="module-summary">{{ getModuleSummary(currentModule.id, currentModule.resumo, currentModule) }}</p>
@@ -49,30 +59,40 @@
             <div v-if="currentModule.id === 'estrategia'" class="estrategia-container">
               <!-- Subseção A: Recomendações Estratégicas -->
               <div class="sub-section mb-4">
-                <h5 class="sub-title text-green">{{ t('report.sub_recommendations', '💡 Recomendações Estratégicas Acionáveis') }}</h5>
+                <h5 class="sub-title text-green sub-title-flex">
+                  <Lightbulb :size="16" />
+                  <span>{{ t('report.sub_recommendations', 'Recomendações Estratégicas Acionáveis') }}</span>
+                </h5>
                 <div class="list-cards">
                   <div 
                     v-for="(rec, index) in (currentModule.recomendacoes || currentModule.itens || [])" 
                     :key="'rec'+index" 
                     class="action-card rec-card"
                   >
-                    <span class="icon">📈</span>
-                    <p v-html="typeof rec === 'string' ? rec : (rec.dica || rec.texto || JSON.stringify(rec))"></p>
+                    <span class="icon-wrap">
+                      <TrendingUp :size="16" class="text-emerald-600" />
+                    </span>
+                    <p v-html="formatInsightText(rec)"></p>
                   </div>
                 </div>
               </div>
 
               <!-- Subseção B: Oportunidades de Nicho & Demanda Oculta -->
               <div class="sub-section">
-                <h5 class="sub-title text-purple">{{ t('report.sub_niches', '🚀 Oportunidades de Nicho & Demanda Oculta') }}</h5>
+                <h5 class="sub-title text-purple sub-title-flex">
+                  <Rocket :size="16" />
+                  <span>{{ t('report.sub_niches', 'Oportunidades de Nicho & Demanda Oculta') }}</span>
+                </h5>
                 <div class="list-cards">
                   <div 
                     v-for="(nicho, index) in (currentModule.oportunidades_nicho || [])" 
                     :key="'nicho'+index" 
                     class="action-card niche-card"
                   >
-                    <span class="icon">✨</span>
-                    <p v-html="typeof nicho === 'string' ? nicho : JSON.stringify(nicho)"></p>
+                    <span class="icon-wrap">
+                      <Sparkles :size="16" class="text-purple-600" />
+                    </span>
+                    <p v-html="formatInsightText(nicho)"></p>
                   </div>
                 </div>
               </div>
@@ -90,13 +110,19 @@
                 <div class="flex-between">
                   <div class="seller-name-row">
                     <strong>#{{ index + 1 }} {{ v.name }}</strong>
-                    <span class="view-seller-badge">{{ t('report.view_store', 'Ver Loja 🔎') }}</span>
+                    <span class="view-seller-badge">
+                      {{ t('report.view_store', 'Ver Loja') }}
+                      <ExternalLink :size="11" />
+                    </span>
                   </div>
                   <span class="revenue-tag">R$ {{ (v.receita || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 }) }}</span>
                 </div>
                 <div class="flex-between text-sm text-muted border-t pt-1 mt-2">
                   <span>{{ (v.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }} ({{ v.anuncios || 1 }} {{ t('charts.units_short', 'un') }})</span>
-                  <span class="top-prod-tag" v-if="v.top_produto">🏆 {{ v.top_produto }}</span>
+                  <span class="top-prod-tag" v-if="v.top_produto">
+                    <Trophy :size="12" />
+                    {{ v.top_produto }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -105,21 +131,29 @@
             <div v-else-if="currentModule.id === 'seo' || currentModule.tipo === 'seo_completo' || currentModule.tipo === 'palavras_chave'" class="seo-container">
               <!-- Palavras Chave -->
               <div class="sub-section mb-3">
-                <h5 class="sub-title">{{ t('report.sub_keywords', '🏷️ Termos de Maior Frequência nos Anúncios Top') }}</h5>
+                <h5 class="sub-title sub-title-flex">
+                  <Tag :size="16" />
+                  <span>{{ t('report.sub_keywords', 'Termos de Maior Frequência nos Anúncios Top') }}</span>
+                </h5>
                 <div class="tags-cloud">
                   <span 
                     v-for="(kw, index) in (currentModule.palavras_chave || currentModule.itens || [])" 
                     :key="index" 
                     class="kw-tag"
                   >
-                    🏷️ <strong>{{ kw.palavra || kw }}</strong> <small v-if="kw.frequencia">({{ kw.frequencia }}x)</small>
+                    <Tag :size="11" />
+                    <strong>{{ kw.palavra || kw }}</strong>
+                    <small v-if="kw.frequencia">({{ kw.frequencia }}x)</small>
                   </span>
                 </div>
               </div>
 
               <!-- Modelos de Títulos -->
               <div v-if="currentModule.titulos_recomendados && currentModule.titulos_recomendados.length > 0" class="sub-section mb-3">
-                <h5 class="sub-title">{{ t('report.sub_titles', '🎯 Modelos de Título de Alta Conversão') }}</h5>
+                <h5 class="sub-title sub-title-flex">
+                  <Target :size="16" />
+                  <span>{{ t('report.sub_titles', 'Modelos de Título de Alta Conversão') }}</span>
+                </h5>
                 <div class="titles-list">
                   <div v-for="(tit, idx) in currentModule.titulos_recomendados" :key="idx" class="title-template-card">
                     <code>{{ tit }}</code>
@@ -129,10 +163,14 @@
 
               <!-- Combinações Long-Tail -->
               <div v-if="currentModule.combinacoes_longtail && currentModule.combinacoes_longtail.length > 0" class="sub-section">
-                <h5 class="sub-title">{{ t('report.sub_longtail', '🔗 Estruturas Long-Tail Recomendadas') }}</h5>
+                <h5 class="sub-title sub-title-flex">
+                  <Link :size="16" />
+                  <span>{{ t('report.sub_longtail', 'Estruturas Long-Tail Recomendadas') }}</span>
+                </h5>
                 <div class="longtail-cloud">
                   <span v-for="(lt, idx) in currentModule.combinacoes_longtail" :key="idx" class="longtail-badge">
-                    ⚡ {{ lt }}
+                    <Zap :size="12" />
+                    {{ lt }}
                   </span>
                 </div>
               </div>
@@ -157,7 +195,11 @@
                 </div>
                 <div class="flex-between text-sm text-muted mt-2 border-t pt-1" v-if="plat.vendedores_unicos">
                   <span>{{ t('report.active_stores', 'Lojas Ativas:') }}</span>
-                  <span>🏪 <strong>{{ plat.vendedores_unicos }}</strong> {{ t('charts.col_seller', 'vendedores') }}</span>
+                  <span class="stores-count-flex">
+                    <Store :size="14" />
+                    <strong>{{ plat.vendedores_unicos }}</strong>
+                    {{ t('charts.col_seller', 'vendedores') }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -174,6 +216,23 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { 
+  Sparkles, 
+  ChevronDown, 
+  ChevronUp, 
+  Calendar, 
+  Lightbulb, 
+  TrendingUp, 
+  Rocket, 
+  ExternalLink, 
+  Trophy, 
+  Tag, 
+  Target, 
+  Link, 
+  Zap, 
+  Store, 
+  BarChart2 
+} from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 import SellerProductsModal from './SellerProductsModal.vue'
 
@@ -312,23 +371,23 @@ const defaultReportData = computed(() => {
     modulos: [
       {
         id: 'estrategia',
-        titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
+        titulo: t('report.tab_strategy', 'Estratégia & Nichos'),
         tipo: 'estrategia_completa',
         resumo: t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
         recomendacoes: [
-          t('report.rec1', '🎯 **Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
-          t('report.rec2', '💵 **Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
-          t('report.rec3', '⚡ **Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
+          t('report.rec1', '**Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
+          t('report.rec2', '**Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
+          t('report.rec3', '**Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
         ],
         oportunidades_nicho: [
-          t('report.niche1', '✨ **Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
-          t('report.niche2', '💍 **Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.'),
-          t('report.niche3', '📦 **Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.')
+          t('report.niche1', '**Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
+          t('report.niche2', '**Noivinhos & Topos Personalizados**: Peças acima de R$ 120,00 possuem margem líquida superior a 45% com excelente aceitação.'),
+          t('report.niche3', '**Lotes de Lembrancinhas (10 a 30 un)**: Combos para aniversários infantis aumentam o Ticket Médio por pedido em 40%.')
         ]
       },
       {
         id: 'vendedores_produtos',
-        titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
+        titulo: t('report.tab_sellers', 'Top Lojas & Produtos'),
         tipo: 'vendedores',
         resumo: t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
         itens: stats?.topSellers?.length ? stats.topSellers : [
@@ -338,7 +397,7 @@ const defaultReportData = computed(() => {
       },
       {
         id: 'seo',
-        titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
+        titulo: t('report.tab_seo', 'Estratégia de SEO'),
         tipo: 'seo_completo',
         resumo: t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
         palavras_chave: stats?.keywords?.length ? stats.keywords : [
@@ -360,7 +419,7 @@ const defaultReportData = computed(() => {
       },
       {
         id: 'plataformas_precos',
-        titulo: t('report.tab_platforms', '📊 Comparativo de Marketplaces'),
+        titulo: t('report.tab_platforms', 'Comparativo de Marketplaces'),
         tipo: 'plataformas',
         resumo: t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
         itens: stats?.platforms?.length ? stats.platforms : [
@@ -397,7 +456,7 @@ const effectiveReport = computed(() => {
 
   const modEstrategia = {
     id: 'estrategia',
-    titulo: t('report.tab_strategy', '🎯 Estratégia & Nichos'),
+    titulo: t('report.tab_strategy', 'Estratégia & Nichos'),
     tipo: 'estrategia_completa',
     resumo: (actions?.resumo || niches?.resumo) || t('report.mod1_desc', 'Diagnósticos acionáveis baseados em dados reais e oportunidades de alta demanda reprimida.'),
     recomendacoes: (actions?.itens || actions?.recomendacoes || defaultReportData.value.modulos[0].recomendacoes),
@@ -407,7 +466,7 @@ const effectiveReport = computed(() => {
   const sellersItens = (topSellers?.itens || topSellers?.vendedores || [])
   const modVendedores = {
     id: 'vendedores_produtos',
-    titulo: t('report.tab_sellers', '🏆 Top Lojas & Produtos'),
+    titulo: t('report.tab_sellers', 'Top Lojas & Produtos'),
     tipo: 'vendedores',
     resumo: topSellers?.resumo || t('report.mod2_desc', 'Ranking combinado dos principais vendedores e itens com maior tração no mercado.'),
     itens: stats?.topSellers?.length > 0 ? stats.topSellers : (sellersItens.length > 0 ? sellersItens : defaultReportData.value.modulos[1].itens)
@@ -415,7 +474,7 @@ const effectiveReport = computed(() => {
 
   const modSeo = {
     id: 'seo',
-    titulo: t('report.tab_seo', '🏷️ Estratégia de SEO'),
+    titulo: t('report.tab_seo', 'Estratégia de SEO'),
     tipo: 'seo_completo',
     resumo: seo?.resumo || t('report.mod3_desc', 'Termos mais frequentes nos títulos líderes, combinações long-tail e modelos de alta conversão.'),
     palavras_chave: (seo?.palavras_chave || seo?.itens || stats?.keywords || defaultReportData.value.modulos[2].palavras_chave),
@@ -426,7 +485,7 @@ const effectiveReport = computed(() => {
   const platformItens = (platformBattle?.itens || platformBattle?.dados || [])
   const modPlataformas = {
     id: 'plataformas_precos',
-    titulo: t('report.tab_platforms', '📊 Comparativo de Marketplaces'),
+    titulo: t('report.tab_platforms', 'Comparativo de Marketplaces'),
     tipo: 'plataformas',
     resumo: (platformBattle?.resumo || oceanBlue?.resumo) || t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
     itens: stats?.platforms?.length > 0 ? stats.platforms : (platformItens.length > 0 ? platformItens : defaultReportData.value.modulos[3].itens),
@@ -442,15 +501,33 @@ const effectiveReport = computed(() => {
 const modules = computed(() => effectiveReport.value.modulos || [])
 const currentModule = computed(() => modules.value[activeTab.value] || modules.value[0] || null)
 
+function formatInsightText(val) {
+  let text = typeof val === 'string' ? val : (val?.dica || val?.texto || JSON.stringify(val) || '')
+  // Remove leading emojis like 🎯, 💵, ⚡, ✨, 💍, 📦, 💡, 🚀, 📈, etc.
+  text = text.replace(/^[\p{Emoji}\p{Extended_Pictographic}\uFE0F\s]+/gu, '')
+  return text
+}
+
+function getModuleIcon(mod) {
+  if (!mod) return Sparkles
+  const id = mod.id || ''
+  const tipo = mod.tipo || ''
+  if (id === 'estrategia' || tipo === 'estrategia_completa') return Target
+  if (id === 'vendedores_produtos' || tipo === 'vendedores') return Trophy
+  if (id === 'seo' || tipo === 'seo_completo') return Tag
+  if (id === 'plataformas_precos' || tipo === 'plataformas') return BarChart2
+  return Sparkles
+}
+
 function getModuleTabName(mod) {
   if (!mod) return ''
   const id = mod.id || ''
   const tipo = mod.tipo || ''
-  if (id === 'estrategia' || tipo === 'estrategia_completa') return t('report.tab_strategy', '🎯 Estratégia & Nichos')
-  if (id === 'vendedores_produtos' || tipo === 'vendedores') return t('report.tab_sellers', '🏆 Top Lojas & Produtos')
-  if (id === 'seo' || tipo === 'seo_completo') return t('report.tab_seo', '🏷️ Estratégia de SEO')
-  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', '📊 Comparativo de Marketplaces')
-  return mod.titulo || t('report.tab_strategy', '🎯 Insights')
+  if (id === 'estrategia' || tipo === 'estrategia_completa') return t('report.tab_strategy', 'Estratégia & Nichos')
+  if (id === 'vendedores_produtos' || tipo === 'vendedores') return t('report.tab_sellers', 'Top Lojas & Produtos')
+  if (id === 'seo' || tipo === 'seo_completo') return t('report.tab_seo', 'Estratégia de SEO')
+  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', 'Comparativo de Marketplaces')
+  return mod.titulo || t('report.tab_strategy', 'Insights')
 }
 
 function getModuleTitle(id, original, mod) {
@@ -535,9 +612,10 @@ function openSellerDetails(sellerItem) {
 .executive-panel { padding: 1.5rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06); }
 .panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .title-group h3 { margin: 0 0 0.2rem 0; color: #0f172a; font-size: 1.2rem; display: flex; align-items: center; gap: 0.6rem; }
+.header-heading-flex { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .subtitle { color: #64748b; font-size: 0.85rem; margin: 0; }
 .ai-badge { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.72rem; padding: 0.2rem 0.6rem; border-radius: 99px; font-weight: 700; text-transform: uppercase; }
-.btn-toggle { background: transparent; border: none; color: #2563eb; font-weight: 700; cursor: pointer; font-size: 0.88rem; }
+.btn-toggle { background: transparent; border: none; color: #2563eb; font-weight: 700; cursor: pointer; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.35rem; }
 
 .mt-3 { margin-top: 1rem; }
 .mb-1 { margin-bottom: 0.3rem; }
@@ -548,18 +626,19 @@ function openSellerDetails(sellerItem) {
 .pt-1 { padding-top: 0.4rem; }
 
 .tabs-scroll { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0; }
-.tab-btn { padding: 0.5rem 0.9rem; font-size: 0.82rem; font-weight: 600; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; }
+.tab-btn { padding: 0.5rem 0.9rem; font-size: 0.82rem; font-weight: 600; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
 .tab-btn:hover { background: #f1f5f9; color: #0f172a; }
 .tab-btn.active { background: #2563eb; color: #ffffff; border-color: #2563eb; }
 
 .module-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.2rem; border-radius: 12px; }
 .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
 .card-top h4 { margin: 0; color: #0f172a; font-size: 1.05rem; }
-.update-tag { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+.update-tag { font-size: 0.75rem; color: #64748b; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; }
 
 .module-summary { color: #334155; font-size: 0.9rem; margin: 0 0 1.2rem 0; font-weight: 500; }
 
 .sub-title { font-size: 0.92rem; font-weight: 700; margin: 0 0 0.6rem 0; text-transform: uppercase; letter-spacing: 0.03em; }
+.sub-title-flex { display: flex; align-items: center; gap: 0.4rem; }
 .text-green { color: #166534; }
 .text-purple { color: #6b21a8; }
 
@@ -569,8 +648,10 @@ function openSellerDetails(sellerItem) {
 .seller-item-card { cursor: pointer; transition: all 0.2s ease; }
 .seller-item-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08); }
 .seller-name-row { display: flex; align-items: center; gap: 0.5rem; }
-.view-seller-badge { font-size: 0.7rem; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 0.15rem 0.45rem; border-radius: 6px; font-weight: 600; }
-.top-prod-tag { font-size: 0.78rem; color: #d97706; font-weight: 600; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view-seller-badge { font-size: 0.7rem; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 0.15rem 0.45rem; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; }
+.top-prod-tag { font-size: 0.78rem; color: #d97706; font-weight: 600; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; align-items: center; gap: 0.3rem; }
+
+.stores-count-flex { display: inline-flex; align-items: center; gap: 0.3rem; }
 
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .border-t { border-top: 1px solid #e2e8f0; }
@@ -582,7 +663,7 @@ function openSellerDetails(sellerItem) {
 
 .list-cards { display: flex; flex-direction: column; gap: 0.6rem; }
 .action-card { display: flex; align-items: flex-start; gap: 0.8rem; padding: 0.8rem 1rem; border-radius: 10px; background: #ffffff; }
-.action-card .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; }
+.icon-wrap { flex-shrink: 0; margin-top: 0.15rem; display: flex; align-items: center; justify-content: center; }
 .action-card p { margin: 0; font-size: 0.88rem; line-height: 1.4; }
 
 .rec-card { border: 1px solid #bbf7d0; }
@@ -592,14 +673,14 @@ function openSellerDetails(sellerItem) {
 .niche-card p { color: #581c87; font-weight: 500; }
 
 .tags-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.kw-tag { background: #ffffff; border: 1px solid #cbd5e1; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.85rem; color: #334155; }
+.kw-tag { background: #ffffff; border: 1px solid #cbd5e1; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.85rem; color: #334155; display: inline-flex; align-items: center; gap: 0.35rem; }
 
 .titles-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .title-template-card { background: #ffffff; border: 1px solid #e2e8f0; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.85rem; color: #0f172a; }
 .title-template-card code { font-family: inherit; font-weight: 600; color: #1d4ed8; }
 
 .longtail-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.longtail-badge { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.82rem; color: #334155; font-weight: 600; }
+.longtail-badge { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.82rem; color: #334155; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; }
 
 .slide-fade-enter-active, .slide-fade-leave-active { transition: all 0.3s ease; }
 .slide-fade-enter-from, .slide-fade-leave-to { opacity: 0; transform: translateY(-10px); }

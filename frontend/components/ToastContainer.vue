@@ -9,16 +9,18 @@
           :class="toast.type"
         >
           <div class="toast-icon">
-            <span v-if="toast.type === 'success'">✅</span>
-            <span v-else-if="toast.type === 'error'">❌</span>
-            <span v-else-if="toast.type === 'warning'">⚠️</span>
-            <span v-else>ℹ️</span>
+            <CheckCircle2 v-if="toast.type === 'success'" :size="20" class="text-emerald-600" />
+            <AlertCircle v-else-if="toast.type === 'error'" :size="20" class="text-rose-600" />
+            <AlertTriangle v-else-if="toast.type === 'warning'" :size="20" class="text-amber-600" />
+            <Info v-else :size="20" class="text-blue-600" />
           </div>
           <div class="toast-body">
             <h5 v-if="toast.title" class="toast-title">{{ toast.title }}</h5>
             <p class="toast-message">{{ toast.message }}</p>
           </div>
-          <button class="toast-close" @click="remove(toast.id)" title="Fechar">×</button>
+          <button class="toast-close" @click="remove(toast.id)" title="Fechar">
+            <X :size="16" />
+          </button>
         </div>
       </TransitionGroup>
     </div>
@@ -26,6 +28,7 @@
 </template>
 
 <script setup>
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
 
 const { toasts, remove } = useToast()
@@ -106,12 +109,14 @@ const { toasts, remove } = useToast()
   background: none;
   border: none;
   color: #94a3b8;
-  font-size: 1.3rem;
-  line-height: 1;
   cursor: pointer;
-  padding: 0;
+  padding: 2px;
   margin-left: 0.3rem;
   transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
 }
 
 .toast-close:hover {

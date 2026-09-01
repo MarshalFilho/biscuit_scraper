@@ -13,6 +13,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
     "apexcharts": "^6.10.0",
+    "lucide-vue-next": "^1.0.0",
     "nuxt": "^3.9.3",
     "vue3-apexcharts": "^1.11.1"
   },

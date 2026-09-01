@@ -3,7 +3,8 @@
     <div v-if="isOpen" class="modal-overlay" @click.self="handleCancel">
       <div class="confirm-dialog glass-panel animate-scale">
         <div class="confirm-icon-box" :class="{ 'is-danger': dialogOptions.danger }">
-          <span>{{ dialogOptions.danger ? '⚠️' : '❓' }}</span>
+          <AlertTriangle v-if="dialogOptions.danger" :size="26" />
+          <HelpCircle v-else :size="26" />
         </div>
 
         <h3 class="confirm-title">{{ dialogOptions.title }}</h3>
@@ -28,6 +29,7 @@
 </template>
 
 <script setup>
+import { AlertTriangle, HelpCircle } from 'lucide-vue-next'
 import { useConfirmDialog } from '~/composables/useConfirmDialog'
 
 const { isOpen, dialogOptions, handleConfirm, handleCancel } = useConfirmDialog()
@@ -68,7 +70,7 @@ const { isOpen, dialogOptions, handleConfirm, handleCancel } = useConfirmDialog(
   border-radius: 50%;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-  font-size: 1.6rem;
+  color: #2563eb;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -78,6 +80,7 @@ const { isOpen, dialogOptions, handleConfirm, handleCancel } = useConfirmDialog(
 .confirm-icon-box.is-danger {
   background: #fef2f2;
   border-color: #fecaca;
+  color: #dc2626;
 }
 
 .confirm-title {

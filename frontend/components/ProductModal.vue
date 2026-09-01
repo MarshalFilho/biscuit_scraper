@@ -5,9 +5,15 @@
         <div class="modal-header">
           <div class="modal-title-box">
             <span class="badge-category">{{ product.categoria || t('product_modal.general', 'Geral') }}</span>
-            <h3>{{ t('product_modal.title', '🔎 Análise Detalhada:') }} <span class="product-title-text">{{ product.titulo }}</span></h3>
+            <h3 class="modal-heading-flex">
+              <FileSearch :size="20" class="text-blue-600" />
+              <span>{{ t('product_modal.title', 'Análise Detalhada:') }}</span>
+              <span class="product-title-text">{{ product.titulo }}</span>
+            </h3>
           </div>
-          <button class="close-btn" @click="close" :title="t('product_modal.close_window', 'Fechar janela')">×</button>
+          <button class="close-btn" @click="close" :title="t('product_modal.close_window', 'Fechar janela')">
+            <X :size="18" />
+          </button>
         </div>
         
         <div class="modal-body">
@@ -16,7 +22,8 @@
             <div class="summary-card">
               <span class="card-label">{{ t('product_modal.platform', 'Plataforma') }}</span>
               <span :class="['badge-platform', product.plataforma]">
-                {{ product.plataforma === 'meli' ? '🛒 Mercado Livre' : '🧡 Shopee' }}
+                <ShoppingBag :size="14" />
+                {{ product.plataforma === 'meli' ? 'Mercado Livre' : 'Shopee' }}
               </span>
             </div>
 
@@ -32,20 +39,28 @@
 
             <div class="summary-card" v-if="product.vendedor">
               <span class="card-label">{{ t('product_modal.seller_origin', 'Vendedor / Origem') }}</span>
-              <span class="card-value seller">
-                {{ product.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ product.vendedor }}
+              <span class="card-value seller inline-flex-seller">
+                <MapPin v-if="product.vendedor.startsWith('Loja em')" :size="16" />
+                <Store v-else :size="16" />
+                {{ product.vendedor }}
               </span>
             </div>
 
             <div class="summary-card">
               <span class="card-label">{{ t('product_modal.original_ad', 'Anúncio Original') }}</span>
-              <a :href="product.link" target="_blank" class="store-link-btn">{{ t('product_modal.view_in_store', 'Acessar na Loja ↗') }}</a>
+              <a :href="product.link" target="_blank" class="store-link-btn">
+                {{ t('product_modal.view_in_store', 'Acessar na Loja') }}
+                <ExternalLink :size="13" />
+              </a>
             </div>
           </div>
 
           <!-- Gráfico do Histórico -->
           <div class="chart-section">
-            <h4>{{ t('product_modal.history_chart_title', '📈 Histórico de Evolução (Preço x Vendas)') }}</h4>
+            <h4 class="section-title-flex">
+              <TrendingUp :size="17" />
+              {{ t('product_modal.history_chart_title', 'Histórico de Evolução (Preço x Vendas)') }}
+            </h4>
             <ClientOnly>
               <apexchart type="line" height="300" :options="chartOptions" :series="chartSeries"></apexchart>
               <template #fallback>
@@ -56,7 +71,10 @@
 
           <!-- Tabela de Histórico Bruto -->
           <div class="history-table-section" v-if="product.historico_coletas && product.historico_coletas.length > 0">
-            <h4>{{ t('product_modal.scrape_records', '📅 Registro de Coletas') }}</h4>
+            <h4 class="section-title-flex">
+              <Calendar :size="17" />
+              {{ t('product_modal.scrape_records', 'Registro de Coletas') }}
+            </h4>
             <div class="history-table-wrapper">
               <table class="history-table">
                 <thead>
@@ -84,6 +102,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { FileSearch, X, ShoppingBag, MapPin, Store, ExternalLink, TrendingUp, Calendar } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
@@ -179,7 +198,7 @@ const chartOptions = computed(() => {
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
 .modal-title-box { flex: 1; padding-right: 1rem; }
 .badge-category { font-size: 0.75rem; font-weight: 700; color: #6b21a8; background: #f3e8ff; padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid #d8b4fe; text-transform: uppercase; margin-bottom: 0.4rem; display: inline-block; }
-.modal-header h3 { margin: 0; color: #0f172a; font-size: 1.25rem; line-height: 1.4; }
+.modal-heading-flex { margin: 0; color: #0f172a; font-size: 1.25rem; line-height: 1.4; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .product-title-text { color: #2563eb; font-weight: 700; }
 
 .close-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; width: 36px; height: 36px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; line-height: 1; }
@@ -191,16 +210,17 @@ const chartOptions = computed(() => {
 .card-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
 .card-value.price { color: #2563eb; }
 .card-value.sales { color: #059669; }
+.inline-flex-seller { display: flex; align-items: center; gap: 0.4rem; }
 
-.badge-platform { display: inline-block; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 700; width: fit-content; }
+.badge-platform { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 700; width: fit-content; }
 .badge-platform.meli { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
 .badge-platform.shopee { background: #ffedd5; color: #c2410c; border: 1px solid #fdba74; }
 
-.store-link-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.45rem 0.8rem; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.2s ease; margin-top: 0.2rem; }
+.store-link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.8rem; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.2s ease; margin-top: 0.2rem; }
 .store-link-btn:hover { background: #1d4ed8; }
 
 .chart-section { margin-bottom: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem; }
-.chart-section h4 { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; }
+.section-title-flex { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.45rem; }
 .loading-chart { height: 300px; display: flex; justify-content: center; align-items: center; color: #64748b; font-weight: 600; }
 
 .history-table-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem; }

@@ -3,32 +3,40 @@
     <div class="chart-header-box">
       <div class="header-title-flex">
         <div>
-          <h3>{{ t('charts.price_vs_sales', '🎯 Distribuição de Vendas por Faixa de Preço') }}</h3>
+          <h3 class="chart-heading-inline">
+            <DollarSign :size="18" class="text-emerald-600" />
+            <span>{{ t('charts.price_vs_sales', 'Distribuição de Vendas por Faixa de Preço') }}</span>
+          </h3>
           <p class="chart-subtitle">{{ t('charts.price_vs_sales_desc', 'Volume total de unidades vendidas agrupadas por faixa de valor.') }}</p>
         </div>
-        <span class="chart-badge">📊 Volume</span>
       </div>
     </div>
     <div class="chart-wrapper">
       <apexchart 
-        v-if="isMounted" 
+        v-if="isMounted && (series[0]?.data?.some(v => v > 0) || series[1]?.data?.some(v => v > 0))" 
+        :key="chartKey"
         type="bar" 
         height="260" 
         :options="chartOptions" 
         :series="series"
       ></apexchart>
+      <div v-else class="empty-chart">
+        <p>{{ t('charts.waiting_data', 'Aguardando dados para calcular a distribuição...') }}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { DollarSign, BarChart2 } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
 
 const props = defineProps({
-  items: { type: Array, default: () => [] }
+  items: { type: Array, default: () => [] },
+  isComparing: { type: Boolean, default: false }
 })
 
 const isMounted = ref(false)
@@ -72,22 +80,33 @@ const priceRanges = computed(() => {
 })
 
 const series = computed(() => {
+  const getItemSales = (i) => {
+    if (props.isComparing && i.salesDiff !== null && i.salesDiff !== undefined) {
+      return i.salesDiff
+    }
+    return i.vendas_totais || 0
+  }
+
   const meliSales = priceRanges.value.map(r => {
     return props.items
       .filter(i => i.plataforma === 'meli' && i.preco >= r.min && i.preco <= r.max)
-      .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
+      .reduce((sum, i) => sum + getItemSales(i), 0)
   })
 
   const shopeeSales = priceRanges.value.map(r => {
     return props.items
       .filter(i => i.plataforma === 'shopee' && i.preco >= r.min && i.preco <= r.max)
-      .reduce((sum, i) => sum + (i.vendas_totais || 0), 0)
+      .reduce((sum, i) => sum + getItemSales(i), 0)
   })
 
   return [
     { name: 'Mercado Livre', data: meliSales },
     { name: 'Shopee', data: shopeeSales }
   ]
+})
+
+const chartKey = computed(() => {
+  return `${props.isComparing}-${series.value[0]?.data?.join(',')}-${series.value[1]?.data?.join(',')}`
 })
 
 const chartOptions = computed(() => ({

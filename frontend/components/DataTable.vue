@@ -3,17 +3,19 @@
     <!-- Cabeçalho Principal da Tabela -->
     <div class="table-header">
       <div class="table-title">
-        <h3>📦 {{ t('table.title', 'Catálogo Completo de Anúncios') }}</h3>
+        <h3 class="table-heading-flex">
+          <Layers :size="20" class="text-blue-600" />
+          <span>{{ t('table.title', 'Catálogo Completo de Anúncios') }}</span>
+        </h3>
         <p class="subtitle">{{ t('table.subtitle', 'Filtre, pesquise e navegue pelas páginas diretamente por esta tabela.') }}</p>
       </div>
       <div class="table-actions">
         <div class="table-counter-badge">
-          <span>📊 <strong>{{ filteredData.length }}</strong> {{ t('table.products_count', 'produtos') }}</span>
+          <FileText :size="13" />
+          <span><strong>{{ filteredData.length }}</strong> {{ t('table.products_count', 'produtos') }}</span>
         </div>
         <button @click="exportToCSV" class="btn-export-csv" :title="t('table.export_csv', 'Exportar CSV')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="export-icon">
-            <path d="M12 3V16M12 16L7 11M12 16L17 11M4 20H20" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <Download :size="15" />
           {{ t('table.export_csv', 'Exportar CSV') }}
         </button>
       </div>
@@ -22,14 +24,16 @@
     <!-- Barra Integrada de Busca e Itens por Página da Tabela -->
     <div class="in-table-toolbar">
       <div class="search-box">
-        <span class="search-icon">🔍</span>
+        <Search :size="16" class="search-icon" />
         <input 
           type="text" 
           v-model="search" 
           :placeholder="t('table.search_placeholder', 'Buscar por título ou loja...')" 
           class="table-search-input" 
         />
-        <button v-if="search" @click="search = ''" class="clear-search-btn" title="Limpar busca">✕</button>
+        <button v-if="search" @click="search = ''" class="clear-search-btn" title="Limpar busca">
+          <X :size="14" />
+        </button>
       </div>
 
       <div class="toolbar-right-controls">
@@ -100,10 +104,15 @@
               <span class="badge category">{{ item.categoria }}</span>
             </td>
             <td class="title-cell clickable-title" :title="item.titulo" @click="openModal(item)">
-              <span v-if="item.isNew" class="badge-new" :title="t('table.new_badge_title', 'Identificado recentemente')">{{ t('table.new_badge', '✨ Novo') }}</span>
+              <span v-if="item.isNew" class="badge-new" :title="t('table.new_badge_title', 'Identificado recentemente')">
+                <Sparkles :size="11" />
+                {{ t('table.new_badge', 'Novo') }}
+              </span>
               <div class="title-text">{{ item.titulo }}</div>
               <small v-if="item.vendedor" class="seller-subtext" :title="'Vendedor / Loja: ' + item.vendedor">
-                {{ item.vendedor.startsWith('Loja em') ? '📍' : '🏪' }} {{ item.vendedor }}
+                <MapPin v-if="item.vendedor.startsWith('Loja em')" :size="12" />
+                <Store v-else :size="12" />
+                {{ item.vendedor }}
               </small>
             </td>
             
@@ -118,7 +127,8 @@
             
             <td class="variation-cell">
               <span v-if="item.varInfo" :class="{'badge-price-up': item.varInfo.isPositive, 'badge-price-down': item.varInfo.isNegative}">
-                {{ item.varInfo.isPositive ? '▲' : '▼' }}
+                <ArrowUpRight v-if="item.varInfo.isPositive" :size="12" />
+                <ArrowDownRight v-else-if="item.varInfo.isNegative" :size="12" />
                 R$ {{ Math.abs(item.varInfo.diff).toFixed(2).replace('.', ',') }}
                 <small>({{ item.varInfo.perc > 0 ? '+' : '' }}{{ item.varInfo.perc.toFixed(1) }}%)</small>
               </span>
@@ -134,8 +144,12 @@
             
             <td class="action-cell">
               <div class="action-btns-wrap">
-                <button @click="openModal(item)" class="icon-btn action-btn-icon" :title="t('table.view_details_title', 'Ver detalhes completos do anúncio')">🔎</button>
-                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir anúncio original na loja')">↗</a>
+                <button @click="openModal(item)" class="icon-btn action-btn-icon" :title="t('table.view_details_title', 'Ver detalhes completos do anúncio')">
+                  <Eye :size="14" />
+                </button>
+                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir anúncio original na loja')">
+                  <ExternalLink :size="14" />
+                </a>
               </div>
             </td>
           </tr>
@@ -168,10 +182,10 @@
           <button 
             :disabled="currentPage === 1" 
             @click="currentPage = 1" 
-            class="page-btn" 
+            class="page-btn page-btn-icon" 
             :title="t('table.first_page', 'Primeira Página')"
           >
-            «
+            <ChevronsLeft :size="15" />
           </button>
           <button 
             :disabled="currentPage === 1" 
@@ -179,7 +193,8 @@
             class="page-btn" 
             :title="t('table.prev_page', 'Página Anterior')"
           >
-            ‹ {{ t('table.prev_page', 'Anterior') }}
+            <ChevronLeft :size="15" />
+            <span>{{ t('table.prev_page', 'Anterior') }}</span>
           </button>
 
           <span class="page-current">{{ locale === 'pt' ? `Pág. ${currentPage} de ${totalPages}` : `Page ${currentPage} of ${totalPages}` }}</span>
@@ -190,15 +205,16 @@
             class="page-btn" 
             :title="t('table.next_page', 'Próxima Página')"
           >
-            {{ t('table.next_page', 'Próxima') }} ›
+            <span>{{ t('table.next_page', 'Próxima') }}</span>
+            <ChevronRight :size="15" />
           </button>
           <button 
             :disabled="currentPage === totalPages" 
             @click="currentPage = totalPages" 
-            class="page-btn" 
+            class="page-btn page-btn-icon" 
             :title="t('table.last_page', 'Última Página')"
           >
-            »
+            <ChevronsRight :size="15" />
           </button>
         </div>
       </div>
@@ -211,6 +227,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { Layers, FileText, Download, Search, X, Sparkles, MapPin, Store, ArrowUpRight, ArrowDownRight, Eye, ExternalLink, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 import ProductModal from './ProductModal.vue'
 
@@ -368,10 +385,36 @@ function exportToCSV() {
   color: #0f172a;
 }
 
+.table-heading-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .subtitle {
   margin: 0.2rem 0 0;
   font-size: 0.85rem;
   color: #64748b;
+}
+
+.btn-export-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-export-csv:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
 }
 
 .in-table-toolbar {
@@ -584,7 +627,9 @@ function exportToCSV() {
 }
 
 .seller-subtext {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 0.75rem;
   color: #64748b;
   margin-top: 0.15rem;
@@ -619,6 +664,9 @@ function exportToCSV() {
 }
 
 .badge-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font-size: 0.68rem;
   background: #dcfce7;
   color: #15803d;
@@ -634,11 +682,17 @@ function exportToCSV() {
 }
 
 .badge-price-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
   color: #15803d;
   font-weight: 700;
 }
 
 .badge-price-down {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
   color: #b91c1c;
   font-weight: 700;
 }

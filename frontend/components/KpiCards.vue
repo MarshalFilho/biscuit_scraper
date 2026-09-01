@@ -2,7 +2,9 @@
   <div class="kpi-container">
     <div class="kpi-grid">
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.1s;">
-        <div class="kpi-icon blue">📦</div>
+        <div class="kpi-icon icon-blue">
+          <Package :size="22" />
+        </div>
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.total_items', 'Total de Produtos') }}</h3>
           <p class="kpi-value text-gradient">{{ formatLargeNumber(totalProducts) }}</p>
@@ -11,7 +13,9 @@
       </div>
       
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.2s;">
-        <div class="kpi-icon purple">💰</div>
+        <div class="kpi-icon icon-emerald">
+          <DollarSign :size="22" />
+        </div>
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.avg_price', 'Preço Médio') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(averagePrice, false) }}</p>
@@ -20,7 +24,9 @@
       </div>
       
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.3s;">
-        <div class="kpi-icon blue">🔥</div>
+        <div class="kpi-icon icon-amber">
+          <ShoppingBag :size="22" />
+        </div>
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.top_platform', 'Top Plataforma') }}</h3>
           <p class="kpi-value text-gradient" style="text-transform: capitalize;">
@@ -31,7 +37,9 @@
       </div>
 
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.4s;">
-        <div class="kpi-icon purple">🏆</div>
+        <div class="kpi-icon icon-purple">
+          <Trophy :size="22" />
+        </div>
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.champion_product', 'Produto Campeão') }}</h3>
           <p class="kpi-value-small text-gradient" :title="topProduct?.titulo">
@@ -43,7 +51,9 @@
       </div>
 
       <div class="glass-panel kpi-card animate-fade-in" style="animation-delay: 0.5s;">
-        <div class="kpi-icon blue">💎</div>
+        <div class="kpi-icon icon-indigo">
+          <TrendingUp :size="22" />
+        </div>
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.revenue', 'Faturamento Est.') }}</h3>
           <p class="kpi-value text-gradient">{{ formatCurrency(estimatedRevenue, true) }}</p>
@@ -55,6 +65,7 @@
 </template>
 
 <script setup>
+import { Package, DollarSign, ShoppingBag, Trophy, TrendingUp } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
@@ -139,13 +150,44 @@ function formatCurrency(num, shorten = false) {
 }
 
 .kpi-icon {
-  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   margin-right: 0.8rem;
-  padding: 0.7rem;
   border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
   flex-shrink: 0;
+}
+
+.icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.icon-amber {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.icon-purple {
+  background: #faf5ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+}
+
+.icon-indigo {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
 }
 
 .kpi-content {

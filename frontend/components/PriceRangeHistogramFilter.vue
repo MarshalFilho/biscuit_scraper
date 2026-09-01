@@ -1,7 +1,10 @@
 <template>
   <div class="mini-price-slider">
     <div class="slider-top">
-      <span class="label">📊 {{ t('filters.price_range', 'Faixa de Preço:') }}</span>
+      <span class="label">
+        <SlidersHorizontal :size="13" class="inline-icon" />
+        {{ t('filters.price_range', 'Faixa de Preço:') }}
+      </span>
       <span class="price-val">R$ {{ minVal }} — R$ {{ maxVal === absoluteMax ? maxVal + '+' : maxVal }}</span>
     </div>
     
@@ -44,6 +47,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { SlidersHorizontal } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t } = useAppI18n()
@@ -168,6 +172,9 @@ function onSliderChange() {
   font-weight: 700;
   color: #475569;
   font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .price-val {
