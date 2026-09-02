@@ -16,7 +16,7 @@
         v-if="isMounted && (series[0]?.data?.some(v => v > 0) || series[1]?.data?.some(v => v > 0))" 
         :key="chartKey"
         type="bar" 
-        height="260" 
+        height="320" 
         :options="chartOptions" 
         :series="series"
       ></apexchart>
@@ -29,7 +29,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { DollarSign, BarChart2 } from 'lucide-vue-next'
+import { DollarSign } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
@@ -42,40 +42,13 @@ const props = defineProps({
 const isMounted = ref(false)
 onMounted(() => { isMounted.value = true })
 
-// Calcula faixas de preço limpas, inteligentes e perfeitamente arredondadas
+// Faixas de preço com +R$ 100 consolidado (juntando 100-200 e +200)
 const priceRanges = computed(() => {
-  const validPrices = props.items
-    .map(i => i.preco)
-    .filter(p => typeof p === 'number' && p > 0)
-    .sort((a, b) => a - b)
-
-  if (validPrices.length === 0) {
-    return [
-      { label: t('charts.up_to', 'Até') + ' R$ 30', min: 0, max: 30 },
-      { label: 'R$ 30 - R$ 60', min: 30.01, max: 60 },
-      { label: 'R$ 60 - R$ 100', min: 60.01, max: 100 },
-      { label: 'R$ 100 - R$ 200', min: 100.01, max: 200 },
-      { label: t('charts.above', 'Acima') + ' R$ 200', min: 200.01, max: Infinity }
-    ]
-  }
-
-  const p95Index = Math.min(Math.floor(validPrices.length * 0.95), validPrices.length - 1)
-  const maxP = Math.max(validPrices[p95Index], 100)
-
-  // Arredonda degraus de preço de forma harmoniosa para e-commerce
-  let s1 = 30, s2 = 60, s3 = 100, s4 = 200
-  if (maxP <= 80) {
-    s1 = 15; s2 = 30; s3 = 50; s4 = 80
-  } else if (maxP > 300) {
-    s1 = 50; s2 = 100; s3 = 200; s4 = 400
-  }
-
   return [
-    { label: `${t('charts.up_to', 'Até')} R$ ${s1}`, min: 0, max: s1 },
-    { label: `R$ ${s1} - R$ ${s2}`, min: s1 + 0.01, max: s2 },
-    { label: `R$ ${s2} - R$ ${s3}`, min: s2 + 0.01, max: s3 },
-    { label: `R$ ${s3} - R$ ${s4}`, min: s3 + 0.01, max: s4 },
-    { label: `${t('charts.above', 'Acima')} R$ ${s4}`, min: s4 + 0.01, max: Infinity }
+    { label: `${t('charts.up_to', 'Até')} R$ 30`, min: 0, max: 30 },
+    { label: 'R$ 30 - R$ 60', min: 30.01, max: 60 },
+    { label: 'R$ 60 - R$ 100', min: 60.01, max: 100 },
+    { label: '+ R$ 100', min: 100.01, max: Infinity }
   ]
 })
 
@@ -120,19 +93,26 @@ const chartOptions = computed(() => ({
   plotOptions: {
     bar: {
       horizontal: false,
-      columnWidth: '55%',
+      columnWidth: '50%',
       borderRadius: 6,
       borderRadiusApplication: 'end'
     }
   },
   dataLabels: {
-    enabled: false
+    enabled: true,
+    formatter: (val) => val > 0 ? Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') : '',
+    style: {
+      fontSize: '11px',
+      fontWeight: 'bold',
+      colors: ['#334155']
+    },
+    offsetY: -18
   },
   stroke: { show: true, width: 2, colors: ['transparent'] },
   xaxis: {
     categories: priceRanges.value.map(r => r.label),
     labels: { 
-      style: { colors: '#475569', fontWeight: 700, fontSize: '11px' } 
+      style: { colors: '#475569', fontWeight: 700, fontSize: '12px' } 
     },
     axisBorder: { show: false },
     axisTicks: { show: false }
@@ -158,62 +138,65 @@ const chartOptions = computed(() => ({
   grid: { 
     borderColor: '#f1f5f9', 
     strokeDashArray: 4,
-    xaxis: { lines: { show: false } }
+    padding: {
+      bottom: 0
+    }
   },
   theme: { mode: 'light' },
   tooltip: {
-    theme: 'light',
-    y: { 
-      formatter: (val) => `${val.toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US')} ${t('report.sales_units', 'vendas')}` 
+    shared: true,
+    intersect: false,
+    y: {
+      formatter: (val) => Number(val).toLocaleString(locale.value === 'pt' ? 'pt-BR' : 'en-US') + ' ' + t('report.sales_units', 'vendas')
     }
   }
 }))
 </script>
 
 <style scoped>
-.chart-container { 
-  padding: 1.25rem 1.4rem; 
-  background: #ffffff; 
-  border: 1px solid #e2e8f0; 
-  border-radius: 16px; 
-  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
-}
-
-.chart-header-box { 
-  margin-bottom: 0.8rem; 
-}
-
-.header-title-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.8rem;
-}
-
-.chart-header-box h3 { 
-  margin: 0 0 0.2rem 0; 
-  color: #0f172a; 
-  font-size: 1.05rem; 
-  font-weight: 800;
-}
-
-.chart-subtitle { 
-  color: #64748b; 
-  font-size: 0.82rem; 
-  margin: 0; 
-}
-
-.chart-badge {
-  background: #f8fafc;
-  color: #475569;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: 6px;
+.chart-container {
+  padding: 1.35rem;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
 }
 
-.chart-wrapper { 
-  min-height: 260px; 
+.chart-header-box {
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.chart-heading-inline {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.chart-wrapper {
+  flex: 1;
+  min-height: 320px;
+}
+
+.empty-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+  color: #94a3b8;
+  font-size: 0.9rem;
 }
 </style>

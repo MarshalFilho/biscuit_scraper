@@ -105,20 +105,16 @@
                 :key="index" 
                 class="item-card seller-item-card"
                 @click="openSellerDetails(v)"
-                :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os anúncios desta loja')"
+                :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os produtos desta loja')"
               >
                 <div class="flex-between">
                   <div class="seller-name-row">
                     <strong>#{{ index + 1 }} {{ v.name }}</strong>
-                    <span class="view-seller-badge">
-                      {{ t('report.view_store', 'Ver Loja') }}
-                      <ExternalLink :size="11" />
-                    </span>
                   </div>
                   <span class="revenue-tag">R$ {{ (v.receita || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 }) }}</span>
                 </div>
                 <div class="flex-between text-sm text-muted border-t pt-1 mt-2">
-                  <span>{{ (v.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }} ({{ v.anuncios || 1 }} {{ t('charts.units_short', 'un') }})</span>
+                  <span>{{ (v.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('report.sales_units', 'vendas') }} ({{ v.produtos || v.anuncios || 1 }} {{ t('report.products_count_short', 'produtos') }})</span>
                   <span class="top-prod-tag" v-if="v.top_produto">
                     <Trophy :size="12" />
                     {{ v.top_produto }}
@@ -133,7 +129,7 @@
               <div class="sub-section mb-3">
                 <h5 class="sub-title sub-title-flex">
                   <Tag :size="16" />
-                  <span>{{ t('report.sub_keywords', 'Termos de Maior Frequência nos Anúncios Top') }}</span>
+                  <span>{{ t('report.sub_keywords', 'Termos de Maior Frequência nos Produtos Top') }}</span>
                 </h5>
                 <div class="tags-cloud">
                   <span 
@@ -171,34 +167,6 @@
                   <span v-for="(lt, idx) in currentModule.combinacoes_longtail" :key="idx" class="longtail-badge">
                     <Zap :size="12" />
                     {{ lt }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- MÓDULO 4: Batalha de Marketplaces & Faixas de Preço -->
-            <div v-else-if="currentModule.id === 'plataformas_precos' || currentModule.tipo === 'plataformas'" class="items-grid">
-              <div v-for="(plat, index) in (currentModule.itens || [])" :key="index" class="item-card platform-card">
-                <div class="flex-between mb-2">
-                  <strong>{{ plat.nome || plat.plataforma }}</strong>
-                  <span :class="['badge-sm', (plat.nome || plat.plataforma || '').toLowerCase().includes('shopee') ? 'shopee' : 'meli']">
-                    {{ plat.share }}% Share
-                  </span>
-                </div>
-                <div class="flex-between text-sm mb-1">
-                  <span>{{ t('report.sales_volume', 'Volume de Vendas:') }}</span>
-                  <strong>{{ (plat.vendas || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('charts.units_short', 'un') }}</strong>
-                </div>
-                <div class="flex-between text-sm mb-1">
-                  <span>{{ t('report.est_revenue', 'Faturamento Estimado:') }}</span>
-                  <span class="revenue-tag">R$ {{ (plat.receita || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2 }) }}</span>
-                </div>
-                <div class="flex-between text-sm text-muted mt-2 border-t pt-1" v-if="plat.vendedores_unicos">
-                  <span>{{ t('report.active_stores', 'Lojas Ativas:') }}</span>
-                  <span class="stores-count-flex">
-                    <Store :size="14" />
-                    <strong>{{ plat.vendedores_unicos }}</strong>
-                    {{ t('charts.col_seller', 'vendedores') }}
                   </span>
                 </div>
               </div>
@@ -377,7 +345,7 @@ const defaultReportData = computed(() => {
         recomendacoes: [
           t('report.rec1', '**Foco em Velas e Topos**: Estas categorias representam mais de 65% do volume consolidado. Oportunidade clara em criar variações de kits.'),
           t('report.rec2', '**Faixa Ideal de Preço**: O sweet spot de conversão está entre R$ 25,00 e R$ 60,00, concentrando a maior tração de vendas.'),
-          t('report.rec3', '**Kits com Envio Rápido**: Anúncios com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
+          t('report.rec3', '**Kits com Envio Rápido**: Produtos com marcação de "Envio 24h" ou "FULL" apresentam velocidade de tração 2.8x superior.')
         ],
         oportunidades_nicho: [
           t('report.niche1', '**Temas Infantis Específicos**: Temas como "Safari Baby", "Moana" e "Sonic" possuem altíssima procura e baixa variação de preço.'),
@@ -416,15 +384,6 @@ const defaultReportData = computed(() => {
           t('report.lt2', 'Topo de bolo biscuit + [Tema] + [Envio Rápido]'),
           t('report.lt3', 'Kit lembrancinha biscuit + [Quantidade] unidades + [Tema]')
         ]
-      },
-      {
-        id: 'plataformas_precos',
-        titulo: t('report.tab_platforms', 'Comparativo de Marketplaces'),
-        tipo: 'plataformas',
-        resumo: t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
-        itens: stats?.platforms?.length ? stats.platforms : [
-          { nome: 'Mercado Livre', share: 100.0, vendas: 0, receita: 0, vendedores_unicos: 1 }
-        ]
       }
     ]
   }
@@ -444,11 +403,9 @@ const effectiveReport = computed(() => {
 
   const rawMods = raw?.modulos || []
 
-  // Consolidação inteligente dos módulos no padrão oficial
+  // Consolidação inteligente dos 3 macro módulos de inteligência
   const topSellers = rawMods.find(m => m.id === 'top_sellers' || m.id === 'vendedores_produtos' || m.tipo === 'vendedores')
   const seo = rawMods.find(m => m.id === 'seo_strategy' || m.id === 'seo' || m.tipo === 'palavras_chave' || m.tipo === 'seo_completo')
-  const oceanBlue = rawMods.find(m => m.id === 'ocean_blue' || m.tipo === 'faixas_preco')
-  const platformBattle = rawMods.find(m => m.id === 'platform_battle' || m.id === 'plataformas_precos' || m.tipo === 'plataformas')
   const actions = rawMods.find(m => m.id === 'action_recommendations' || m.tipo === 'recomendacoes')
   const niches = rawMods.find(m => m.id === 'niche_opportunities' || m.tipo === 'oportunidades')
 
@@ -482,19 +439,9 @@ const effectiveReport = computed(() => {
     combinacoes_longtail: (seo?.combinacoes_longtail || defaultReportData.value.modulos[2].combinacoes_longtail)
   }
 
-  const platformItens = (platformBattle?.itens || platformBattle?.dados || [])
-  const modPlataformas = {
-    id: 'plataformas_precos',
-    titulo: t('report.tab_platforms', 'Comparativo de Marketplaces'),
-    tipo: 'plataformas',
-    resumo: (platformBattle?.resumo || oceanBlue?.resumo) || t('report.mod4_desc', 'Participação entre Mercado Livre e Shopee, e volume por zona de preço.'),
-    itens: stats?.platforms?.length > 0 ? stats.platforms : (platformItens.length > 0 ? platformItens : defaultReportData.value.modulos[3].itens),
-    faixas_preco: (oceanBlue?.itens || oceanBlue?.faixas || [])
-  }
-
   return {
     atualizado_em: raw?.atualizado_em || t('report.default_model', 'Modelo Padrão'),
-    modulos: [modEstrategia, modVendedores, modSeo, modPlataformas]
+    modulos: [modEstrategia, modVendedores, modSeo]
   }
 })
 
@@ -515,7 +462,6 @@ function getModuleIcon(mod) {
   if (id === 'estrategia' || tipo === 'estrategia_completa') return Target
   if (id === 'vendedores_produtos' || tipo === 'vendedores') return Trophy
   if (id === 'seo' || tipo === 'seo_completo') return Tag
-  if (id === 'plataformas_precos' || tipo === 'plataformas') return BarChart2
   return Sparkles
 }
 
@@ -526,7 +472,6 @@ function getModuleTabName(mod) {
   if (id === 'estrategia' || tipo === 'estrategia_completa') return t('report.tab_strategy', 'Estratégia & Nichos')
   if (id === 'vendedores_produtos' || tipo === 'vendedores') return t('report.tab_sellers', 'Top Lojas & Produtos')
   if (id === 'seo' || tipo === 'seo_completo') return t('report.tab_seo', 'Estratégia de SEO')
-  if (id === 'plataformas_precos' || tipo === 'plataformas') return t('report.tab_platforms', 'Comparativo de Marketplaces')
   return mod.titulo || t('report.tab_strategy', 'Insights')
 }
 
@@ -536,7 +481,6 @@ function getModuleTitle(id, original, mod) {
   if (mId === 'estrategia' || tipo === 'estrategia_completa' || mId === 'action_recommendations' || tipo === 'recomendacoes') return t('report.tab_strategy', original)
   if (mId === 'vendedores_produtos' || mId === 'top_sellers' || tipo === 'vendedores') return t('report.tab_sellers', original)
   if (mId === 'seo' || mId === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') return t('report.tab_seo', original)
-  if (mId === 'plataformas_precos' || mId === 'platform_battle' || mId === 'ocean_blue' || tipo === 'plataformas' || tipo === 'faixas_preco') return t('report.tab_platforms', original)
   return original
 }
 
@@ -546,7 +490,6 @@ function getModuleSummary(id, original, mod) {
   if (mId === 'estrategia' || tipo === 'estrategia_completa') return t('report.mod1_desc', original)
   if (mId === 'vendedores_produtos' || mId === 'top_sellers' || tipo === 'vendedores') return t('report.mod2_desc', original)
   if (mId === 'seo' || mId === 'seo_strategy' || tipo === 'seo_completo' || tipo === 'palavras_chave') return t('report.mod3_desc', original)
-  if (mId === 'plataformas_precos' || mId === 'platform_battle' || tipo === 'plataformas') return t('report.mod4_desc', original)
   return original
 }
 
@@ -587,7 +530,7 @@ function openSellerDetails(sellerItem) {
   const finalProducts = sellerProds.length > 0 ? sellerProds : [
     { 
       id: 'seller-prod-1', 
-      titulo: sellerItem.top_produto || 'Anúncio Principal da Loja', 
+      titulo: sellerItem.top_produto || 'Produto Principal da Loja', 
       preco: 45.0, 
       vendas_totais: sellerItem.vendas || 1, 
       link: fallbackLink,

@@ -32,13 +32,19 @@
         :products="processedProducts"
       />
 
-      <!-- 3. Super Bloco Unificado de Controle (Filtros Globais + Barra de Intervalo Histórico + Abas de Visão) -->
+      <!-- 3. Comparativo de Marketplaces Fixo e Independente -->
+      <MarketplaceComparisonCard 
+        :products="processedProducts"
+        class="marketplace-standalone-card"
+      />
+
+      <!-- 4. Bloco de Filtros Globais em Tempo Real -->
       <div class="glass-panel unified-control-panel animate-fade-in">
-        <!-- 1. Linha Superior: Filtros Globais em Tempo Real -->
-        <div class="control-header-row">
-          <div class="filters-main-row">
+        <div class="filters-grid">
+          <!-- Grupo Esquerda: Filtros Globais -->
+          <div class="filters-left-group">
             <!-- Plataforma -->
-            <div class="filter-item">
+            <div class="filter-item platform-item">
               <label>{{ t('filters.platform', 'Plataforma:') }}</label>
               <div class="toggle-group">
                 <button 
@@ -47,7 +53,7 @@
                   @click="selectedPlatform = 'Todas'"
                 >
                   <Globe :size="14" />
-                  {{ t('filters.both', 'Todas') }}
+                  <span>{{ t('filters.both', 'Todas') }}</span>
                 </button>
                 <button 
                   type="button" 
@@ -58,7 +64,7 @@
                     <circle cx="12" cy="12" r="11" fill="#FFE600"/>
                     <path d="M7 12.5L10.5 15.5L17 8.5" stroke="#2D3277" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  Mercado Livre
+                  <span>Mercado Livre</span>
                 </button>
                 <button 
                   type="button" 
@@ -70,7 +76,7 @@
                     <path d="M7 9V7C7 4.79086 8.79086 3 11 3H13C15.2091 3 17 4.79086 17 7V9M5 9H19L17.5 21H6.5L5 9Z" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M12 11V15M12 15C11 15 9.5 14.2 9.5 13C9.5 11.8 12 12.2 12 11M12 15C13 15 14.5 15.8 14.5 17" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
                   </svg>
-                  Shopee
+                  <span>Shopee</span>
                 </button>
               </div>
             </div>
@@ -84,82 +90,62 @@
               </select>
             </div>
 
-            <!-- Vendas Mínimas -->
-            <div class="filter-item sales-item">
-              <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
-              <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
-            </div>
+            <!-- Sublinha de Vendas Mínimas e Checkbox (compacto e alinhado) -->
+            <div class="filter-sub-row">
+              <div class="filter-item sales-item">
+                <label>{{ t('filters.min_sales', 'Vendas Mín:') }}</label>
+                <input type="number" v-model="minSales" :placeholder="t('filters.min_sales_placeholder', 'Ex: 50')" class="glass-input sales-input" />
+              </div>
 
-            <!-- Checkbox Rápido 0 vendas -->
-            <div class="filter-item checkboxes-item">
-              <label class="checkbox-label">
-                <input type="checkbox" v-model="hideZeroSales" />
-                {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
-              </label>
-            </div>
-
-            <!-- Botão Histograma -->
-            <div class="filter-item">
-              <button 
-                type="button" 
-                class="btn-toggle-histogram" 
-                @click="showPriceHistogram = !showPriceHistogram"
-              >
-                <SlidersHorizontal :size="14" />
-                {{ showPriceHistogram ? t('filters.hide_price_range', 'Ocultar Faixa de Preços') : t('filters.filter_price_range', 'Filtrar Faixa de Preços') }}
-              </button>
+              <div class="filter-item checkboxes-item">
+                <label class="checkbox-label">
+                  <input type="checkbox" v-model="hideZeroSales" />
+                  {{ t('filters.hide_zero', 'Ocultar 0 vendas') }}
+                </label>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Histograma de Preços Expansível -->
-        <transition name="slide-fade">
-          <div v-if="showPriceHistogram" class="histogram-expand-wrapper">
+
+          <!-- Grupo Direita: Histograma de Faixa de Preço -->
+          <div class="filters-right-group">
             <PriceRangeHistogramFilter 
               :items="processedProducts" 
               @filter="(r) => { minPrice = r.min; maxPrice = r.max }" 
             />
           </div>
-        </transition>
+        </div>
+      </div>
 
-        <!-- 2. Linha Intermediária: Barra de Evolução Histórica (Data Inicial ➔ Data Final) -->
-        <TimelineScrapeSelector 
-          :rawItems="productsRaw" 
-          @select-date="onTimelineSelectDate"
-          @compare-dates="onTimelineCompareDates"
-        />
-
-        <!-- 3. Linha Inferior: Abas de Navegação das Visões -->
-        <div class="control-bottom-row">
-          <div class="view-tabs-group full-width">
-            <button 
-              :class="['view-tab-btn', { active: activeViewTab === 'overview' }]" 
-              @click="activeViewTab = 'overview'"
-            >
-              <BarChart3 :size="15" />
-              {{ t('tabs.overview', 'Visão Geral de Mercado') }}
-            </button>
-            <button 
-              :class="['view-tab-btn', { active: activeViewTab === 'trending' }]" 
-              @click="activeViewTab = 'trending'"
-            >
-              <Flame :size="15" />
-              {{ t('tabs.trending', 'Produtos em Alta & Aceleração') }}
-            </button>
-            <button 
-              :class="['view-tab-btn', { active: activeViewTab === 'pricing' }]" 
-              @click="activeViewTab = 'pricing'"
-            >
-              <Tag :size="15" />
-              {{ t('tabs.pricing', 'Estratégias de Preço & Oportunidades') }}
-            </button>
-          </div>
+      <!-- 5. Abas de Navegação das Visões Grudadas no Bloco de Conteúdo -->
+      <div class="views-navigation-wrapper">
+        <div class="view-tabs-container">
+          <button 
+            :class="['view-tab-pill', { active: activeViewTab === 'overview' }]" 
+            @click="activeViewTab = 'overview'"
+          >
+            <BarChart3 :size="16" />
+            <span>{{ t('tabs.overview', 'Visão Geral de Mercado') }}</span>
+          </button>
+          <button 
+            :class="['view-tab-pill', { active: activeViewTab === 'trending' }]" 
+            @click="activeViewTab = 'trending'"
+          >
+            <Flame :size="16" />
+            <span>{{ t('tabs.trending', 'Produtos em Alta & Aceleração') }}</span>
+          </button>
+          <button 
+            :class="['view-tab-pill', { active: activeViewTab === 'pricing' }]" 
+            @click="activeViewTab = 'pricing'"
+          >
+            <Tag :size="16" />
+            <span>{{ t('tabs.pricing', 'Estratégias de Preço & Oportunidades') }}</span>
+          </button>
         </div>
       </div>
 
       <!-- VISÃO 1: Visão Geral de Mercado (Gráficos e Tabela) -->
-      <div v-if="activeViewTab === 'overview'" class="overview-layout">
-        <!-- SEÇÃO 2: Mapeamento Visual de Concorrência & Gráficos -->
+      <div v-if="activeViewTab === 'overview'" class="overview-layout content-view-attached">
+        <!-- SEÇÃO: Mapeamento Visual de Concorrência & Gráficos -->
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
@@ -169,41 +155,43 @@
           </div>
           
           <div class="charts-container">
+            <!-- Linha 1: Top 10 Produtos em Crescimento ocupando linha inteira -->
             <div class="charts-row">
-              <TopProductsChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
-              <PriceVsSalesChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
-            </div>
-            
-            <div class="charts-row">
-              <TopSellersChart :items="filteredProducts" :isComparing="isComparing" class="full-width" />
+              <TopProductsChart :items="filteredProducts" :isComparing="true" class="full-width" />
             </div>
 
+            <!-- Linha 2: Distribuição de Vendas por Faixa de Preço dividindo com Share de Volume de Vendas por Categoria -->
             <div class="charts-row">
-              <CategoryVolumeChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
-              <PlatformMarketShareChart :items="filteredProducts" :isComparing="isComparing" class="half-width" />
+              <PriceVsSalesChart :items="filteredProducts" :isComparing="true" class="half-width" />
+              <CategoryVolumeChart :items="filteredProducts" :isComparing="true" class="half-width" />
+            </div>
+            
+            <!-- Linha 3: Ranking de Lojas Líderes -->
+            <div class="charts-row">
+              <TopSellersChart :items="filteredProducts" :isComparing="true" class="full-width" />
             </div>
           </div>
         </section>
 
-        <!-- SEÇÃO 4: Catálogo Detalhado de Anúncios -->
+        <!-- SEÇÃO: Catálogo Detalhado de Produtos -->
         <section class="dashboard-section">
           <div class="section-header">
             <div class="section-title-box">
-              <h3>{{ t('sections.table_title', 'Catálogo Completo de Anúncios') }}</h3>
+              <h3>{{ t('sections.table_title', 'Catálogo Completo de Produtos') }}</h3>
             </div>
-            <p class="section-subtitle">{{ t('sections.table_subtitle', 'Detalhamento de cada anúncio coletado com preço, vendedor e link oficial.') }}</p>
+            <p class="section-subtitle">{{ t('sections.table_subtitle', 'Detalhamento de cada produto coletado com preço, vendedor e link oficial.') }}</p>
           </div>
           <DataTable :items="filteredProducts" class="full-width" />
         </section>
       </div>
 
       <!-- VISÃO 2: Ranking de Aceleração & Tendências -->
-      <div v-else-if="activeViewTab === 'trending'">
+      <div v-else-if="activeViewTab === 'trending'" class="content-view-attached">
         <TrendingProductsTab :products="filteredProducts" />
       </div>
 
       <!-- VISÃO 3: Monitor de Estratégias de Preço -->
-      <div v-else-if="activeViewTab === 'pricing'">
+      <div v-else-if="activeViewTab === 'pricing'" class="content-view-attached">
         <PriceStrategyMonitor :products="filteredProducts" />
       </div>
     </div>
@@ -212,17 +200,16 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Globe, SlidersHorizontal, BarChart3, Flame, Tag, BarChart2, Layers, AlertTriangle } from 'lucide-vue-next'
+import { Globe, BarChart3, Flame, Tag, AlertTriangle } from 'lucide-vue-next'
 import Navbar from '~/components/Navbar.vue'
 import KpiCards from '~/components/KpiCards.vue'
 import DataTable from '~/components/DataTable.vue'
 import TopProductsChart from '~/components/TopProductsChart.client.vue'
 import PriceVsSalesChart from '~/components/PriceVsSalesChart.client.vue'
 import CategoryVolumeChart from '~/components/CategoryVolumeChart.client.vue'
-import PlatformMarketShareChart from '~/components/PlatformMarketShareChart.client.vue'
 import TopSellersChart from '~/components/TopSellersChart.client.vue'
-import TimelineScrapeSelector from '~/components/TimelineScrapeSelector.vue'
 import PriceRangeHistogramFilter from '~/components/PriceRangeHistogramFilter.vue'
+import MarketplaceComparisonCard from '~/components/MarketplaceComparisonCard.vue'
 import TrendingProductsTab from '~/components/TrendingProductsTab.vue'
 import PriceStrategyMonitor from '~/components/PriceStrategyMonitor.vue'
 import AiExecutiveReport from '~/components/AiExecutiveReport.client.vue'
@@ -239,18 +226,6 @@ const aiReportData = ref(null)
 
 // Estado das Visões da Dashboard
 const activeViewTab = ref('overview') // 'overview', 'trending', 'pricing'
-const timelineSelectedDate = ref(null)
-const timelineCompareRange = ref(null)
-
-function onTimelineSelectDate(dateStr) {
-  timelineCompareRange.value = null
-  timelineSelectedDate.value = dateStr
-}
-
-function onTimelineCompareDates({ dateA, dateB }) {
-  timelineSelectedDate.value = null
-  timelineCompareRange.value = { dateA, dateB }
-}
 
 // Estado dos Filtros Globais
 const selectedCategory = ref('Todas')
@@ -259,7 +234,6 @@ const minPrice = ref(null)
 const maxPrice = ref(null)
 const minSales = ref(null)
 const hideZeroSales = ref(false)
-const showPriceHistogram = ref(false)
 
 const defaultCategoryRules = [
   { keyword: 'vela', category: 'Velas de Aniversário' },
@@ -367,59 +341,11 @@ onMounted(() => {
 
 // Texto explicativo do período para os KPIs
 const dateRangeText = computed(() => {
-  if (productsRaw.value.length === 0) return t('global.loading_dates', 'Carregando datas...')
-  
-  if (timelineCompareRange.value) {
-    const { dateA, dateB } = timelineCompareRange.value
-    const dateLocale = locale.value === 'pt' ? 'pt-BR' : 'en-US'
-    const formatStr = (dStr) => new Date(dStr + 'T00:00:00').toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-    return `${formatStr(dateA)} ${t('global.until', 'até')} ${formatStr(dateB)}`
-  }
-
-  if (timelineSelectedDate.value) {
-    const dateLocale = locale.value === 'pt' ? 'pt-BR' : 'en-US'
-    return new Date(timelineSelectedDate.value + 'T00:00:00').toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
-
-  return t('global.real_time_updates', 'Dados atualizados em tempo real')
+  if (productsRaw.value.length === 0) return t('global.loading_dates', 'Carregando dados...')
+  return t('global.real_time_updates', 'Histórico completo consolidado em tempo real')
 })
 
-function extractDateStr(raw) {
-  if (!raw) return ''
-  const str = String(raw).trim()
-  const match = str.match(/^\d{4}-\d{2}-\d{2}/)
-  if (match) return match[0]
-  try {
-    const d = new Date(str)
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0]
-    }
-  } catch (e) {}
-  return str.split('T')[0].split(' ')[0]
-}
-
-function getSnapshotForDate(historico, targetDateStr) {
-  if (!historico || !Array.isArray(historico) || historico.length === 0) return null
-  
-  // 1. Tenta correspondência exata de data (YYYY-MM-DD)
-  const exact = historico.find(h => extractDateStr(h.data_coleta) === targetDateStr)
-  if (exact) return exact
-
-  // 2. Se não houver exata, busca a coleta mais recente <= targetDateStr
-  const targetTime = new Date(targetDateStr + 'T23:59:59').getTime()
-  const prior = historico
-    .filter(h => {
-      const dStr = extractDateStr(h.data_coleta)
-      return dStr && new Date(dStr + 'T00:00:00').getTime() <= targetTime
-    })
-    .sort((a, b) => new Date(b.data_coleta).getTime() - new Date(a.data_coleta).getTime())
-
-  if (prior.length > 0) return prior[0]
-
-  return null
-}
-
-// Processa métricas e variações com base no intervalo de datas selecionado
+// Processa métricas e variações com base em todo o histórico coletado (100% do período)
 const processedProducts = computed(() => {
   return productsRaw.value
     .map(p => {
@@ -427,83 +353,42 @@ const processedProducts = computed(() => {
       let snapshot = { ...p }
       let hist = null
       let varInfo = null
-      let salesDiff = null
+      let salesDiff = 0
+      let isNew = false
 
-      if (timelineCompareRange.value) {
-        const { dateA, dateB } = timelineCompareRange.value
-        // Ponto B (Data final/mais recente)
-        const entryB = getSnapshotForDate(history, dateB) || (history.length > 0 ? history[0] : null)
-        // Ponto A (Data inicial/base)
-        const entryA = getSnapshotForDate(history, dateA)
+      if (history.length >= 2) {
+        // Ponto mais recente (index 0) e ponto inicial mais antigo coletado (index length - 1)
+        const entryLatest = history[0]
+        const entryOldest = history[history.length - 1]
 
-        const priceB = entryB ? (entryB.preco ?? p.preco ?? 0) : (p.preco ?? 0)
-        const salesB = entryB ? (entryB.vendas_totais ?? p.vendas_totais ?? 0) : (p.vendas_totais ?? 0)
+        const priceLatest = entryLatest.preco ?? p.preco ?? 0
+        const salesLatest = entryLatest.vendas_totais ?? p.vendas_totais ?? 0
+        const priceOldest = entryOldest.preco ?? priceLatest
+        const salesOldest = entryOldest.vendas_totais ?? 0
 
-        if (entryA) {
-          const priceA = entryA.preco ?? 0
-          const salesA = entryA.vendas_totais ?? 0
+        snapshot = { ...p, preco: priceLatest, vendas_totais: salesLatest }
+        hist = { preco: priceOldest, vendas_totais: salesOldest }
+        salesDiff = Math.max(0, salesLatest - salesOldest)
 
-          snapshot = { ...p, preco: priceB, vendas_totais: salesB }
-          hist = { preco: priceA, vendas_totais: salesA }
-          salesDiff = Math.max(0, salesB - salesA)
-          
-          if (priceA > 0) {
-            const diff = priceB - priceA
-            if (Math.abs(diff) > 0.05) {
-              varInfo = {
-                diff,
-                perc: (diff / priceA) * 100,
-                isPositive: diff > 0,
-                isNegative: diff < 0
-              }
-            }
-          }
-        } else {
-          // Produto adicionado após a data inicial (novo no período)
-          snapshot = { ...p, preco: priceB, vendas_totais: salesB, isNew: true }
-          hist = null
-          salesDiff = salesB
-          varInfo = null
-        }
-      } else if (timelineSelectedDate.value) {
-        const targetDate = timelineSelectedDate.value
-        const entryCurrent = getSnapshotForDate(history, targetDate) || (history.length > 0 ? history[0] : null)
-        
-        if (entryCurrent) {
-          snapshot = { ...p, preco: entryCurrent.preco ?? 0, vendas_totais: entryCurrent.vendas_totais ?? 0 }
-          
-          // Busca a coleta imediatamente anterior a essa data no histórico
-          const currentTargetTime = new Date(extractDateStr(entryCurrent.data_coleta) + 'T00:00:00').getTime()
-          const priorEntries = history.filter(h => {
-            const d = new Date(extractDateStr(h.data_coleta) + 'T00:00:00').getTime()
-            return d < currentTargetTime
-          })
-          
-          if (priorEntries.length > 0) {
-            const entryPrev = priorEntries[0]
-            const pricePrev = entryPrev.preco ?? 0
-            const salesPrev = entryPrev.vendas_totais ?? 0
-            
-            hist = { preco: pricePrev, vendas_totais: salesPrev }
-            salesDiff = Math.max(0, (entryCurrent.vendas_totais ?? 0) - salesPrev)
-            
-            if (pricePrev > 0) {
-              const diff = (entryCurrent.preco ?? 0) - pricePrev
-              if (Math.abs(diff) > 0.05) {
-                varInfo = {
-                  diff,
-                  perc: (diff / pricePrev) * 100,
-                  isPositive: diff > 0,
-                  isNegative: diff < 0
-                }
-              }
+        if (priceOldest > 0) {
+          const diff = priceLatest - priceOldest
+          if (Math.abs(diff) > 0.05) {
+            varInfo = {
+              diff,
+              perc: (diff / priceOldest) * 100,
+              isPositive: diff > 0,
+              isNegative: diff < 0
             }
           }
         }
+      } else {
+        // Produto recém-extraído com apenas 1 coleta registrada
+        // Não conta o total de vendas histórico da plataforma como novas vendas recentes!
+        isNew = true
+        salesDiff = 0
+        hist = null
+        varInfo = null
       }
-
-      const createdDate = snapshot.criado_em ? new Date(snapshot.criado_em) : new Date()
-      const isNew = snapshot.isNew || (history.length === 1) || (new Date().getTime() - createdDate.getTime() < 86400000)
 
       return {
         ...snapshot,
@@ -560,16 +445,23 @@ const topPlatform = computed(() => {
   }, {})
   return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b)
 })
-const isComparing = computed(() => !!timelineCompareRange.value)
 const topProduct = computed(() => filteredProducts.value.length > 0 ? filteredProducts.value[0] : null)
 const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) => acc + ((p.preco || 0) * (p.vendas_totais || 0)), 0))
 </script>
 
 <style scoped>
+.marketplace-standalone-card {
+  margin-bottom: 1.4rem;
+}
+
 .overview-layout {
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
+}
+
+.content-view-attached {
+  animation: fadeIn 0.25s ease;
 }
 
 .dashboard-section {
@@ -606,36 +498,6 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   color: #64748b;
 }
 
-.section-badge {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 0.2rem 0.55rem;
-  border-radius: 99px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.section-badge.green {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
-}
-
-.section-badge.blue {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-}
-
-.section-badge.purple {
-  background: #faf5ff;
-  color: #7c3aed;
-  border: 1px solid #ddd6fe;
-}
-
 .charts-container {
   display: flex;
   flex-direction: column;
@@ -654,31 +516,45 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 
 .half-width {
   flex: 1;
-  min-width: 400px;
+  min-width: 380px;
 }
 
 .unified-control-panel {
-  padding: 1.15rem 1.35rem;
-  margin-bottom: 1.4rem;
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.2rem;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
 
-.control-header-row {
+.filters-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 1.4rem;
   width: 100%;
 }
 
-.filters-main-row {
+.filters-left-group {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1.15rem 1.4rem;
-  width: 100%;
+  gap: 0.85rem 1.2rem;
+  flex: 1;
+}
+
+.filter-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.filters-right-group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .filter-item {
@@ -696,9 +572,9 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 }
 
 .category-item {
-  flex: 1 1 220px;
-  min-width: 200px;
-  max-width: 320px;
+  flex: 0 1 210px;
+  min-width: 160px;
+  max-width: 240px;
 }
 
 .category-item select {
@@ -709,10 +585,10 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   background: #ffffff;
   border: 1.5px solid #cbd5e1;
   color: #0f172a;
-  padding: 0.5rem 0.85rem;
+  padding: 0.45rem 0.75rem;
   border-radius: 9px;
   outline: none;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 600;
   transition: all 0.2s ease;
 }
@@ -727,7 +603,7 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
 }
 
 .sales-input {
-  width: 85px;
+  width: 75px;
 }
 
 .checkboxes-item {
@@ -746,81 +622,45 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   white-space: nowrap;
 }
 
-.btn-toggle-histogram {
-  background: #f8fafc;
-  border: 1.5px solid #cbd5e1;
-  color: #334155;
-  font-size: 0.84rem;
-  font-weight: 700;
-  padding: 0.5rem 0.95rem;
-  border-radius: 9px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+/* Abas de Navegação das Visões Grudadas no Conteúdo */
+.views-navigation-wrapper {
+  margin-bottom: 1rem;
 }
 
-.btn-toggle-histogram:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-  border-color: #94a3b8;
-}
-
-.histogram-expand-wrapper {
-  padding-top: 0.5rem;
-  border-top: 1px dashed #e2e8f0;
-}
-
-.control-bottom-row {
-  padding-top: 0.85rem;
-  border-top: 1px solid #f1f5f9;
-}
-
-.view-tabs-group {
+.view-tabs-container {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
-  background: #f8fafc;
+  background: #f1f5f9;
   padding: 0.35rem;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-}
-
-.view-tabs-group.full-width {
+  border: 1px solid #cbd5e1;
   width: 100%;
 }
 
-.view-tabs-group.full-width .view-tab-btn {
+.view-tab-pill {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  text-align: center;
+  gap: 0.5rem;
   padding: 0.65rem 1rem;
-}
-
-.view-tab-btn {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
   background: transparent;
   border: 1px solid transparent;
-  color: #475569;
-  padding: 0.55rem 1.1rem;
   border-radius: 9px;
-  font-weight: 700;
-  font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
 }
 
-.view-tab-btn:hover {
+.view-tab-pill:hover {
   background: #ffffff;
   color: #0f172a;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
 }
 
-.view-tab-btn.active {
+.view-tab-pill.active {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: #ffffff;
   border-color: #b45309;
@@ -852,6 +692,11 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   to { transform: rotate(360deg); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 880px) {
   .half-width {
     min-width: 100%;
@@ -867,36 +712,94 @@ const estimatedRevenue = computed(() => filteredProducts.value.reduce((acc, p) =
   .unified-control-panel {
     padding: 0.85rem 0.9rem;
     border-radius: 14px;
+  }
+  .filters-grid {
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.85rem;
   }
-  .filters-main-row {
-    gap: 0.85rem;
-  }
-  .filter-item {
+  .filters-left-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
     width: 100%;
-    justify-content: space-between;
+  }
+  .platform-item {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+  .platform-item .toggle-group {
+    width: 100%;
+    display: flex;
+  }
+  .platform-item .toggle-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.45rem 0.25rem;
+    font-size: 0.76rem;
+    gap: 0.2rem;
   }
   .category-item {
     max-width: 100%;
     width: 100%;
     flex: 1 1 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
   }
-  .sales-item {
+  .category-item select {
+    width: 100%;
+    font-size: 0.88rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .filter-sub-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+  .filter-sub-row .sales-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+  .filter-sub-row .sales-item label {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .filter-sub-row .sales-input {
+    width: 58px;
+    padding: 0.4rem 0.45rem;
+    font-size: 0.84rem;
+  }
+  .filter-sub-row .checkboxes-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+  .filter-sub-row .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+  .filters-right-group {
     width: 100%;
   }
-  .sales-input {
-    flex: 1;
-    width: auto;
-  }
-  .btn-toggle-histogram {
-    width: 100%;
-    text-align: center;
-  }
-  .view-tabs-group.full-width {
+  .view-tabs-container {
     flex-direction: column;
     gap: 0.4rem;
   }
-  .view-tabs-group.full-width .view-tab-btn {
+  .view-tab-pill {
     width: 100%;
     padding: 0.6rem 0.8rem;
     font-size: 0.84rem;

@@ -34,7 +34,7 @@
 
             <div class="summary-card">
               <span class="card-label">{{ t('product_modal.total_sales', 'Vendas Acumuladas') }}</span>
-              <span class="card-value sales">{{ product.vendas_totais || 0 }} {{ t('product_modal.units_label', 'unidades') }}</span>
+              <span class="card-value sales">{{ (product.vendas_totais || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('product_modal.units_label', 'unidades') }}</span>
             </div>
 
             <div class="summary-card" v-if="product.vendedor">
@@ -47,26 +47,12 @@
             </div>
 
             <div class="summary-card">
-              <span class="card-label">{{ t('product_modal.original_ad', 'Anúncio Original') }}</span>
+              <span class="card-label">{{ t('product_modal.original_ad', 'Produto Original') }}</span>
               <a :href="product.link" target="_blank" class="store-link-btn">
                 {{ t('product_modal.view_in_store', 'Acessar na Loja') }}
                 <ExternalLink :size="13" />
               </a>
             </div>
-          </div>
-
-          <!-- Gráfico do Histórico -->
-          <div class="chart-section">
-            <h4 class="section-title-flex">
-              <TrendingUp :size="17" />
-              {{ t('product_modal.history_chart_title', 'Histórico de Evolução (Preço x Vendas)') }}
-            </h4>
-            <ClientOnly>
-              <apexchart type="line" height="300" :options="chartOptions" :series="chartSeries"></apexchart>
-              <template #fallback>
-                <div class="loading-chart">{{ t('product_modal.loading_chart', 'Carregando dados históricos do anúncio...') }}</div>
-              </template>
-            </ClientOnly>
           </div>
 
           <!-- Tabela de Histórico Bruto -->
@@ -88,7 +74,7 @@
                   <tr v-for="(entry, index) in product.historico_coletas" :key="index">
                     <td>{{ formatDate(entry.data_coleta) }}</td>
                     <td class="fw-bold">R$ {{ entry.preco ? entry.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-                    <td>{{ entry.vendas_totais || 0 }} {{ t('product_modal.unit_short', 'un') }}</td>
+                    <td>{{ (entry.vendas_totais || 0).toLocaleString(locale === 'pt' ? 'pt-BR' : 'en-US') }} {{ t('product_modal.unit_short', 'un') }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -101,8 +87,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { FileSearch, X, ShoppingBag, MapPin, Store, ExternalLink, TrendingUp, Calendar } from 'lucide-vue-next'
+import { FileSearch, X, ShoppingBag, MapPin, Store, ExternalLink, Calendar } from 'lucide-vue-next'
 import { useAppI18n } from '~/composables/useAppI18n'
 
 const { t, locale } = useAppI18n()
@@ -121,87 +106,19 @@ function formatDate(dateStr) {
   const d = new Date(dateStr)
   return d.toLocaleDateString(locale.value === 'pt' ? 'pt-BR' : 'en-US')
 }
-
-const chartSeries = computed(() => {
-  if (!props.product || !props.product.historico_coletas) return []
-  
-  const history = [...props.product.historico_coletas].reverse()
-  
-  return [
-    {
-      name: t('kpis.sales', 'Vendas Totais'),
-      type: 'area',
-      data: history.map(h => h.vendas_totais || 0)
-    },
-    {
-      name: t('table.col_price', 'Preço') + ' (R$)',
-      type: 'line',
-      data: history.map(h => h.preco || 0)
-    }
-  ]
-})
-
-const chartOptions = computed(() => {
-  if (!props.product || !props.product.historico_coletas) return {}
-  
-  const history = [...props.product.historico_coletas].reverse()
-  const dates = history.map(h => formatDate(h.data_coleta))
-  
-  return {
-    chart: {
-      type: 'line',
-      background: 'transparent',
-      toolbar: { show: false },
-      fontFamily: 'Inter, sans-serif'
-    },
-    colors: ['#059669', '#2563eb'], // Verde para Vendas, Azul para Preço
-    stroke: { curve: 'smooth', width: [0, 3] },
-    fill: { 
-      type: ['gradient', 'solid'],
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.3,
-        opacityTo: 0.05,
-        stops: [0, 100]
-      }
-    },
-    labels: dates,
-    xaxis: {
-      type: 'category',
-      labels: { style: { colors: '#475569', fontWeight: 600 } }
-    },
-    yaxis: [
-      {
-        title: { text: t('kpis.sales', 'Vendas') + ' (' + t('product_modal.units_label', 'unidades') + ')', style: { color: '#059669', fontWeight: 600 } },
-        labels: { style: { colors: '#059669' } }
-      },
-      {
-        opposite: true,
-        title: { text: t('table.col_price', 'Preço') + ' (R$)', style: { color: '#2563eb', fontWeight: 600 } },
-        labels: {
-          style: { colors: '#2563eb' },
-          formatter: (value) => `R$ ${value.toFixed(2)}`
-        }
-      }
-    ],
-    theme: { mode: 'light' },
-    tooltip: { theme: 'light' },
-    legend: { position: 'top', labels: { colors: '#0f172a' } }
-  }
-})
 </script>
 
 <style scoped>
 .modal-overlay { position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); display: flex; justify-content: center; align-items: center; z-index: 99999; backdrop-filter: blur(6px); padding: 1.5rem; }
-.modal-content { width: 100%; max-width: 920px; max-height: 88vh; overflow-y: auto; padding: 2rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin: auto; }
+.modal-content { width: 100%; max-width: 780px; max-height: 88vh; overflow-y: auto; padding: 1.8rem; border-radius: 16px; position: relative; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); margin: auto; }
 
 .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; }
 .modal-title-box { flex: 1; padding-right: 1rem; }
 .badge-category { font-size: 0.75rem; font-weight: 700; color: #6b21a8; background: #f3e8ff; padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid #d8b4fe; text-transform: uppercase; margin-bottom: 0.4rem; display: inline-block; }
-.modal-heading-flex { margin: 0; color: #0f172a; font-size: 1.25rem; line-height: 1.4; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.modal-heading-flex { margin: 0; color: #0f172a; font-size: 1.2rem; line-height: 1.4; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .product-title-text { color: #2563eb; font-weight: 700; }
 
-.close-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; width: 36px; height: 36px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; line-height: 1; }
+.close-btn { background: #f1f5f9; border: 1px solid #cbd5e1; color: #64748b; width: 34px; height: 34px; border-radius: 50%; font-size: 1.3rem; cursor: pointer; transition: all 0.2s ease; display: flex; justify-content: center; align-items: center; line-height: 1; }
 .close-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
 .product-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
@@ -218,10 +135,6 @@ const chartOptions = computed(() => {
 
 .store-link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; padding: 0.45rem 0.8rem; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; transition: background 0.2s ease; margin-top: 0.2rem; }
 .store-link-btn:hover { background: #1d4ed8; }
-
-.chart-section { margin-bottom: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem; }
-.section-title-flex { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.45rem; }
-.loading-chart { height: 300px; display: flex; justify-content: center; align-items: center; color: #64748b; font-weight: 600; }
 
 .history-table-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.2rem; }
 .history-table-section h4 { font-size: 1rem; color: #0f172a; margin-bottom: 0.8rem; }

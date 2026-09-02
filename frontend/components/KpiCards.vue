@@ -8,7 +8,7 @@
         <div class="kpi-content">
           <h3 class="kpi-title">{{ t('kpis.total_items', 'Total de Produtos') }}</h3>
           <p class="kpi-value text-gradient">{{ formatLargeNumber(totalProducts) }}</p>
-          <span class="kpi-subtext">{{ t('kpis.total_items_sub', 'Anúncios monitorados') }}</span>
+          <span class="kpi-subtext">{{ t('kpis.total_items_sub', 'Produtos monitorados') }}</span>
         </div>
       </div>
       

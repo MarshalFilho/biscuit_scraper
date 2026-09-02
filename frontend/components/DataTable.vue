@@ -5,9 +5,9 @@
       <div class="table-title">
         <h3 class="table-heading-flex">
           <Layers :size="20" class="text-blue-600" />
-          <span>{{ t('table.title', 'Catálogo Completo de Anúncios') }}</span>
+          <span>{{ t('table.title', 'Catálogo Completo de Produtos') }}</span>
         </h3>
-        <p class="subtitle">{{ t('table.subtitle', 'Filtre, pesquise e navegue pelas páginas diretamente por esta tabela.') }}</p>
+        <p class="subtitle">{{ t('table.subtitle', 'Filtre, pesquise e navegue pelos produtos monitorados diretamente nesta tabela.') }}</p>
       </div>
       <div class="table-actions">
         <div class="table-counter-badge">
@@ -62,16 +62,10 @@
               {{ t('table.col_category', 'Categoria') }} <span class="sort-icon">{{ sortKey === 'categoria' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('titulo')" class="sortable-header">
-              {{ t('table.col_product', 'Título Anúncio') }} <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_product', 'Título do Produto') }} <span class="sort-icon">{{ sortKey === 'titulo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('preco')" class="sortable-header">
-              {{ t('table.col_price', 'Preço Atual') }} <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
-            </th>
-            <th @click="sortBy('hist_preco')" class="sortable-header">
-              {{ t('table.col_old_price', 'Preço Ant.') }} <span class="sort-icon">{{ sortKey === 'hist_preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
-            </th>
-            <th @click="sortBy('varInfo')" class="sortable-header">
-              {{ t('table.col_variation', 'Variação') }} <span class="sort-icon">{{ sortKey === 'varInfo' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
+              {{ t('table.col_price', 'Preço') }} <span class="sort-icon">{{ sortKey === 'preco' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
             </th>
             <th @click="sortBy('vendas_totais')" class="sortable-header">
               {{ t('table.col_sales', 'Vendas Totais') }} <span class="sort-icon">{{ sortKey === 'vendas_totais' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕' }}</span>
@@ -81,7 +75,7 @@
         </thead>
         <tbody v-if="isLoading">
           <tr v-for="i in 10" :key="'skel-dt'+i">
-            <td colspan="8"><div class="skeleton skeleton-text" style="height: 36px"></div></td>
+            <td colspan="6"><div class="skeleton skeleton-text" style="height: 36px"></div></td>
           </tr>
         </tbody>
         <tbody v-else>
@@ -104,10 +98,6 @@
               <span class="badge category">{{ item.categoria }}</span>
             </td>
             <td class="title-cell clickable-title" :title="item.titulo" @click="openModal(item)">
-              <span v-if="item.isNew" class="badge-new" :title="t('table.new_badge_title', 'Identificado recentemente')">
-                <Sparkles :size="11" />
-                {{ t('table.new_badge', 'Novo') }}
-              </span>
               <div class="title-text">{{ item.titulo }}</div>
               <small v-if="item.vendedor" class="seller-subtext" :title="'Vendedor / Loja: ' + item.vendedor">
                 <MapPin v-if="item.vendedor.startsWith('Loja em')" :size="12" />
@@ -116,23 +106,16 @@
               </small>
             </td>
             
-            <!-- Preços -->
-            <td class="price-cell">R$ {{ item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00' }}</td>
-            
-            <!-- Histórico -->
-            <td class="old-price-cell text-muted">
-              <span v-if="item.hist">R$ {{ item.hist.preco.toFixed(2).replace('.', ',') }}</span>
-              <span v-else class="text-muted">-</span>
-            </td>
-            
-            <td class="variation-cell">
-              <span v-if="item.varInfo" :class="{'badge-price-up': item.varInfo.isPositive, 'badge-price-down': item.varInfo.isNegative}">
-                <ArrowUpRight v-if="item.varInfo.isPositive" :size="12" />
-                <ArrowDownRight v-else-if="item.varInfo.isNegative" :size="12" />
-                R$ {{ Math.abs(item.varInfo.diff).toFixed(2).replace('.', ',') }}
-                <small>({{ item.varInfo.perc > 0 ? '+' : '' }}{{ item.varInfo.perc.toFixed(1) }}%)</small>
-              </span>
-              <span v-else class="text-muted">-</span>
+            <!-- Preço com badge de variação inline -->
+            <td class="price-cell">
+              <div class="price-cell-wrap">
+                <span class="price-amount">R$&nbsp;{{ item.preco ? item.preco.toFixed(2).replace('.', ',') : '0,00' }}</span>
+                <span v-if="item.varInfo" :class="['badge-price-inline', {'badge-price-up': item.varInfo.isPositive, 'badge-price-down': item.varInfo.isNegative}]" :title="`Variação: R$ ${item.varInfo.diff > 0 ? '+' : ''}${item.varInfo.diff.toFixed(2)}`">
+                  <ArrowUpRight v-if="item.varInfo.isPositive" :size="12" />
+                  <ArrowDownRight v-else-if="item.varInfo.isNegative" :size="12" />
+                  {{ item.varInfo.perc > 0 ? '+' : '' }}{{ item.varInfo.perc.toFixed(0) }}%
+                </span>
+              </div>
             </td>
             
             <td class="sales-diff-cell">
@@ -144,17 +127,14 @@
             
             <td class="action-cell">
               <div class="action-btns-wrap">
-                <button @click="openModal(item)" class="icon-btn action-btn-icon" :title="t('table.view_details_title', 'Ver detalhes completos do anúncio')">
-                  <Eye :size="14" />
-                </button>
-                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir anúncio original na loja')">
+                <a :href="item.link" target="_blank" class="icon-btn link-btn-icon" :title="t('table.open_store_title', 'Abrir produto original na loja')">
                   <ExternalLink :size="14" />
                 </a>
               </div>
             </td>
           </tr>
           <tr v-if="filteredData.length === 0 && !isLoading">
-            <td colspan="8" class="empty-state">{{ t('table.empty', 'Nenhum produto encontrado com os filtros aplicados.') }}</td>
+            <td colspan="6" class="empty-state">{{ t('table.empty', 'Nenhum produto encontrado com os filtros aplicados.') }}</td>
           </tr>
         </tbody>
       </table>
@@ -663,38 +643,47 @@ function exportToCSV() {
   border: 1px solid #e2e8f0;
 }
 
-.badge-new {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.68rem;
-  background: #dcfce7;
-  color: #15803d;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  font-weight: 800;
-  margin-right: 0.4rem;
-}
-
 .price-cell {
   font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
 }
 
-.badge-price-up {
+.price-cell-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.price-amount {
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.badge-price-inline {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-price-inline.badge-price-up {
+  background: #dcfce7;
   color: #15803d;
-  font-weight: 700;
+  border: 1px solid #bbf7d0;
 }
 
-.badge-price-down {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
+.badge-price-inline.badge-price-down {
+  background: #fee2e2;
   color: #b91c1c;
-  font-weight: 700;
+  border: 1px solid #fecaca;
 }
 
 .badge-growth {
@@ -705,6 +694,7 @@ function exportToCSV() {
   font-size: 0.75rem;
   font-weight: 800;
   margin-left: 0.3rem;
+  white-space: nowrap;
 }
 
 .action-btns-wrap {

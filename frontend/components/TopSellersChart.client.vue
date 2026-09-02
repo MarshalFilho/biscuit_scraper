@@ -57,7 +57,7 @@
             <th>#</th>
             <th>{{ t('charts.col_seller', 'Vendedor / Loja') }}</th>
             <th>{{ t('table.col_platform', 'Plataforma') }}</th>
-            <th>{{ t('charts.col_ads', 'Anúncios Ativos') }}</th>
+            <th>{{ t('charts.col_ads', 'Produtos Ativos') }}</th>
             <th>{{ isComparing ? t('charts.new_sales', 'Novas Vendas') : t('kpis.sales', 'Vendas Totais') }}</th>
             <th>{{ t('kpis.revenue', 'Fat. Estimado') }}</th>
           </tr>
@@ -74,8 +74,8 @@
               </span>
             </td>
             <td class="ads-count-td">
-              <span class="ads-count-link" :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os anúncios deste vendedor')">
-                {{ seller.productCount }} {{ seller.productCount === 1 ? t('charts.ad', 'anúncio') : t('charts.ads', 'anúncios') }}
+              <span class="ads-count-link" :title="t('seller_modal.inspect_tooltip', 'Clique para ver todos os produtos deste vendedor')">
+                {{ seller.productCount }} {{ seller.productCount === 1 ? t('charts.ad', 'produto') : t('charts.ads', 'produtos') }}
               </span>
             </td>
             <td class="sales-td">
@@ -90,7 +90,7 @@
       </table>
     </div>
 
-    <!-- Modal com os Anúncios do Vendedor -->
+    <!-- Modal com os Produtos do Vendedor -->
     <SellerProductsModal :seller="selectedSeller" @close="selectedSeller = null" />
   </div>
 </template>
