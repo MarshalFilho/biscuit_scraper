@@ -162,13 +162,13 @@
 
             <!-- Linha 2: Distribuição de Vendas por Faixa de Preço dividindo com Share de Volume de Vendas por Categoria -->
             <div class="charts-row">
-              <PriceVsSalesChart :items="filteredProducts" :isComparing="true" class="half-width" />
-              <CategoryVolumeChart :items="filteredProducts" :isComparing="true" class="half-width" />
+              <PriceVsSalesChart :items="filteredProducts" :isComparing="false" class="half-width" />
+              <CategoryVolumeChart :items="filteredProducts" :isComparing="false" class="half-width" />
             </div>
             
             <!-- Linha 3: Ranking de Lojas Líderes -->
             <div class="charts-row">
-              <TopSellersChart :items="filteredProducts" :isComparing="true" class="full-width" />
+              <TopSellersChart :items="filteredProducts" :isComparing="false" class="full-width" />
             </div>
           </div>
         </section>
